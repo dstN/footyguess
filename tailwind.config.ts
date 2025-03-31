@@ -1,5 +1,15 @@
 import type { Config } from "tailwindcss";
 
 export default <Partial<Config>>{
-  content: ["docs/content/**/*.md"],
+  content: [
+    "./components/**/*.{vue,js,ts}",
+    "./layouts/**/*.vue",
+    "./pages/**/*.vue",
+    "./app.vue",
+    "./nuxt.config.ts",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
 };

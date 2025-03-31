@@ -1,0 +1,46 @@
+{
+  "title": "Errate den Spieler!",
+  "career": "Karriereverlauf",
+  "placeholder": "Spielername eingeben...",
+  "submit": "Antwort abgeben",
+  "hint_button": "Willst du einen Tipp?",
+  "correct": "🎉 Richtig! Du hast den Spieler erraten!",
+  "wrong": "❌ Falscher Spieler!",
+  "unknown": "⚠️ Dieser Spieler ist nicht in der Datenbank.",
+  "hint": "💡 {hint}",
+  "hints": {
+    "nationality": {
+      "correct": "Die Nationalität stimmt.",
+      "incorrect": "Die Nationalität stimmt nicht."
+    },
+    "position": {
+      "correct": "Die Position stimmt.",
+      "incorrect": "Die Position stimmt nicht."
+    },
+    "shirt_number": {
+      "higher": "Die Rückennummer ist höher als die des gesuchten Spielers.",
+      "lower": "Die Rückennummer ist niedriger als die des gesuchten Spielers.",
+      "exact": "Die Rückennummer stimmt."
+    },
+    "age": {
+      "younger": "Der gesuchte Spieler ist jünger.",
+      "older": "Der gesuchte Spieler ist älter.",
+      "same": "Das Alter stimmt genau."
+    },
+    "foot": {
+      "correct": "Der bevorzugte Fuß stimmt.",
+      "incorrect": "Der bevorzugte Fuß stimmt nicht."
+    },
+    "active": {
+      "true": "Der gesuchte Spieler ist noch aktiv.",
+      "false": "Der gesuchte Spieler ist nicht mehr aktiv.",
+      "same": "Beide Spieler sind im gleichen Aktivstatus."
+    },
+    "dead": {
+      "true": "Der gesuchte Spieler ist verstorben.",
+      "false": "Der gesuchte Spieler lebt noch.",
+      "same": "Beide leben oder beide sind verstorben."
+    },
+    "none": "Kein Hinweis verfügbar."
+  }
+}
