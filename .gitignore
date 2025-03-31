@@ -5,7 +5,10 @@
 .nitro
 .cache
 dist
-
+query.json
+hint-availability.json
+teamIDs.json
+server/db
 # Node dependencies
 node_modules
 

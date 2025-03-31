@@ -1,0 +1,46 @@
+{
+  "title": "Guess the player!",
+  "career": "Career history",
+  "placeholder": "Enter player name...",
+  "submit": "Submit guess",
+  "hint_button": "Want a hint?",
+  "correct": "🎉 Correct! You guessed the player!",
+  "wrong": "❌ Wrong player!",
+  "unknown": "⚠️ This player is not in the database.",
+  "hint": "💡 {hint}",
+  "hints": {
+    "nationality": {
+      "correct": "The nationality is correct.",
+      "incorrect": "The nationality is incorrect."
+    },
+    "position": {
+      "correct": "The position is correct.",
+      "incorrect": "The position is incorrect."
+    },
+    "shirt_number": {
+      "higher": "The shirt number is higher than the target player's.",
+      "lower": "The shirt number is lower than the target player's.",
+      "exact": "The shirt number matches."
+    },
+    "age": {
+      "younger": "The target player is younger.",
+      "older": "The target player is older.",
+      "same": "The age is exactly the same."
+    },
+    "foot": {
+      "correct": "The preferred foot matches.",
+      "incorrect": "The preferred foot does not match."
+    },
+    "active": {
+      "true": "The target player is still active.",
+      "false": "The target player is no longer active.",
+      "same": "Both players have the same active status."
+    },
+    "dead": {
+      "true": "The target player is deceased.",
+      "false": "The target player is still alive.",
+      "same": "Both players are either alive or deceased."
+    },
+    "none": "No hint available."
+  }
+}
