@@ -5,6 +5,12 @@
 .nitro
 .cache
 dist
+footyguess.db
+players-output.json
+players.json
+all_players.json
+output/
+public/
 
 # Node dependencies
 node_modules
