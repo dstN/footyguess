@@ -7,13 +7,19 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "scrape": "tsx server/scraper/index.ts"
   },
   "dependencies": {
     "@nuxt/ui": "^3.0.2",
+    "better-sqlite3": "^11.9.1",
     "nuxt": "^3.14.1592",
     "puppeteer": "^24.5.0",
     "vue": "latest",
     "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "tsx": "^4.19.3"
   }
 }
