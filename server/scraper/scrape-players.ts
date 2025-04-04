@@ -19,7 +19,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
   const players = JSON.parse(rawData).map((p: { name: string }) => p.name);
 
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -266,6 +266,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
         main_position: main_position,
         secondary_positions: secondary_positions,
         nationalities: nationalities,
+        total_stats: [],
       });
 
       const playerRecord = db

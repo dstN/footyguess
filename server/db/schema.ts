@@ -15,9 +15,10 @@ export function initSchema() {
       total_worth INTEGER,
       shirt_number INTEGER,
       main_position TEXT,
-      secondary_positions TEXT, -- JSON-Array
+      secondary_positions TEXT, 
       birthplace TEXT,
-      nationalities TEXT,       -- JSON-Array
+      nationalities TEXT,
+      total_stats TEXT,
       FOREIGN KEY (current_club_id) REFERENCES clubs(id)
     );
 
