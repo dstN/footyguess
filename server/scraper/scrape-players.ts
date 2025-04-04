@@ -7,13 +7,14 @@ import { initSchema } from "../db/schema";
 import db from "../db/connection";
 import { performance } from "perf_hooks";
 import { scrapeTransfersForPlayer } from "./scrape-transfers";
+import { scrapeCareerStatsForPlayer } from "./scrape-career";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 (async () => {
   initSchema();
 
-  const inputPath = path.resolve("players.json");
+  const inputPath = path.resolve("one_player.json");
   const rawData = fs.readFileSync(inputPath, "utf8");
   const players = JSON.parse(rawData).map((p: { name: string }) => p.name);
 
@@ -71,6 +72,69 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
       await page.click(firstLink);
       await page.waitForSelector("div.spielerdatenundfakten", {
         timeout: 60000,
+      });
+
+      const shirt_number = await page.evaluate(() => {
+        const el = document.querySelector("span.data-header__shirt-number");
+        if (!el) return null;
+        const text = el.textContent?.trim().replace("#", "").trim();
+        const num = parseInt(text ?? "", 10);
+        return isNaN(num) ? null : num;
+      });
+
+      const birthplace = await page.evaluate(() => {
+        const el = document.querySelector('span[itemprop="birthPlace"]');
+        return el?.textContent?.trim() || "";
+      });
+
+      const nationalities = await page.evaluate(() => {
+        const label = Array.from(
+          document.querySelectorAll("span.info-table__content--regular")
+        ).find((el) => el.textContent?.trim() === "Citizenship:");
+
+        const value = label?.nextElementSibling as HTMLElement | null;
+        if (!value) return [];
+
+        const html = value.innerHTML;
+
+        return html
+          .split("<br>")
+          .map((entry) => {
+            const match = entry.match(/&nbsp;&nbsp;([^<]+)/);
+            return match?.[1].trim() ?? null;
+          })
+          .filter((x): x is string => !!x);
+      });
+
+      const { main_position, secondary_positions } = await page.evaluate(() => {
+        const mainSelector1 = document.querySelector(
+          ".detail-position__inner-box dd.detail-position__position"
+        );
+        const mainSelectorFallback = document.querySelector(
+          ".detail-position__box > dd.detail-position__position"
+        );
+
+        const main_position =
+          mainSelector1?.textContent?.trim() ||
+          mainSelectorFallback?.textContent?.trim() ||
+          "";
+
+        const secondary_positions: string[] = [];
+        const secondaryNodes = document.querySelectorAll(
+          ".detail-position__position dd.detail-position__position"
+        );
+
+        secondaryNodes.forEach((node) => {
+          const text = node.textContent?.trim();
+          if (text && text !== main_position) {
+            secondary_positions.push(text);
+          }
+        });
+
+        return {
+          main_position,
+          secondary_positions,
+        };
       });
 
       const birthHref = await page.$$eval(
@@ -196,6 +260,12 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
         retired_since,
         foot,
         current_club_id,
+        total_worth: null,
+        shirt_number: shirt_number,
+        birthplace: birthplace,
+        main_position: main_position,
+        secondary_positions: secondary_positions,
+        nationalities: nationalities,
       });
 
       const playerRecord = db
@@ -204,6 +274,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
       const playerId = playerRecord?.id;
       if (playerId) {
         await scrapeTransfersForPlayer(page, playerId, name, true);
+        await scrapeCareerStatsForPlayer(page, playerId, name);
       }
 
       const duration = (performance.now() - start) / 1000;

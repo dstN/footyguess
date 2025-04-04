@@ -1,13 +1,91 @@
 // 📁 server/scraper/scrape-transfers.ts
-import puppeteer, { Page } from "puppeteer";
+import puppeteer, { Page, ElementHandle } from "puppeteer";
 import db from "../db/connection";
-import { insertTransfer } from "../db/insert";
+import { upsertClub, updatePlayerWorth } from "../db/insert";
+import path from "path";
+import fs from "fs";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 interface PlayerRow {
   id: number;
   name: string;
+}
+
+function parseDateToISO(dateStr: string): string | null {
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? null : parsed.toISOString().split("T")[0];
+}
+
+async function scrapeAndUpsertClubFromRow(
+  element: ElementHandle<Element>,
+  selector: string
+): Promise<number | null> {
+  try {
+    const clubAnchor = await element.$(
+      `${selector} .tm-player-transfer-history-grid__club-link`
+    );
+    const clubLogo = await element.$(
+      `${selector} .tm-player-transfer-history-grid__club-logo`
+    );
+
+    if (!clubAnchor || !clubLogo) return null;
+
+    const clubName = await clubAnchor.evaluate(
+      (el) => (el as HTMLElement).textContent?.trim() ?? null
+    );
+    const clubHref = await clubAnchor.evaluate((el) =>
+      (el as HTMLElement).getAttribute("href")
+    );
+    const logoSrc = await clubLogo.evaluate(
+      (el) =>
+        (el as HTMLElement)
+          .getAttribute("srcset")
+          ?.split(",")[0]
+          ?.split(" ")[0] ?? (el as HTMLElement).getAttribute("src")
+    );
+
+    if (!clubName || !clubHref) return null;
+
+    const idMatch = clubHref.match(/verein\/(\d+)/);
+    const clubId = idMatch ? parseInt(idMatch[1]) : null;
+    if (!clubId) return null;
+
+    const exists = db.prepare("SELECT 1 FROM clubs WHERE id = ?").get(clubId);
+    if (exists) return clubId;
+
+    let finalLogoPath: string | null = null;
+    if (logoSrc) {
+      const safeLogoUrl = logoSrc.startsWith("http")
+        ? logoSrc
+        : `https:${logoSrc}`;
+      const safeName = clubName
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9\-]/g, "");
+      const filename = `${safeName}.png`;
+      const logoPath = `/assets/logos/${filename}`;
+      const logoDir = path.resolve("public/assets/logos");
+      const fullPath = path.join(logoDir, filename);
+
+      if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
+      if (!fs.existsSync(fullPath)) {
+        const res = await fetch(safeLogoUrl);
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          fs.writeFileSync(fullPath, Buffer.from(buffer));
+        }
+      }
+
+      finalLogoPath = logoPath;
+    }
+
+    upsertClub(clubId, clubName, finalLogoPath);
+    return clubId;
+  } catch (err) {
+    console.error("❌ Fehler beim Scrapen des Clubs:", err);
+    return null;
+  }
 }
 
 export async function scrapeTransfersForPlayer(
@@ -37,75 +115,56 @@ export async function scrapeTransfersForPlayer(
       timeout: 60000,
     });
 
-    // Scroll zu Transferhistorie
     await page.evaluate(() => {
       const el = document.querySelector(".tm-player-transfer-history-grid");
       if (el) el.scrollIntoView({ behavior: "auto", block: "center" });
     });
     await sleep(500);
 
-    const allRows = await page.$$eval("div.grid", (nodes: Element[]) =>
-      nodes.map((el: Element) => ({
+    const allRows = await page.$$eval("div.grid, div.grid-container", (nodes) =>
+      nodes.map((el) => ({
         html: el.outerHTML,
         className: el.className,
       }))
     );
 
-    let currentFlag: boolean | undefined = undefined;
     for (const row of allRows) {
-      const isHeading = row.className.includes(
-        "tm-player-transfer-history-grid--heading"
-      );
+      const isHeading =
+        row.className.includes("tm-player-transfer-history-grid--heading") ||
+        row.className.includes("grid-container");
+      if (isHeading) continue;
+
       const isFooter = row.className.includes(
         "player-transfer-history__footer-container"
       );
-
-      if (isHeading) {
-        const text = row.html.match(/>([^<]+)<\/div>/)?.[1].trim();
-        if (text === "Upcoming transfer") currentFlag = true;
-        else if (text === "Transfer history") currentFlag = false;
-        continue;
-      }
-
       if (isFooter) continue;
 
       const handle = await page.evaluateHandle((html: string) => {
         const wrapper = document.createElement("div");
         wrapper.innerHTML = html;
-        return wrapper.firstElementChild;
+        return wrapper.firstElementChild as Element;
       }, row.html);
 
-      const element = handle.asElement();
+      const element = handle.asElement() as ElementHandle<Element>;
       if (!element) continue;
 
       const season = await element
-        .$eval(".tm-player-transfer-history-grid__season", (el: Element) =>
+        .$eval(".tm-player-transfer-history-grid__season", (el) =>
           el.textContent?.trim()
         )
         .catch(() => null);
-
-      const date = await element
-        .$eval(".tm-player-transfer-history-grid__date", (el: Element) =>
+      const dateRaw = await element
+        .$eval(".tm-player-transfer-history-grid__date", (el) =>
           el.textContent?.trim()
         )
         .catch(() => null);
-
-      const fromClubName = await element
-        .$eval(
-          ".tm-player-transfer-history-grid__old-club .tm-player-transfer-history-grid__club-link",
-          (el: Element) => el.textContent?.trim()
-        )
-        .catch(() => null);
-
-      const toClubName = await element
-        .$eval(
-          ".tm-player-transfer-history-grid__new-club .tm-player-transfer-history-grid__club-link",
-          (el: Element) => el.textContent?.trim()
-        )
-        .catch(() => null);
+      const transfer_date = dateRaw ? parseDateToISO(dateRaw) : null;
+      const upcoming = transfer_date
+        ? new Date(transfer_date) > new Date()
+        : null;
 
       const feeRaw = await element
-        .$eval(".tm-player-transfer-history-grid__fee", (el: Element) =>
+        .$eval(".tm-player-transfer-history-grid__fee", (el) =>
           el.textContent?.trim()
         )
         .catch(() => null);
@@ -145,46 +204,49 @@ export async function scrapeTransfersForPlayer(
         }
       }
 
-      let from_club_id: number | null = null;
-      let to_club_id: number | null = null;
+      const from_club_id = await scrapeAndUpsertClubFromRow(
+        element,
+        ".tm-player-transfer-history-grid__old-club"
+      );
+      const to_club_id = await scrapeAndUpsertClubFromRow(
+        element,
+        ".tm-player-transfer-history-grid__new-club"
+      );
 
-      if (fromClubName) {
-        const existing = db
-          .prepare("SELECT id FROM clubs WHERE name = ?")
-          .get(fromClubName);
-        if (existing && typeof existing === "object" && "id" in existing) {
-          from_club_id = (existing as { id: number }).id;
-        }
-      }
+      if (!season && !transfer_date && !fee && !from_club_id && !to_club_id)
+        continue;
 
-      if (toClubName) {
-        const existing = db
-          .prepare("SELECT id FROM clubs WHERE name = ?")
-          .get(toClubName);
-        if (existing && typeof existing === "object" && "id" in existing) {
-          to_club_id = (existing as { id: number }).id;
-        }
-      }
-
-      insertTransfer({
-        player_id: playerId,
-        season: season || undefined,
-        transfer_date: date || undefined,
-        from_club_id,
-        to_club_id,
-        fee,
-        transfer_type: transferType,
-        upcoming: currentFlag ?? false,
-      });
+      db.prepare(
+        `INSERT INTO transfers (
+          player_id, season, transfer_date, from_club_id, to_club_id, fee, transfer_type, upcoming
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(player_id, transfer_date) DO UPDATE SET
+          season = excluded.season,
+          from_club_id = excluded.from_club_id,
+          to_club_id = excluded.to_club_id,
+          fee = excluded.fee,
+          transfer_type = excluded.transfer_type,
+          upcoming = excluded.upcoming`
+      ).run(
+        playerId,
+        season ?? null,
+        transfer_date ?? null,
+        from_club_id ?? null,
+        to_club_id ?? null,
+        fee ?? null,
+        transferType ?? null,
+        upcoming === null ? null : Number(upcoming)
+      );
     }
 
     const totalFeeRaw = await page
       .$eval(
-        ".grid__footer.tm-player-transfer-history-grid .tm-player-transfer-history-grid__fee",
+        ".player-transfer-history__footer-container .tm-player-transfer-history-grid__fee",
         (el: Element) => el.textContent?.trim()
       )
       .catch(() => null);
 
+    let totalFee = 0;
     if (totalFeeRaw && totalFeeRaw.startsWith("\u20ac")) {
       const multiplier = totalFeeRaw.includes("m")
         ? 1_000_000
@@ -194,17 +256,10 @@ export async function scrapeTransfersForPlayer(
       const number = parseFloat(
         totalFeeRaw.replace("\u20ac", "").replace("m", "").replace("k", "")
       );
-      const total_fee = !isNaN(number) ? Math.round(number * multiplier) : null;
-
-      if (total_fee !== null) {
-        insertTransfer({
-          player_id: playerId,
-          fee: String(total_fee),
-          transfer_type: "total",
-        });
-      }
+      if (!isNaN(number)) totalFee = Math.round(number * multiplier);
     }
 
+    updatePlayerWorth(playerId, totalFee);
     console.log(`✅ Transfers für ${playerName} gespeichert.`);
   } catch (err) {
     console.error(`❌ Fehler bei ${playerName}:`, err);

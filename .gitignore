@@ -9,6 +9,7 @@ footyguess.db
 players-output.json
 players.json
 all_players.json
+one_player.json
 output/
 public/
 
