@@ -3,7 +3,11 @@ import puppeteer, { Page } from "puppeteer";
 import db from "../db/connection";
 import path from "path";
 import fs from "fs";
-import { upsertCompetition, upsertPlayerStats } from "../db/insert";
+import {
+  upsertCompetition,
+  upsertPlayerStats,
+  updateTotalStatsForPlayer,
+} from "../db/insert";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -127,6 +131,51 @@ export async function scrapeCareerStatsForPlayer(
         minutes_played: minutesPlayed,
         average_minutes_per_match: averageMinutesPerMatch,
       });
+    }
+
+    const totalCells = await page.$$eval(
+      ".responsive-table .items tfoot td",
+      (cells) => cells.map((td) => td.textContent?.trim() || "")
+    );
+
+    if (totalCells.length >= 14) {
+      const parseSafe = (value: string) =>
+        value === "-"
+          ? 0
+          : parseInt(value.replace("'", "").replace(/\./g, "")) || 0;
+
+      const appearances = parseSafe(totalCells[2]);
+      const goals = parseSafe(totalCells[3]);
+      const assists = parseSafe(totalCells[4]);
+      const own_goals = parseSafe(totalCells[5]);
+      const subbed_on = parseSafe(totalCells[6]);
+      const subbed_off = parseSafe(totalCells[7]);
+      const yellow_cards = parseSafe(totalCells[8]);
+      const yellow_red_cards = parseSafe(totalCells[9]);
+      const red_cards = parseSafe(totalCells[10]);
+      const penalties = parseSafe(totalCells[11]);
+      const avg_minutes_per_goal = parseSafe(totalCells[12]);
+      const minutes_played = parseSafe(totalCells[13]);
+      const avg_minutes_per_match =
+        appearances > 0 ? Math.round(minutes_played / appearances) : 0;
+
+      const totalStats = {
+        appearances,
+        goals,
+        assists,
+        own_goals,
+        subbed_on,
+        subbed_off,
+        yellow_cards,
+        yellow_red_cards,
+        red_cards,
+        penalties,
+        avg_minutes_per_goal,
+        minutes_played,
+        avg_minutes_per_match,
+      };
+
+      updateTotalStatsForPlayer(playerId, JSON.stringify(totalStats));
     }
   } catch (err) {
     console.error(`❌ Fehler beim Laden der Stats für ${playerName}:`, err);

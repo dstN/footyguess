@@ -26,6 +26,7 @@ export interface PlayerInsert {
   secondary_positions?: string[] | null;
   birthplace?: string | null;
   nationalities?: string[] | null;
+  total_stats?: string[] | null;
 }
 
 export function upsertPlayer(player: PlayerInsert) {
@@ -33,12 +34,12 @@ export function upsertPlayer(player: PlayerInsert) {
     INSERT INTO players (
       name, birthdate, height_cm, active, retired_since, foot, current_club_id,
       total_worth, shirt_number, main_position, secondary_positions,
-      birthplace, nationalities
+      birthplace, nationalities, total_stats
     )
     VALUES (
       @name, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
       @total_worth, @shirt_number, @main_position, @secondary_positions,
-      @birthplace, @nationalities
+      @birthplace, @nationalities, @total_stats
     )
     ON CONFLICT(name) DO UPDATE SET
       birthdate = excluded.birthdate,
@@ -52,7 +53,8 @@ export function upsertPlayer(player: PlayerInsert) {
       main_position = excluded.main_position,
       secondary_positions = excluded.secondary_positions,
       birthplace = excluded.birthplace,
-      nationalities = excluded.nationalities;
+      nationalities = excluded.nationalities,
+      total_stats = excluded.total_stats;
   `);
 
   stmt.run({
@@ -63,6 +65,7 @@ export function upsertPlayer(player: PlayerInsert) {
     nationalities: player.nationalities
       ? JSON.stringify(player.nationalities)
       : null,
+    total_stats: player.total_stats ? JSON.stringify(player.total_stats) : null,
   });
 }
 
@@ -180,4 +183,14 @@ export function upsertPlayerStats(data: PlayerStatsInsert) {
     data.minutes_played ?? null,
     data.average_minutes_per_match ?? null
   );
+}
+
+export function updateTotalStatsForPlayer(
+  playerId: number,
+  totalStatsJson: string
+) {
+  const stmt = db.prepare(`
+    UPDATE players SET total_stats = ? WHERE id = ?
+  `);
+  stmt.run(totalStatsJson, playerId);
 }

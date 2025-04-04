@@ -22,6 +22,7 @@ export function exportPlayersToJson(outputPath = "output/players.json") {
       p.main_position,
       p.secondary_positions,
       p.nationalities,
+      p.total_stats,
       c.name AS currentClub,
       c.logo_path AS clubLogo
     FROM players p
@@ -92,6 +93,7 @@ export function exportPlayersToJson(outputPath = "output/players.json") {
       nationalities: player.nationalities
         ? JSON.parse(player.nationalities)
         : [],
+      total_stats: player.total_stats ? JSON.parse(player.total_stats) : [],
       transfers,
       stats,
     };
