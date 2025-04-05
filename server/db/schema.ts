@@ -45,8 +45,8 @@ export function initSchema() {
     );
 
     CREATE TABLE IF NOT EXISTS competitions (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
+      id TEXT PRIMARY KEY UNIQUE,
+      name TEXT NOT NULL,
       logo_path TEXT
     );
 

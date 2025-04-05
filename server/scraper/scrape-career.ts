@@ -16,19 +16,25 @@ interface PlayerRow {
   name: string;
 }
 
+async function extractFilenameFromUrl(url: string) {
+  const match = url.match(/\/([^\/?#]+)\.png/i);
+  return match ? match[1] : null;
+}
+
 async function downloadImage(
   url: string,
   filename: string
 ): Promise<string | null> {
   try {
     const fullUrl = url.startsWith("http") ? url : `https:${url}`;
+    const competition_id = await extractFilenameFromUrl(fullUrl);
     const safeName = filename
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "");
-    const localPath = `/assets/competitions/${safeName}.png`;
+    const localPath = `/assets/competitions/${safeName}-${competition_id}.png`;
     const outputDir = path.resolve("public/assets/competitions");
-    const fullPath = path.join(outputDir, `${safeName}.png`);
+    const fullPath = path.join(outputDir, `${safeName}-${competition_id}.png`);
 
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     if (!fs.existsSync(fullPath)) {
@@ -92,7 +98,7 @@ export async function scrapeCareerStatsForPlayer(
       upsertCompetition({
         id: competitionIdMatch,
         name: competitionName,
-        logo_path,
+        logo_path: logo_path,
       });
 
       const text = await Promise.all(

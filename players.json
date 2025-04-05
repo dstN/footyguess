@@ -18,7 +18,7 @@
     "name": "Kevin De Bruyne"
   },
   {
-    "name": "Neymar Jr."
+    "name": "Neymar"
   },
   {
     "name": "Mohamed Salah"
@@ -73,5 +73,205 @@
   },
   {
     "name": "Thomas Müller"
+  },
+  {
+    "id": "Q624",
+    "name": "Alessandro Del Piero",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q67964",
+    "name": "Roberto Baggio",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q46896",
+    "name": "Zlatan Ibrahimović",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q308925",
+    "name": "Jürgen Kohler",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q294565",
+    "name": "Angelo Peruzzi",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q23762815",
+    "name": "Dušan Vlahović",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q18817134",
+    "name": "Rodrigo Bentancur",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q107051",
+    "name": "Andrea Barzagli",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q43926",
+    "name": "Andrea Pirlo",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q187171",
+    "name": "Mario Mandžukić",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q182907",
+    "name": "Gianluca Zambrotta",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q187891",
+    "name": "Fernando Llorente",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q54094",
+    "name": "Sami Khedira",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q26580",
+    "name": "Antonio Conte",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q192671",
+    "name": "Arturo Vidal",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q80306",
+    "name": "Giorgio Chiellini",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q146907",
+    "name": "Miralem Pjanić",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q1835",
+    "name": "Zinedine Zidane",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q1921",
+    "name": "Blaise Matuidi",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q382193",
+    "name": "Alessio Tacchinardi",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q179995",
+    "name": "Claudio Marchisio",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q311578",
+    "name": "Nicola Legrottaglie",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q18962",
+    "name": "Adrien Rabiot",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q171295",
+    "name": "Pavel Nedvěd",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
+  },
+  {
+    "id": "Q188997",
+    "name": "Wojciech Szczęsny",
+    "nationality": true,
+    "position": true,
+    "birthdate": true,
+    "deathdate": false
   }
 ]
