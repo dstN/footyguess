@@ -1,29 +1,77 @@
 [
   {
-    "id": "Q624",
-    "name": "Alessandro Del Piero",
-    "nationality": true,
-    "position": true,
-    "birthdate": true,
-    "deathdate": false
+    "name": "Lionel Messi"
   },
   {
-    "id": "Q67964",
-    "name": "Roberto Baggio",
-    "nationality": true,
-    "position": true,
-    "birthdate": true,
-    "deathdate": false
+    "name": "Cristiano Ronaldo"
   },
   {
-    "id": "Q23762815",
-    "name": "Dušan Vlahović",
-    "nationality": true,
-    "position": true,
-    "birthdate": true,
-    "deathdate": false
+    "name": "Robert Lewandowski"
   },
   {
-    "name": "Philippe Coutinho"
+    "name": "Kylian Mbappe"
+  },
+  {
+    "name": "Erling Haaland"
+  },
+  {
+    "name": "Kevin De Bruyne"
+  },
+  {
+    "name": "Neymar Jr."
+  },
+  {
+    "name": "Mohamed Salah"
+  },
+  {
+    "name": "Virgil van Dijk"
+  },
+  {
+    "name": "Harry Kane"
+  },
+  {
+    "name": "Luka Modric"
+  },
+  {
+    "name": "Toni Kroos"
+  },
+  {
+    "name": "Manuel Neuer"
+  },
+  {
+    "name": "Sergio Ramos"
+  },
+  {
+    "name": "Joshua Kimmich"
+  },
+  {
+    "name": "Sadio Mané"
+  },
+  {
+    "name": "Karim Benzema"
+  },
+  {
+    "name": "N'Golo Kanté"
+  },
+  {
+    "name": "Jude Bellingham"
+  },
+  {
+    "name": "Thibaut Courtois"
+  },
+  {
+    "name": "Jadon Sancho"
+  },
+  {
+    "name": "Phil Foden"
+  },
+  {
+    "name": "Bruno Fernandes"
+  },
+  {
+    "name": "Marcus Rashford"
+  },
+  {
+    "name": "Thomas Müller"
   }
 ]
