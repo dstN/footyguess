@@ -1,7 +1,12 @@
-export function chunkArray<T>(array: T[], chunkSize = 5): T[][] {
+export function chunkArray<T>(array: T[], chunkCount = 5): T[][] {
   const result: T[][] = [];
-  for (let i = 0; i < array.length; i += chunkSize) {
-    result.push(array.slice(i, i + chunkSize));
+  const chunkSize = Math.ceil(array.length / chunkCount);
+
+  for (let i = 0; i < chunkCount; i++) {
+    const start = i * chunkSize;
+    const end = start + chunkSize;
+    result.push(array.slice(start, end));
   }
+
   return result;
 }
