@@ -1,6 +1,5 @@
 // 📁 server/scraper/index.ts
 import { initSchema } from "../db/schema";
-import { exportPlayersToJson } from "../db/export";
 import { spawn } from "child_process";
 
 async function runScraper() {
@@ -14,11 +13,10 @@ async function runScraper() {
   });
 
   proc.on("close", (code) => {
-    if (code === 0) {
-      console.log("\n📤 Exportiere JSON...");
-      exportPlayersToJson();
-    } else {
+    if (code !== 0) {
       console.error("❌ Scraper fehlgeschlagen mit Code:", code);
+    } else {
+      console.log("✅ Scraper erfolgreich abgeschlossen.");
     }
   });
 }
