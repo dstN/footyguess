@@ -27,6 +27,7 @@ async function downloadImage(
 ): Promise<string | null> {
   try {
     const fullUrl = url.startsWith("http") ? url : `https:${url}`;
+    const safeUrl = fullUrl.replace("/tiny/", "/medium/");
     const competition_id = await extractFilenameFromUrl(fullUrl);
     const safeName = filename
       .toLowerCase()
@@ -38,7 +39,7 @@ async function downloadImage(
 
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     if (!fs.existsSync(fullPath)) {
-      const res = await fetch(fullUrl);
+      const res = await fetch(safeUrl);
       if (res.ok) {
         const buffer = await res.arrayBuffer();
         fs.writeFileSync(fullPath, Buffer.from(buffer));

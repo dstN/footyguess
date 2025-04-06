@@ -15,11 +15,11 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 (async () => {
   initSchema();
 
-  const inputPath = path.resolve("players.json");
+  const inputPath = path.resolve("all_players.json");
   const rawData = fs.readFileSync(inputPath, "utf8");
   const players = JSON.parse(rawData).map((p: { name: string }) => p.name);
 
-  const chunkedPlayers = chunkArray<string>(players, 2); // Number specifies browser instances and amount of arrays to process
+  const chunkedPlayers = chunkArray<string>(players, 3); // Number specifies browser instances and amount of arrays to process
   const globalStart = performance.now();
   let totalScrapeTime = 0;
 
@@ -35,6 +35,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
           "--disable-popup-blocking",
           "--disable-infobars",
           "--disable-blink-features=AutomationControlled",
+          "--disable-features=site-per-process",
         ],
       });
       const page = await browser.newPage();
@@ -43,6 +44,18 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
       for (const name of chunk) {
         const label = `[${players.indexOf(name) + 1}/${players.length}]`;
+
+        // 👉 Skip if player already exists in DB
+        const existing = db
+          .prepare("SELECT 1 FROM players WHERE name = ?")
+          .get(name);
+        if (existing) {
+          console.log(
+            `${label} ⏭️ ${name} bereits in der Datenbank – übersprungen.`
+          );
+          continue;
+        }
+
         const start = performance.now();
         console.log(`${label} 🔍 Lade ${name} ...`);
 
@@ -248,6 +261,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
                 const safeLogoUrl = clubInfo.logo.startsWith("http")
                   ? clubInfo.logo
                   : `https:${clubInfo.logo}`;
+                const logoSizedUrl = safeLogoUrl.replace("/small/", "/header/");
                 const safeName = clubInfo.name
                   .toLowerCase()
                   .replace(/\s+/g, "-")
@@ -260,7 +274,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
                 if (!fs.existsSync(logoDir))
                   fs.mkdirSync(logoDir, { recursive: true });
                 if (!fs.existsSync(fullPath)) {
-                  const res = await fetch(safeLogoUrl);
+                  const res = await fetch(logoSizedUrl);
                   if (res.ok) {
                     const buffer = await res.arrayBuffer();
                     fs.writeFileSync(fullPath, Buffer.from(buffer));
@@ -303,6 +317,10 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
           console.log(`${label} ✅ ${name} fertig in ${duration.toFixed(2)}s`);
         } catch (err) {
           console.error("❌ Fehler bei:", name, err);
+          const errorLog = `[${new Date().toISOString()}] ${name}: ${
+            err instanceof Error ? err.message : String(err)
+          }\n`;
+          fs.appendFileSync("error.txt", errorLog, "utf8");
         }
 
         await sleep(500);

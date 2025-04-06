@@ -59,6 +59,7 @@ async function scrapeAndUpsertClubFromRow(
       const safeLogoUrl = logoSrc.startsWith("http")
         ? logoSrc
         : `https:${logoSrc}`;
+      const logoSizedUrl = safeLogoUrl.replace("/tiny/", "/header/");
       const safeName = clubName
         .toLowerCase()
         .replace(/\s+/g, "-")
@@ -70,7 +71,7 @@ async function scrapeAndUpsertClubFromRow(
 
       if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
       if (!fs.existsSync(fullPath)) {
-        const res = await fetch(safeLogoUrl);
+        const res = await fetch(logoSizedUrl);
         if (res.ok) {
           const buffer = await res.arrayBuffer();
           fs.writeFileSync(fullPath, Buffer.from(buffer));
