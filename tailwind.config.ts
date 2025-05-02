@@ -12,11 +12,15 @@ export default <Partial<Config>>{
   theme: {
     extend: {
       colors: {
-        mint: "#0ef9ae",
-        darkpurple: "#100b23",
+        mint: {
+          DEFAULT: "#0ef9ae",
+        },
+        darkpurple: {
+          DEFAULT: "#100b23",
+        },
       },
     },
   },
-  darkMode: "class", // oder 'media' je nach Präferenz
+  darkMode: "class",
   plugins: [],
 };
