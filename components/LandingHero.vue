@@ -1,23 +1,23 @@
 <template>
   <div
-    class="rounded-3xl max-w-lg w-full text-center relative flex items-center justify-center glass overflow-hidden z-0"
+    class="glass relative z-0 flex w-full max-w-lg items-center justify-center overflow-hidden rounded-3xl text-center shadow-lg"
   >
     <div
       id="border"
-      class="content-[''] absolute z-2 rounded-3xl p-[2px]"
+      class="absolute z-2 rounded-3xl p-[2px] content-['']"
     ></div>
     <div
-      class="relative -z-1 rounded-3xl bg-white/1 min-h-[60vh] backdrop-blur-md w-full p-10"
+      class="from-darkpurple/5 to-mint/5 relative -z-1 flex min-h-[60vh] w-full flex-col rounded-3xl bg-gradient-to-br via-white/5 p-10 backdrop-blur-md"
     >
-      <div class="relative z-10">
-        <h1 class="text-white text-2xl font-bold">Footyguess</h1>
+      <div class="relative z-10 flex flex-1 flex-col justify-between">
+        <h1 class="text-2xl font-bold text-white">Footyguess</h1>
         <p class="text-mint text-lg font-medium">
           Guess the football player<br />
           based on their transfer history
         </p>
 
         <button
-          class="mt-4 w-full rounded-xl bg-mint text-black font-bold text-lg py-3 hover:bg-[#00e6a0] transition"
+          class="bg-mint hover:bg-mint mt-4 w-full rounded-xl py-3 text-lg font-bold text-black transition"
         >
           Play
         </button>
@@ -29,7 +29,9 @@
 <style scoped>
 #border {
   inset: 0;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -52,6 +54,18 @@
   transform: scale(1.5);
   transform-origin: center;
   animation: animate 6s linear infinite;
+}
+
+.light #border:before {
+  background: linear-gradient(
+    315deg,
+    rgba(27, 18, 55, 1) 0%,
+    rgba(238, 232, 255, 0.5) 35%,
+    rgba(14, 249, 174, 1) 50%,
+    rgba(238, 232, 255, 0.5) 65%,
+    rgba(27, 18, 55, 1) 100%
+  );
+  animation: animate 24s linear infinite;
 }
 
 @keyframes animate {
