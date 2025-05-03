@@ -15,6 +15,7 @@
     "better-sqlite3": "^11.9.1",
     "nuxt": "^3.14.1592",
     "puppeteer": "^24.5.0",
+    "valibot": "^1.0.0",
     "vue": "latest",
     "vue-router": "latest"
   },
