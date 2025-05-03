@@ -1,32 +1,44 @@
 <template>
   <div
-    class="glass relative z-0 flex w-full max-w-lg items-center justify-center overflow-hidden rounded-3xl text-center shadow-lg"
+    class="flex min-h-screen items-center justify-center bg-size-[100vw_100vh] bg-top-left"
+    id="aurora"
   >
     <div
-      id="border"
-      class="absolute z-2 rounded-3xl p-[2px] content-['']"
-    ></div>
-    <div
-      class="from-darkpurple/5 to-mint/5 relative -z-1 flex min-h-[60vh] w-full flex-col rounded-3xl bg-gradient-to-br via-white/5 p-10 backdrop-blur-md"
+      class="relative z-0 flex w-full max-w-xl items-center justify-center overflow-hidden rounded-3xl text-center shadow-lg"
+      :class="['glass', { 'animate-shake': shouldShake }]"
+      @animationend="shouldShake = false"
     >
-      <div class="relative z-10 flex flex-1 flex-col justify-between">
-        <h1 class="text-2xl font-bold text-white">Footyguess</h1>
-        <p class="text-mint text-lg font-medium">
-          Guess the football player<br />
-          based on their transfer history
-        </p>
-
-        <button
-          class="bg-mint hover:bg-mint mt-4 w-full rounded-xl py-3 text-lg font-bold text-black transition"
-        >
-          Play
-        </button>
+      <div
+        id="border"
+        class="absolute z-2 rounded-3xl p-[2px] content-['']"
+      ></div>
+      <div
+        class="from-darkpurple/5 to-mint/5 relative -z-1 flex min-h-[65vh] w-full flex-col rounded-3xl bg-gradient-to-br via-white/5 p-10 backdrop-blur-xl"
+      >
+        <div class="relative z-10 flex flex-1">
+          <slot @shake="triggerShake" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
+<script setup lang="ts">
+const shouldShake = ref(false);
+function triggerShake() {
+  shouldShake.value = true;
+}
+
+provide("triggerShake", triggerShake);
+</script>
+
 <style scoped>
+html.dark #aurora {
+  background-image: url("/img/aurora.webp");
+}
+html:not(.dark) #aurora {
+  background-image: url("/img/aurora_light.webp");
+}
 #border {
   inset: 0;
   mask:
