@@ -11,14 +11,6 @@ export default <Partial<Config>>{
   ],
   theme: {
     extend: {
-      colors: {
-        mint: {
-          DEFAULT: "#0ef9ae",
-        },
-        darkpurple: {
-          DEFAULT: "#100b23",
-        },
-      },
       animation: {
         shake: "shake 0.4s ease-in-out",
       },
@@ -32,5 +24,4 @@ export default <Partial<Config>>{
     },
   },
   darkMode: "class",
-  plugins: [],
 };

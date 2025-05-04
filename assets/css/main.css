@@ -1,3 +1,35 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @config "../../tailwind.config.ts";
+
+@theme {
+  --color-mint: oklch(86.889% 0.18822 162.35);
+  --color-mint-50: oklch(94.824% 0.06561 173.41);
+  --color-mint-100: oklch(93.544% 0.08559 172.83);
+  --color-mint-200: oklch(91.093% 0.1216 170.48);
+  --color-mint-300: oklch(89.218% 0.15027 168.32);
+  --color-mint-400: oklch(87.802% 0.17309 165.4);
+  --color-mint-500: oklch(86.889% 0.18822 162.35);
+  --color-mint-600: oklch(74.177% 0.16228 161.9);
+  --color-mint-700: oklch(58.673% 0.12724 162.33);
+  --color-mint-800: oklch(42.069% 0.0888 164.07);
+  --color-mint-900: oklch(23.888% 0.04793 166.79);
+  --color-mint-950: oklch(12.944% 0.02402 176.94);
+  --color-darkpurple: oklch(17.188% 0.04816 289.97);
+  --color-darkpurple-50: oklch(75.785% 0.08739 293.99);
+  --color-darkpurple-100: oklch(71.337% 0.10434 293.13);
+  --color-darkpurple-200: oklch(62.804% 0.13735 291.85);
+  --color-darkpurple-300: oklch(54.394% 0.171 289.04);
+  --color-darkpurple-400: oklch(46.735% 0.19237 285.8);
+  --color-darkpurple-500: oklch(41.275% 0.16696 286.23);
+  --color-darkpurple-600: oklch(35.633% 0.14052 286.86);
+  --color-darkpurple-700: oklch(29.839% 0.11136 286.6);
+  --color-darkpurple-800: oklch(23.698% 0.08144 287.71);
+  --color-darkpurple-900: oklch(17.188% 0.04816 289.97);
+  --color-darkpurple-950: oklch(11.857% 0.02611 294.01);
+}
+
+:root {
+  --ui-primary: var(--color-mint);
+  --ui-secondary: var(--color-darkpurple);
+}
