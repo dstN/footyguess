@@ -13,6 +13,7 @@
         <li
           v-for="(t, index) in player.transfers"
           :key="index"
+          class="text-mint"
         >
           {{ t.season }}: {{ t.from_club || "?" }} → {{ t.to_club || "?" }}
           <span v-if="t.fee">({{ t.fee }})</span>
@@ -30,6 +31,7 @@
       >
         <UInput
           v-model="formState.guess"
+          ref="guessInput"
           placeholder="Your guess..."
           :color="isError ? 'error' : 'neutral'"
         />
@@ -85,8 +87,14 @@ const formState = reactive<Schema>({
 
 const toast = useToast();
 const triggerShake = inject<() => void>("triggerShake");
+const guessInput = ref<any>(null);
 
 function onSubmit(event: FormSubmitEvent<Schema>) {
+  event.preventDefault();
+  const inputElement = guessInput.value?.inputRef;
+  if (inputElement) {
+    inputElement.focus();
+  }
   if (!player.value) return;
 
   const normalizedGuess = event.data.guess.trim().toLowerCase();
@@ -109,7 +117,7 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
 }
 
 onMounted(async () => {
-  const res = await fetch("/api/getPlayer?name=Lionel%20Messi");
+  const res = await fetch("/api/getPlayer?name=Marco%20Reus");
   player.value = await res.json();
   console.log("🎯 GELADENER SPIELER:", player.value);
 });

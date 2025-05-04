@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       FROM players p
       LEFT JOIN clubs c ON p.current_club_id = c.id
       WHERE p.name = ?
-    `
+    `,
     )
     .get(name) as Player | undefined;
 
@@ -43,24 +43,31 @@ export default defineEventHandler(async (event) => {
   const transfers = db
     .prepare(
       `
-      SELECT
-        t.season,
-        t.transfer_date,
-        t.fee,
-        t.transfer_type,
-        t.upcoming,
-        fc.id AS from_club_id,
-        fc.name AS from_club,
-        fc.logo_path AS from_club_logo,
-        tc.id AS to_club_id,
-        tc.name AS to_club,
-        tc.logo_path AS to_club_logo
-      FROM transfers t
-      LEFT JOIN clubs fc ON t.from_club_id = fc.id
-      LEFT JOIN clubs tc ON t.to_club_id = tc.id
-      WHERE t.player_id = ?
-      ORDER BY t.transfer_date DESC
-    `
+    SELECT
+      t.season,
+      t.transfer_date,
+      t.fee,
+      t.transfer_type,
+      t.upcoming,
+      fc.id AS from_club_id,
+      fc.name AS from_club,
+      fc.logo_path AS from_club_logo,
+      tc.id AS to_club_id,
+      tc.name AS to_club,
+      tc.logo_path AS to_club_logo
+    FROM transfers t
+    LEFT JOIN clubs fc ON t.from_club_id = fc.id
+    LEFT JOIN clubs tc ON t.to_club_id = tc.id
+    WHERE
+      t.player_id = ?
+      AND (
+        fc.name IS NULL OR fc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.'
+      )
+      AND (
+        tc.name IS NULL OR tc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.'
+      )
+    ORDER BY t.transfer_date DESC
+  `,
     )
     .all(player.id);
 
@@ -87,7 +94,7 @@ export default defineEventHandler(async (event) => {
       JOIN competitions c ON ps.competition_id = c.id
       WHERE ps.player_id = ?
       ORDER BY ps.appearances DESC
-    `
+    `,
     )
     .all(player.id);
 
