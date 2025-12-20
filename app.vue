@@ -1,6 +1,5 @@
 <template>
-  <UApp>
-    <ColorModeButton />
+  <UApp :toaster="toaster">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -8,5 +7,5 @@
 </template>
 
 <script setup>
-import ColorModeButton from "~/components/ColorModeButton.vue";
+const toaster = { position: "top-right" };
 </script>

@@ -2,7 +2,7 @@
 @import "@nuxt/ui";
 @config "../../tailwind.config.ts";
 
-@theme {
+@theme static {
   --color-mint: oklch(86.889% 0.18822 162.35);
   --color-mint-50: oklch(94.824% 0.06561 173.41);
   --color-mint-100: oklch(93.544% 0.08559 172.83);
@@ -27,9 +27,44 @@
   --color-darkpurple-800: oklch(23.698% 0.08144 287.71);
   --color-darkpurple-900: oklch(17.188% 0.04816 289.97);
   --color-darkpurple-950: oklch(11.857% 0.02611 294.01);
+
+  /* Neon pink: brighter, higher chroma */
+  --color-mew-50: #fff0fb;
+  --color-mew-100: #ffd5f4;
+  --color-mew-200: #ffb7ec;
+  --color-mew-300: #ff8fe1;
+  --color-mew-400: #ff5cd4;
+  --color-mew-500: #ff2fc4;
+  --color-mew-600: #e317ae;
+  --color-mew-700: #b00f8c;
+  --color-mew-800: #7d0a63;
+  --color-mew-900: #4c063f;
+  --color-mew-950: #2d0426;
 }
 
 :root {
-  --ui-primary: var(--color-mint);
-  --ui-secondary: var(--color-darkpurple);
+  --ui-primary: var(--color-primary-500);
+  --ui-secondary: var(--color-secondary-900);
+  --ui-bg: var(--color-primary-50);
+}
+.dark {
+  --ui-bg: var(--color-primary-900);
+}
+
+/* Offset toasts above the fixed guess bar */
+.u-notifications {
+  bottom: 18rem !important;
+  inset-inline: 0 !important;
+  z-index: 13000 !important;
+  width: 100%;
+}
+
+/* InputMenu placeholder and text */
+input[role="combobox"] {
+  color: var(--color-mint-50);
+}
+
+input[role="combobox"]::placeholder {
+  color: var(--color-mint-200);
+  opacity: 0.9;
 }

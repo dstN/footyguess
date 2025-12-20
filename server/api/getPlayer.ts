@@ -1,11 +1,14 @@
-import { defineEventHandler, getQuery, sendError } from "h3";
+import { createError, defineEventHandler, getQuery, sendError } from "h3";
 import db from "../db/connection";
 import type { Player } from "~/types/player";
 
 export default defineEventHandler(async (event) => {
   const { name } = getQuery(event);
   if (!name || typeof name !== "string") {
-    return sendError(event, new Error("Missing player name"));
+    return sendError(
+      event,
+      createError({ statusCode: 400, statusMessage: "Missing player name" }),
+    );
   }
 
   const player = db
@@ -23,7 +26,10 @@ export default defineEventHandler(async (event) => {
     .get(name) as Player | undefined;
 
   if (!player) {
-    return sendError(event, new Error("Player not found"));
+    return sendError(
+      event,
+      createError({ statusCode: 404, statusMessage: "Player not found" }),
+    );
   }
 
   try {

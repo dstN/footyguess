@@ -2,7 +2,34 @@ export default defineAppConfig({
   ui: {
     colors: {
       primary: "mint",
-      secondary: "darkpurple",
+      secondary: "mew",
+    },
+    card: {
+      slots: {
+        root: "w-full rounded-3xl border border-primary-900/50 bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm",
+        body: "p-6 sm:p-8",
+        header: "p-6 pb-0 sm:p-8 sm:pb-0",
+        footer: "p-6 pt-0 sm:p-8 sm:pt-0",
+      },
+    },
+    inputMenu: {
+      slots: {
+        content:
+          "max-h-72 w-[var(--reka-combobox-trigger-width)] max-w-[calc(100vw-2rem)] min-w-[12rem] rounded-2xl border border-primary-800/60 bg-white/5 text-slate-50 shadow-[0_24px_70px_rgba(0,0,0,0.5)] ring-1 ring-primary-900/60 backdrop-blur-sm data-[state=open]:animate-[scale-in_120ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in] origin-[var(--reka-combobox-content-transform-origin)] pointer-events-auto overflow-hidden",
+        item: "group relative w-full flex items-start gap-2 p-3 text-sm text-slate-200 select-none outline-none transition before:absolute before:inset-1 before:rounded-lg before:bg-primary-500/0 before:blur-[6px] before:transition data-highlighted:text-white data-highlighted:before:bg-primary-500/20 data-highlighted:bg-primary-500/5",
+        itemLabel: "truncate font-semibold",
+        itemDescription: "truncate text-xs text-slate-400",
+        group: "isolate p-0",
+      },
+    },
+    toast: {
+      slots: {
+        root: "backdrop-blur-xs bg-white/5 border border-primary-900/40 text-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.45)] rounded-2xl",
+        icon: "text-primary-200",
+        title: "font-semibold",
+        description: "text-sm text-slate-200/80",
+        actions: "gap-2",
+      },
     },
   },
 });

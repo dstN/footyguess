@@ -1,21 +1,31 @@
 <template>
   <div
-    class="flex min-h-screen items-center justify-center bg-size-[100vw_100vh] bg-top-left"
-    id="aurora"
+    class="relative min-h-screen overflow-visible bg-[#050915] text-slate-100"
   >
-    <div
-      class="relative z-0 flex w-full max-w-xl items-center justify-center overflow-hidden rounded-3xl text-center shadow-lg"
-      :class="['glass', { 'animate-shake': shouldShake }]"
-      @animationend="shouldShake = false"
-    >
+    <div class="pointer-events-none absolute inset-0">
       <div
-        id="border"
-        class="absolute z-2 rounded-3xl p-[2px] content-['']"
-      ></div>
+        class="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(72,204,255,0.12),transparent_26%),radial-gradient(circle_at_80%_10%,rgba(255,75,165,0.16),transparent_30%),radial-gradient(circle_at_40%_80%,rgba(0,255,178,0.14),transparent_32%)]"
+      />
       <div
-        class="from-darkpurple/5 to-mint/5 relative -z-1 flex min-h-[65vh] w-full flex-col rounded-3xl bg-gradient-to-br via-white/5 p-10 backdrop-blur-xl"
+        class="absolute inset-0 bg-[linear-gradient(120deg,rgba(0,255,170,0.08),transparent_45%),linear-gradient(60deg,rgba(255,39,167,0.08),transparent_40%)]"
+      />
+      <div class="glitch-layer absolute inset-0" />
+    </div>
+
+    <div class="relative mx-auto flex w-full max-w-5xl px-4 py-8 md:py-12">
+      <div
+        class="glass-panel border-primary-900/50 relative mb-18 w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
+        :class="{ 'animate-shake': shouldShake }"
+        @animationend="shouldShake = false"
       >
-        <div class="relative z-10 flex flex-1">
+        <div class="pointer-events-none absolute inset-0 opacity-70">
+          <div class="cyber-grid absolute inset-0" />
+          <div
+            class="from-primary-500 absolute inset-x-0 top-0 h-1 bg-gradient-to-r via-pink-400 to-emerald-300"
+          />
+        </div>
+
+        <div class="relative z-10 p-6 sm:p-8">
           <slot @shake="triggerShake" />
         </div>
       </div>
@@ -25,6 +35,7 @@
 
 <script setup lang="ts">
 const shouldShake = ref(false);
+
 function triggerShake() {
   shouldShake.value = true;
 }
@@ -33,64 +44,96 @@ provide("triggerShake", triggerShake);
 </script>
 
 <style scoped>
-html.dark #aurora {
-  background-image: url("/img/aurora.webp");
-}
-html:not(.dark) #aurora {
-  background-image: url("/img/aurora_light.webp");
-}
-#border {
-  inset: 0;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-#border:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    315deg,
-    rgba(14, 249, 174, 1) 0%,
-    rgba(24, 42, 85, 0.5) 35%,
-    rgba(24, 42, 85, 1) 50%,
-    rgba(24, 42, 85, 0.5) 65%,
-    rgba(14, 249, 174, 1) 100%
-  );
-  transform: scale(1.5);
-  transform-origin: center;
-  animation: animate 6s linear infinite;
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
 }
 
-.light #border:before {
-  background: linear-gradient(
-    315deg,
-    rgba(27, 18, 55, 1) 0%,
-    rgba(238, 232, 255, 0.5) 35%,
-    rgba(14, 249, 174, 1) 50%,
-    rgba(238, 232, 255, 0.5) 65%,
-    rgba(27, 18, 55, 1) 100%
-  );
-  animation: animate 24s linear infinite;
+.glitch-layer {
+  inset: 0;
+  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(20, 255, 180, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 180, 255, 0.18) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  animation: glitch-shift 9s linear infinite;
+  will-change: background-position, opacity;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 200, 0.25));
 }
 
 @keyframes animate {
   0% {
-    rotate: 0deg;
+    transform: translate3d(0, 0, 0);
   }
 
   50% {
-    rotate: 30deg;
+    transform: translate3d(-6px, 4px, 0);
   }
 
   100% {
-    rotate: 0deg;
+    transform: translate3d(0, 0, 0);
   }
+}
+
+.glitch-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 10% 80%,
+      rgba(0, 255, 170, 0.18),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 30%,
+      rgba(255, 90, 200, 0.15),
+      transparent 32%
+    ),
+    linear-gradient(180deg, rgba(0, 255, 170, 0.08), rgba(0, 0, 0, 0));
+  mix-blend-mode: screen;
+  filter: blur(1.5px);
+  animation: glitch-drift 14s ease-in-out infinite alternate;
+}
+
+@keyframes glitch-shift {
+  0% {
+    background-position:
+      0 0,
+      0 0;
+    opacity: 0.55;
+  }
+  50% {
+    background-position:
+      -60px 40px,
+      40px -60px;
+    opacity: 0.75;
+  }
+  100% {
+    background-position:
+      -120px 80px,
+      80px -120px;
+    opacity: 0.6;
+  }
+}
+
+@keyframes glitch-drift {
+  0% {
+    background-position: 0 0;
+    opacity: 0.6;
+  }
+  100% {
+    background-position: -18px 14px;
+    opacity: 0.85;
+  }
+}
+
+.animate-shake {
+  animation: animate 0.4s ease-in-out;
 }
 </style>
