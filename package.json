@@ -11,13 +11,11 @@
     "scrape": "tsx server/scraper/index.ts"
   },
   "dependencies": {
-    "@nuxt/ui": "^3.0.2",
+    "@nuxt/ui": "^4.3.0",
     "better-sqlite3": "^11.9.1",
-    "nuxt": "^3.14.1592",
+    "nuxt": "^4.2.2",
     "puppeteer": "^24.5.0",
-    "valibot": "^1.0.0",
-    "vue": "latest",
-    "vue-router": "latest"
+    "valibot": "^1.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

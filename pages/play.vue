@@ -151,9 +151,14 @@
                 <p class="text-primary-200 text-xs tracking-[0.14em] uppercase">
                   {{ item.date }}
                 </p>
-                <p class="text-base font-semibold text-white">
-                  {{ item.title }}
-                </p>
+                <div class="flex items-center gap-3 text-sm text-slate-200">
+                  <span class="font-semibold text-white">{{ item.from }}</span>
+                  <UIcon
+                    name="i-lucide-arrow-right"
+                    class="text-primary-200"
+                  />
+                  <span class="font-semibold text-white">{{ item.to }}</span>
+                </div>
                 <p class="text-sm text-slate-300">
                   {{ item.description }}
                 </p>
@@ -254,14 +259,24 @@ import * as v from "valibot";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 
-type ClueKey = "age" | "origin" | "foot" | "position";
+type ClueKey =
+  | "age"
+  | "origin"
+  | "foot"
+  | "position"
+  | "height"
+  | "birthplace"
+  | "totals"
+  | "minutesPerGoal"
+  | "discipline"
+  | "mostAppearances";
 
 interface Clue {
   key: ClueKey;
   label: string;
   value: string | null;
   icon: string;
-  accent: "primary" | "secondary" | "info" | "success";
+  accent: "primary" | "secondary" | "info" | "success" | "warning";
 }
 
 const fallbackName = "Marco Reus";
@@ -288,6 +303,7 @@ const isError = ref(false);
 const guessInput = ref<any>(null);
 const revealedTips = ref<ClueKey[]>([]);
 const searchTerm = ref("");
+const availableClues = ref<Clue[]>([]);
 const suggestions = ref<string[]>([]);
 const isSearching = ref(false);
 const searchTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
@@ -342,16 +358,46 @@ async function performSearch(term: string) {
 
 const careerTimeline = computed(() => {
   if (!player.value?.transfers?.length) return [];
-  return [...player.value.transfers]
-    .reverse()
-    .map((transfer: any, index: number) => ({
+  const isRetired = player.value?.active === 0;
+
+  const ordered = [...player.value.transfers].reverse();
+  let prevWasFreeAgent = false;
+
+  return ordered.map((transfer: any, index: number, arr: any[]) => {
+    const isLatest = index === arr.length - 1;
+    const rawTo =
+      transfer.to_club || (isRetired && isLatest ? "Retired" : "Unknown club");
+    const toLabel =
+      !isRetired && !isLatest && rawTo === "Unknown club"
+        ? "Free agent"
+        : rawTo;
+
+    const fromLabel =
+      prevWasFreeAgent &&
+      (transfer.from_club === null || transfer.from_club === "Unknown club")
+        ? "Free agent"
+        : transfer.from_club || "Unknown club";
+
+    const baseDescription =
+      formatFee(transfer.fee) ?? transfer.transfer_type ?? "Undisclosed";
+    const hideDescription =
+      toLabel === "Free agent" ||
+      fromLabel === "Free agent" ||
+      (isRetired && isLatest);
+    const description = hideDescription ? "" : baseDescription;
+
+    prevWasFreeAgent = toLabel === "Free agent";
+
+    return {
       id: `${transfer.transfer_date ?? transfer.season ?? Math.random()}`,
       value: index,
       date: transfer.season || "Unknown season",
-      title: `${transfer.from_club || "Unknown club"} → ${transfer.to_club || "Unknown club"}`,
-      description: transfer.fee || transfer.transfer_type || "Undisclosed",
+      from: fromLabel,
+      to: toLabel,
+      description,
       icon: "i-lucide-football",
-    }));
+    };
+  });
 });
 
 const cluePool = computed<Clue[]>(() => {
@@ -362,12 +408,33 @@ const cluePool = computed<Clue[]>(() => {
       ? player.value.nationalities.join(", ")
       : player.value.birthplace;
   const foot = player.value.foot ? capitalize(player.value.foot) : null;
+  const height = player.value.height_cm ? `${player.value.height_cm} cm` : null;
 
   const positionParts = [
     player.value.main_position,
     ...(player.value.secondary_positions || []),
   ].filter(Boolean);
   const position = positionParts.length ? positionParts.join(" / ") : null;
+
+  const totals = player.value.total_stats || {};
+  const totalsClue =
+    totals && (totals.appearances || totals.goals || totals.assists)
+      ? `${totals.appearances ?? "?"} apps · ${totals.goals ?? "?"} G / ${
+          totals.assists ?? "?"
+        } A`
+      : null;
+
+  const minutesPerGoal =
+    totals && totals.avg_minutes_per_goal
+      ? `Avg ${totals.avg_minutes_per_goal} mins/goal`
+      : null;
+
+  const discipline =
+    totals && (totals.yellow_cards || totals.red_cards)
+      ? `${totals.yellow_cards ?? 0} yellows · ${totals.red_cards ?? 0} reds`
+      : null;
+
+  const mostApps = getMostAppearancesCompetition(player.value.stats);
 
   return [
     {
@@ -378,10 +445,24 @@ const cluePool = computed<Clue[]>(() => {
       accent: "primary",
     },
     {
+      key: "height",
+      label: "Height",
+      value: height,
+      icon: "i-lucide-ruler",
+      accent: "info",
+    },
+    {
       key: "origin",
       label: "Origin",
       value: origin || null,
       icon: "i-lucide-map-pin",
+      accent: "secondary",
+    },
+    {
+      key: "birthplace",
+      label: "Birthplace",
+      value: player.value.birthplace || null,
+      icon: "i-lucide-earth",
       accent: "secondary",
     },
     {
@@ -398,15 +479,43 @@ const cluePool = computed<Clue[]>(() => {
       icon: "i-lucide-crosshair",
       accent: "success",
     },
+    {
+      key: "totals",
+      label: "Career totals",
+      value: totalsClue,
+      icon: "i-lucide-bar-chart-3",
+      accent: "primary",
+    },
+    {
+      key: "minutesPerGoal",
+      label: "Avg mins/goal",
+      value: minutesPerGoal,
+      icon: "i-lucide-gauge",
+      accent: "info",
+    },
+    {
+      key: "discipline",
+      label: "Discipline",
+      value: discipline,
+      icon: "i-lucide-shield",
+      accent: "warning",
+    },
+    {
+      key: "mostAppearances",
+      label: "Most appearances",
+      value: mostApps,
+      icon: "i-lucide-trophy",
+      accent: "primary",
+    },
   ];
 });
 
 const revealedClues = computed(() =>
-  cluePool.value.filter((clue) => revealedTips.value.includes(clue.key)),
+  availableClues.value.filter((clue) => revealedTips.value.includes(clue.key)),
 );
 
 const hiddenClues = computed(() =>
-  cluePool.value.filter(
+  availableClues.value.filter(
     (clue) => !revealedTips.value.includes(clue.key) && Boolean(clue.value),
   ),
 );
@@ -442,6 +551,7 @@ async function loadPlayer(name?: string) {
   errorMessage.value = "";
   isError.value = false;
   revealedTips.value = [];
+  availableClues.value = [];
 
   try {
     for (const candidate of candidates) {
@@ -450,8 +560,10 @@ async function loadPlayer(name?: string) {
         player.value = await $fetch<Player>(
           `/api/getPlayer?name=${encodeURIComponent(candidate)}`,
         );
+        console.log("[footyguess] Loaded player:", player.value);
         formState.guess = "";
         errorMessage.value = "";
+        selectRandomClues();
         return;
       } catch (err) {
         console.error("Failed to load player", err);
@@ -474,6 +586,31 @@ async function loadPlayer(name?: string) {
 function onSearch(term: string) {
   searchTerm.value = term;
   scheduleSearch(term);
+}
+
+function selectRandomClues() {
+  const pool = cluePool.value.filter((clue) => Boolean(clue.value));
+  const shuffled = shuffle(pool);
+  availableClues.value = shuffled.slice(0, 5);
+}
+
+function formatFee(fee?: string | null) {
+  if (!fee || fee === "-") return "free transfer";
+  const numeric = Number(fee);
+  if (Number.isNaN(numeric)) return fee;
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0,
+  }).format(numeric);
+}
+
+function getMostAppearancesCompetition(stats: any[]) {
+  if (!stats || !stats.length) return null;
+  const sorted = [...stats].sort(
+    (a, b) => (b.appearances ?? 0) - (a.appearances ?? 0),
+  );
+  const top = sorted[0];
+  if (!top || !top.competition) return null;
+  return `${top.competition} (${top.appearances ?? "?"} apps)`;
 }
 
 function getAge(birthdate?: string | null) {
@@ -544,6 +681,15 @@ function getGuessValue(raw: unknown) {
 function clearGuess() {
   formState.guess = "";
   searchTerm.value = "";
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 onMounted(async () => {

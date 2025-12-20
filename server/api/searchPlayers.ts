@@ -10,18 +10,27 @@ export default defineEventHandler((event) => {
   const safeLimit =
     typeof limit === "string" ? Math.min(Number(limit) || 10, 25) : 10;
 
+  const patternStart = `${q}%`;
+  const patternWord = `% ${q}%`;
+  const patternHyphen = `%-${q}%`;
+
   try {
     const rows = db
       .prepare(
         `
         SELECT name
         FROM players
-        WHERE name LIKE ?
+        WHERE
+          name LIKE ? COLLATE NOCASE
+          OR name LIKE ? COLLATE NOCASE
+          OR name LIKE ? COLLATE NOCASE
         ORDER BY name ASC
         LIMIT ?
       `,
       )
-      .all(`%${q}%`, safeLimit) as { name: string }[];
+      .all(patternStart, patternWord, patternHyphen, safeLimit) as {
+        name: string;
+      }[];
 
     return rows.map((row) => row.name);
   } catch (error) {
