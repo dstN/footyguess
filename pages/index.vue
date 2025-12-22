@@ -11,7 +11,7 @@
             Guess the player from their transfer trail.
           </h1>
           <p class="max-w-xl text-slate-300">
-            A cyberpunk football riddle. Inspect the club timeline, unlock random neon clues, and see if you can name the mystery baller.
+            A football riddle. Inspect the club timeline, unlock random clues, and see if you can name the mystery baller.
           </p>
         </div>
 
@@ -19,15 +19,13 @@
           <UButton
             to="/play"
             color="primary"
-            size="lg"
+            size="xl"
             icon="i-lucide-play"
-            class="shadow-[0_0_20px_rgba(14,249,174,0.35)]"
+            class="shadow-[0_0_24px_rgba(14,249,174,0.4)] flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold sm:h-20 sm:w-20 sm:flex-col sm:rounded-2xl sm:text-sm"
           >
-            Play now
+            <span class="sm:hidden">Play now</span>
+            <span class="hidden sm:block">Play</span>
           </UButton>
-          <p class="text-xs uppercase tracking-[0.16em] text-primary-100/80">
-            Mobile-first · Nuxt UI
-          </p>
         </div>
       </div>
     </UCard>
