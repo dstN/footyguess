@@ -76,7 +76,8 @@ export function usePlayGame() {
       player.value = null;
     } catch (err) {
       console.error("Failed to load player", err);
-      errorMessage.value = "Couldn't fetch the mystery player. Please try again.";
+      errorMessage.value =
+        "Couldn't fetch the mystery player. Please try again.";
       player.value = null;
     } finally {
       isLoading.value = false;
@@ -157,8 +158,14 @@ export function usePlayGame() {
 
   function loadStreakFromStorage() {
     if (!import.meta.client) return;
-    const stored = Number.parseInt(localStorage.getItem("footyguess_streak") || "0", 10);
-    const storedBest = Number.parseInt(localStorage.getItem("footyguess_best_streak") || "0", 10);
+    const stored = Number.parseInt(
+      localStorage.getItem("footyguess_streak") || "0",
+      10,
+    );
+    const storedBest = Number.parseInt(
+      localStorage.getItem("footyguess_best_streak") || "0",
+      10,
+    );
     streak.value = Number.isFinite(stored) ? stored : 0;
     bestStreak.value = Number.isFinite(storedBest) ? storedBest : 0;
   }
@@ -197,21 +204,21 @@ export function usePlayGame() {
     errorMessage,
     isError,
     revealedClues,
-    hiddenClueLabels,
-    tipButtonDisabled,
-    careerTimeline,
-    suggestions,
-    searchTerm,
-    streak,
-    bestStreak,
-    confirmResetOpen,
-    loadPlayer,
-    requestNewPlayer,
-    confirmNewPlayer,
-    cancelNewPlayer,
-    revealNextClue,
-    onSearch,
-    submitGuessViaEnter,
+  hiddenClueLabels,
+  tipButtonDisabled,
+  careerTimeline,
+  suggestions,
+  searchTerm,
+  streak,
+  bestStreak,
+  confirmResetOpen,
+  loadPlayer,
+  requestNewPlayer,
+  confirmNewPlayer,
+  cancelNewPlayer,
+  revealNextClue,
+  onSearch,
+  submitGuessViaEnter,
     onSubmit,
     clearGuess,
   };

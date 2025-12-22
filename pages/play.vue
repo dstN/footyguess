@@ -1,7 +1,9 @@
 <template>
   <main class="flex flex-1 flex-col gap-6 text-slate-100">
     <header class="flex flex-col gap-4">
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div class="flex items-center gap-2">
           <UBadge
             color="primary"
@@ -11,10 +13,15 @@
             Mystery player
           </UBadge>
         </div>
-        <StreakBar :streak="streak" :best-streak="bestStreak" />
+        <StreakBar
+          :streak="streak"
+          :best-streak="bestStreak"
+        />
       </div>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div class="space-y-1">
           <h1
             class="text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white"
@@ -27,15 +34,55 @@
         </div>
 
         <div class="flex flex-wrap justify-end gap-2">
-          <UButton
-            icon="i-lucide-shuffle"
-            color="neutral"
-            variant="ghost"
-            :disabled="isLoading"
-            @click="requestNewPlayer()"
+          <UModal
+            v-model="confirmResetOpen"
+            :overlay="true"
+            :dissmissible="false"
+            :modal="true"
+            :scrollable="false"
+            title="Confirm"
+            description="Starting a new mystery now will reset your current streak. Continue?"
           >
-            New mystery
-          </UButton>
+            <template #default>
+              <UButton
+                icon="i-lucide-shuffle"
+                color="neutral"
+                variant="ghost"
+                :disabled="isLoading"
+                @click="requestNewPlayer()"
+              >
+                New mystery
+              </UButton>
+            </template>
+
+            <template #footer="{ close }">
+              <div class="flex justify-end gap-2">
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  @click="
+                    () => {
+                      cancelNewPlayer();
+                      close();
+                    }
+                  "
+                >
+                  Cancel
+                </UButton>
+                <UButton
+                  color="primary"
+                  @click="
+                    () => {
+                      confirmNewPlayer();
+                      close();
+                    }
+                  "
+                >
+                  Yes, reset &amp; load
+                </UButton>
+              </div>
+            </template>
+          </UModal>
           <UButton
             icon="i-lucide-sparkles"
             color="primary"
@@ -85,35 +132,6 @@
       @enter="submitGuessViaEnter"
       @clear="clearGuess"
     />
-
-    <Teleport v-if="confirmResetOpen" to="body">
-      <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-        <UCard class="relative z-[210] w-full max-w-md">
-          <template #header>
-            <div>
-              <p class="text-xs uppercase tracking-[0.18em] text-primary-200">
-                Confirm
-              </p>
-              <p class="text-lg font-semibold text-white">Reset streak?</p>
-            </div>
-          </template>
-          <p class="text-sm text-slate-300">
-            Starting a new mystery now will reset your current streak. Continue?
-          </p>
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton variant="ghost" color="neutral" @click="cancelNewPlayer">
-                Cancel
-              </UButton>
-              <UButton color="primary" @click="confirmNewPlayer">
-                Yes, reset &amp; load
-              </UButton>
-            </div>
-          </template>
-        </UCard>
-      </div>
-    </Teleport>
   </main>
 </template>
 
@@ -145,10 +163,10 @@ const {
   streak,
   bestStreak,
   confirmResetOpen,
-  loadPlayer,
-  requestNewPlayer,
   confirmNewPlayer,
   cancelNewPlayer,
+  loadPlayer,
+  requestNewPlayer,
   revealNextClue,
   onSearch,
   submitGuessViaEnter,

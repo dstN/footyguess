@@ -31,5 +31,20 @@ export default defineAppConfig({
         actions: "gap-2",
       },
     },
+    modal: {
+      variants: {
+        fullscreen: {
+          false: {
+            content:
+              "w-[calc(100vw-2rem)] max-w-lg rounded-3xl bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] ring ring-default backdrop-blur-xs z-[102]",
+          },
+        },
+        overlay: {
+          true: {
+            overlay: "bg-white/5 backdrop-blur-xs z-[101]",
+          },
+        },
+      },
+    },
   },
 });
