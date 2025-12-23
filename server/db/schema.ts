@@ -69,5 +69,54 @@ export function initSchema() {
       FOREIGN KEY (player_id) REFERENCES players(id),
       FOREIGN KEY (competition_id) REFERENCES competitions(id)
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      nickname TEXT,
+      streak INTEGER DEFAULT 0,
+      best_streak INTEGER DEFAULT 0,
+      created_at INTEGER DEFAULT (strftime('%s','now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS rounds (
+      id TEXT PRIMARY KEY,
+      player_id INTEGER NOT NULL,
+      session_id TEXT NOT NULL,
+      clues_used INTEGER DEFAULT 0,
+      started_at INTEGER DEFAULT (strftime('%s','now')),
+      expires_at INTEGER,
+      FOREIGN KEY (player_id) REFERENCES players(id),
+      FOREIGN KEY (session_id) REFERENCES sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      round_id TEXT NOT NULL,
+      score INTEGER,
+      correct INTEGER,
+      streak INTEGER,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      FOREIGN KEY (session_id) REFERENCES sessions(id),
+      FOREIGN KEY (round_id) REFERENCES rounds(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS leaderboard_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      value INTEGER NOT NULL,
+      base_score INTEGER,
+      final_score INTEGER,
+      streak INTEGER,
+      nickname TEXT,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      FOREIGN KEY (session_id) REFERENCES sessions(id)
+    );
   `);
+
+  // lightweight migrations for added columns
+  try {
+    db.prepare(`ALTER TABLE scores ADD COLUMN base_score INTEGER`).run();
+  } catch {}
 }

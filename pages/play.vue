@@ -101,7 +101,7 @@
       color="error"
       icon="i-lucide-alert-triangle"
       :title="errorMessage"
-      class="border border-red-500/30 bg-red-500/10"
+      class="border border-red-500/30 bg-white/5 text-red-500/90"
     />
 
     <section class="space-y-4">
@@ -114,6 +114,8 @@
         :items="careerTimeline"
         :is-loading="isLoading"
         :show-badge="Boolean(currentName)"
+        :difficulty="difficulty"
+        :current-streak="streak"
       />
     </section>
 
@@ -162,6 +164,7 @@ const {
   searchTerm,
   streak,
   bestStreak,
+  difficulty,
   confirmResetOpen,
   confirmNewPlayer,
   cancelNewPlayer,

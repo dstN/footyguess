@@ -40,13 +40,21 @@ export function useCluePool(
       player.value.nationalities?.length && player.value.nationalities[0]
         ? player.value.nationalities.join(", ")
         : player.value.birthplace;
-    const foot = player.value.foot ? capitalize(player.value.foot) : null;
+
+    const cleanOrigin = cleanValue(origin);
+
+    const rawFoot = player.value.foot?.trim();
+    const foot =
+      rawFoot && !/^n\/?a$/i.test(rawFoot) && rawFoot.toLowerCase() !== "na"
+        ? capitalize(rawFoot)
+        : null;
+
     const height = player.value.height_cm ? `${player.value.height_cm} cm` : null;
 
     const positionParts = [
-      player.value.main_position,
-      ...(player.value.secondary_positions || []),
-    ].filter(Boolean);
+      cleanValue(player.value.main_position),
+      ...(player.value.secondary_positions || []).map((pos) => cleanValue(pos)),
+    ].filter(Boolean) as string[];
     const position = positionParts.length ? positionParts.join(" / ") : null;
 
     const totals = player.value.total_stats || {};
@@ -82,8 +90,8 @@ export function useCluePool(
     return [
       { key: "age", label: "Age", value: age ? `${age} years` : null, icon: "i-lucide-hourglass", accent: "primary" },
       { key: "height", label: "Height", value: height, icon: "i-lucide-ruler", accent: "info" },
-      { key: "origin", label: "Origin", value: origin || null, icon: "i-lucide-map-pin", accent: "secondary" },
-      { key: "birthplace", label: "Birthplace", value: player.value.birthplace || null, icon: "i-lucide-earth", accent: "secondary" },
+      { key: "origin", label: "Origin", value: cleanOrigin, icon: "i-lucide-map-pin", accent: "secondary" },
+      { key: "birthplace", label: "Birthplace", value: cleanValue(player.value.birthplace), icon: "i-lucide-earth", accent: "secondary" },
       { key: "foot", label: "Strong foot", value: foot, icon: "i-lucide-footprints", accent: "info" },
       { key: "position", label: "Position", value: position, icon: "i-lucide-crosshair", accent: "success" },
       { key: "totals", label: "Career totals", value: totalsClue, icon: "i-lucide-bar-chart-3", accent: "primary" },
@@ -158,6 +166,15 @@ function getAge(birthdate?: string | null) {
 function capitalize(value: string) {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function cleanValue(value?: string | null) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (["n/a", "na", "n\\a", "unknown", "-", "?"].includes(lower)) return null;
+  return trimmed;
 }
 
 function getMostAppearancesCompetition(stats: any[]) {

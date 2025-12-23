@@ -1,9 +1,18 @@
 import { createError, defineEventHandler, getQuery, sendError } from "h3";
+import { randomUUID } from "node:crypto";
 import db from "../db/connection";
 import type { Player } from "~/types/player";
+import { computeDifficulty } from "../utils/difficulty";
+import { createRoundToken, generateSessionId } from "../utils/tokens";
 
 export default defineEventHandler(async (event) => {
-  const { name } = getQuery(event);
+  const query = getQuery(event);
+  const { name } = query;
+  const sessionFromQuery =
+    typeof query.sessionId === "string" && query.sessionId.length > 0
+      ? (query.sessionId as string)
+      : null;
+  const sessionId = sessionFromQuery || generateSessionId();
   if (!name || typeof name !== "string") {
     return sendError(
       event,
@@ -102,11 +111,35 @@ export default defineEventHandler(async (event) => {
       ORDER BY ps.appearances DESC
     `,
     )
-    .all(player.id);
+    .all(player.id) as Array<{ competition_id: string; appearances: number }>;
+
+  const difficulty = computeDifficulty(stats);
+  db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
+
+  const roundId = randomUUID();
+  const expiresAt = Date.now() + 1000 * 60 * 30;
+  db.prepare(
+    `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
+  ).run(roundId, player.id, sessionId, Math.floor(Date.now() / 1000), Math.floor(expiresAt / 1000));
+
+  const token = createRoundToken({
+    roundId,
+    playerId: player.id,
+    sessionId,
+    exp: expiresAt,
+  });
 
   return {
     ...player,
     transfers,
     stats,
+    difficulty,
+    round: {
+      id: roundId,
+      token,
+      sessionId,
+      expiresAt,
+      cluesUsed: 0,
+    },
   };
 });

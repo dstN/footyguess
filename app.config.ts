@@ -7,9 +7,9 @@ export default defineAppConfig({
     card: {
       slots: {
         root: "w-full rounded-3xl border border-primary-900/50 bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm",
-        body: "p-6 sm:p-8",
-        header: "p-6 pb-0 sm:p-8 sm:pb-0",
-        footer: "p-6 pt-0 sm:p-8 sm:pt-0",
+        body: "p-4 sm:p-6",
+        header: "p-4 sm:p-6",
+        footer: "p-4 sm:p-6",
       },
     },
     inputMenu: {
@@ -44,6 +44,12 @@ export default defineAppConfig({
             overlay: "bg-white/5 backdrop-blur-xs z-[101]",
           },
         },
+      },
+    },
+    tooltip: {
+      slots: {
+        content:
+          "flex items-center gap-1 rounded-lg bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs text-highlighted ring ring-default h-6 px-2.5 py-1 text-xs select-none data-[state=delayed-open]:animate-[scale-in_100ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in] origin-(--reka-tooltip-content-transform-origin) pointer-events-auto",
       },
     },
   },

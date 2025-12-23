@@ -3,12 +3,28 @@
     class="border-primary-900/50 relative overflow-hidden border bg-slate-950/60"
   >
     <template #header>
-      <div class="flex items-center justify-between gap-3 pb-6">
-        <div>
-          <p class="text-primary-200/80 text-xs tracking-[0.26em] uppercase">
-            Club timeline
-          </p>
-          <p class="text-lg font-semibold text-white">Career history</p>
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div>
+            <p class="text-primary-200/80 text-xs tracking-[0.26em] uppercase">
+              Club timeline
+            </p>
+            <p class="text-lg font-semibold text-white">Career history</p>
+          </div>
+          <UTooltip
+            v-if="difficulty"
+            :text="`Difficulty: ${difficultyLabel} — Base max ${maxPoints} pts; with current streak bonus (${streakBonusPct}%): up to ${potentialWithStreak} pts.`"
+            :popper="{ placement: 'bottom' }"
+          >
+            <UBadge
+              :color="difficultyBadge.color"
+              variant="soft"
+              class="text-xs"
+              :class="difficultyBadge.class"
+            >
+              {{ difficultyLabel }}
+            </UBadge>
+          </UTooltip>
         </div>
         <UBadge
           v-if="showBadge"
@@ -74,6 +90,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 interface TimelineItem {
   id: string;
   date: string;
@@ -82,9 +100,72 @@ interface TimelineItem {
   description?: string | null;
 }
 
-defineProps<{
+const props = defineProps<{
   items: TimelineItem[];
   isLoading: boolean;
   showBadge?: boolean;
+  currentStreak?: number;
+  difficulty?: {
+    tier: "easy" | "medium" | "hard" | "ultra";
+    multiplier: number;
+    basePoints: number;
+  } | null;
 }>();
+
+const difficultyLabel = computed(() => {
+  if (props.difficulty?.tier === "easy") return "Easy";
+  if (props.difficulty?.tier === "medium") return "Medium";
+  if (props.difficulty?.tier === "hard") return "Hard";
+  if (props.difficulty?.tier === "ultra") return "Ultra";
+  return "";
+});
+
+const maxPoints = computed(() =>
+  props.difficulty
+    ? Math.round(props.difficulty.basePoints * props.difficulty.multiplier)
+    : 0,
+);
+
+function getStreakBonusMultiplier(streak: number) {
+  if (streak >= 100) return 0.3;
+  if (streak >= 60) return 0.2;
+  if (streak >= 30) return 0.15;
+  if (streak >= 15) return 0.1;
+  if (streak >= 5) return 0.05;
+  return 0;
+}
+
+const streakBonusPct = computed(() =>
+  Number((getStreakBonusMultiplier(props.currentStreak ?? 0) * 100).toFixed(0)),
+);
+
+const potentialWithStreak = computed(() =>
+  props.difficulty
+    ? Math.round(
+        props.difficulty.basePoints *
+          props.difficulty.multiplier *
+          (1 + getStreakBonusMultiplier(props.currentStreak ?? 0)),
+      )
+    : 0,
+);
+
+const difficultyBadge = computed<{
+  color: "success" | "warning" | "error" | "neutral";
+  class: string;
+}>(() => {
+  if (!props.difficulty) return { color: "neutral", class: "" };
+  if (props.difficulty.tier === "easy") {
+    return { color: "success", class: "bg-green-500/10 text-green-100" };
+  }
+  if (props.difficulty.tier === "medium") {
+    return { color: "warning", class: "bg-yellow-500/10 text-yellow-100" };
+  }
+  if (props.difficulty.tier === "hard") {
+    return { color: "warning", class: "bg-orange-500/10 text-orange-100" };
+  }
+  if (props.difficulty.tier === "ultra") {
+    return { color: "error", class: "bg-red-500/10 text-red-100" };
+  }
+  return { color: "neutral", class: "" };
+});
 </script>

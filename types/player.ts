@@ -17,4 +17,12 @@ export interface Player {
   clubLogo: string | null;
   transfers: any[]; // kannst du später noch genauer typisieren
   stats: any[]; // kannst du später noch genauer typisieren
+  difficulty?: {
+    basis: "international" | "top5";
+    totalAppearances: number;
+    tier: "easy" | "medium" | "hard" | "ultra";
+    multiplier: number;
+    basePoints: number;
+    cluePenalty: number;
+  };
 }

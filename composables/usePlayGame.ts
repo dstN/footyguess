@@ -1,9 +1,19 @@
+import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import * as v from "valibot";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
+import { calculateScore, getStreakBonusMultiplier } from "~/server/utils/scoring";
+
+interface RoundState {
+  id: string;
+  token: string;
+  sessionId: string;
+  expiresAt: number;
+  cluesUsed: number;
+}
 
 export function usePlayGame() {
   const router = useRouter();
@@ -17,6 +27,8 @@ export function usePlayGame() {
   const isError = ref(false);
   const streak = ref(0);
   const bestStreak = ref(0);
+  const sessionId = ref<string | null>(null);
+  const round = ref<RoundState | null>(null);
   const confirmResetOpen = ref(false);
   const pendingName = ref<string | undefined>(undefined);
 
@@ -48,32 +60,61 @@ export function usePlayGame() {
     revealNextClue,
   } = useCluePool(player, { isLoading });
 
+  const difficulty = computed(() => player.value?.difficulty ?? null);
+  const maxBasePoints = computed(() =>
+    difficulty.value
+      ? Math.round(difficulty.value.basePoints * difficulty.value.multiplier)
+      : 0,
+  );
+  const streakBonusPct = computed(() =>
+    Number((getStreakBonusMultiplier(streak.value) * 100).toFixed(0)),
+  );
+
+  function ensureSessionId() {
+    if (sessionId.value) return sessionId.value;
+    if (import.meta.client) {
+      const stored = localStorage.getItem("footyguess_session_id");
+      if (stored) {
+        sessionId.value = stored;
+        return stored;
+      }
+    }
+    const generated = crypto.randomUUID();
+    sessionId.value = generated;
+    if (import.meta.client) {
+      localStorage.setItem("footyguess_session_id", generated);
+    }
+    return generated;
+  }
+
   async function loadPlayer(name?: string) {
     isLoading.value = true;
     errorMessage.value = "";
     isError.value = false;
 
     try {
+      const sid = ensureSessionId();
       const endpoint = name
-        ? `/api/getPlayer?name=${encodeURIComponent(name)}`
-        : "/api/randomPlayer";
+        ? `/api/getPlayer?name=${encodeURIComponent(name)}&sessionId=${encodeURIComponent(sid)}`
+        : `/api/randomPlayer?sessionId=${encodeURIComponent(sid)}`;
 
-      player.value = await $fetch<Player>(endpoint);
-      currentName.value = player.value?.name;
-      console.log("[footyguess] Loaded player:", player.value);
+      const response = await $fetch<{
+        round: RoundState;
+      } & Player>(endpoint);
+
+      player.value = response;
+      currentName.value = response?.name;
+      round.value = response.round;
+      sessionId.value = response.round.sessionId;
+      if (import.meta.client) {
+        localStorage.setItem("footyguess_session_id", response.round.sessionId);
+      }
+      console.log("[footyguess] Loaded player:", response);
       formState.guess = "";
       clearSearch();
       errorMessage.value = "";
       selectRandomClues();
       return;
-
-      toast.add({
-        title: "No player available",
-        description: "Please try again in a moment.",
-        color: "error",
-        icon: "i-lucide-alert-triangle",
-      });
-      player.value = null;
     } catch (err) {
       console.error("Failed to load player", err);
       errorMessage.value =
@@ -84,37 +125,13 @@ export function usePlayGame() {
     }
   }
 
-  function onSubmit(event: FormSubmitEvent<any>) {
+  async function onSubmit(event: FormSubmitEvent<any>) {
     event.preventDefault();
-    if (!player.value) return;
-
+    if (!player.value || !round.value) return;
     const rawGuess = (event as any).data?.guess as unknown;
-    const normalizedGuess = getGuessValue(rawGuess).toLowerCase();
-    const correct = player.value.name.trim().toLowerCase();
-
-    if (normalizedGuess === correct) {
-      isError.value = false;
-      incrementStreak();
-      persistLastPlayer(player.value.name);
-      toast.add({
-        title: "Correct!",
-        description: "You cracked the code.",
-        color: "primary",
-        icon: "i-lucide-party-popper",
-      });
-      router.push("/won");
-    } else {
-      isError.value = true;
-      resetStreak();
-      toast.add({
-        title: "Wrong player",
-        description: "Try again - follow the clues.",
-        color: "error",
-        icon: "i-lucide-x-circle",
-      });
-
-      triggerShake?.();
-    }
+    const guessValue = getGuessValue(rawGuess);
+    if (!guessValue) return;
+    await submitGuess(guessValue);
   }
 
   function submitGuessViaEnter() {
@@ -176,17 +193,84 @@ export function usePlayGame() {
     localStorage.setItem("footyguess_best_streak", String(bestStreak.value));
   }
 
-  function incrementStreak() {
-    streak.value += 1;
-    if (streak.value > bestStreak.value) {
-      bestStreak.value = streak.value;
-    }
-    saveStreak();
-  }
-
   function resetStreak() {
     streak.value = 0;
     saveStreak();
+  }
+
+  async function useClueServer() {
+    if (!round.value) return;
+    try {
+      const res = await $fetch<{ cluesUsed: number }>("/api/useClue", {
+        method: "POST",
+        body: { roundId: round.value.id, token: round.value.token },
+      });
+      if (res?.cluesUsed !== undefined) {
+        round.value = { ...round.value, cluesUsed: res.cluesUsed };
+      }
+    } catch (err) {
+      console.error("Failed to record clue", err);
+    }
+  }
+
+  async function revealNextClueWithServer() {
+    await useClueServer();
+    revealNextClue();
+  }
+
+  async function submitGuess(guess: string) {
+    if (!round.value) return;
+    try {
+      const res = await $fetch<{
+        correct: boolean;
+        score: number;
+        breakdown: ReturnType<typeof calculateScore>;
+        streak: number;
+        bestStreak: number;
+        playerName: string;
+        difficulty: Player["difficulty"];
+      }>("/api/guess", {
+        method: "POST",
+        body: {
+          roundId: round.value.id,
+          token: round.value.token,
+          guess,
+        },
+      });
+
+      streak.value = res.streak;
+      bestStreak.value = res.bestStreak;
+      saveStreak();
+
+      if (res.correct) {
+        isError.value = false;
+        persistLastPlayer(res.playerName);
+        toast.add({
+          title: `Correct! +${res.breakdown.preStreak} base pts`,
+          description: `Time: +${Math.round((res.breakdown.timeMultiplier - 1) * 100)}% · Streak: ${Math.round(res.breakdown.streakBonus * 100)}% → total ${res.score} pts · Streak ${res.streak}`,
+          color: "primary",
+          icon: "i-lucide-party-popper",
+        });
+        router.push("/won");
+      } else {
+        isError.value = true;
+        toast.add({
+          title: "Wrong player",
+          description: "Try again - follow the clues.",
+          color: "error",
+          icon: "i-lucide-x-circle",
+        });
+        triggerShake?.();
+      }
+    } catch (err) {
+      console.error("Failed to submit guess", err);
+      toast.add({
+        title: "Guess failed",
+        description: "Please try again.",
+        color: "error",
+        icon: "i-lucide-alert-triangle",
+      });
+    }
   }
 
   onMounted(async () => {
@@ -204,21 +288,24 @@ export function usePlayGame() {
     errorMessage,
     isError,
     revealedClues,
-  hiddenClueLabels,
-  tipButtonDisabled,
-  careerTimeline,
-  suggestions,
-  searchTerm,
-  streak,
-  bestStreak,
-  confirmResetOpen,
-  loadPlayer,
-  requestNewPlayer,
-  confirmNewPlayer,
-  cancelNewPlayer,
-  revealNextClue,
-  onSearch,
-  submitGuessViaEnter,
+    hiddenClueLabels,
+    tipButtonDisabled,
+    careerTimeline,
+    suggestions,
+    searchTerm,
+    streak,
+    bestStreak,
+    difficulty,
+    maxBasePoints,
+    streakBonusPct,
+    confirmResetOpen,
+    loadPlayer,
+    requestNewPlayer,
+    confirmNewPlayer,
+    cancelNewPlayer,
+    revealNextClue: revealNextClueWithServer,
+    onSearch,
+    submitGuessViaEnter,
     onSubmit,
     clearGuess,
   };
