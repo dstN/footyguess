@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     nickname: session?.nickname ?? null,
     streak: session?.streak ?? 0,
     bestStreak: session?.best_streak ?? 0,
-    totalScore: (cachedTotal ?? 0) + (session?.streak ?? 0),
+    totalScore: cachedTotal ?? 0,
     lastScore: lastScore
       ? (() => {
           const streakBonus = getStreakBonusMultiplier(lastScore.streak ?? 0);
