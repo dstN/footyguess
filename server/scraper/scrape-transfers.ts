@@ -2,8 +2,6 @@
 import puppeteer, { Page, ElementHandle } from "puppeteer";
 import db from "../db/connection";
 import { upsertClub, updatePlayerWorth } from "../db/insert";
-import path from "path";
-import fs from "fs";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -25,11 +23,7 @@ async function scrapeAndUpsertClubFromRow(
     const clubAnchor = await element.$(
       `${selector} .tm-player-transfer-history-grid__club-link`
     );
-    const clubLogo = await element.$(
-      `${selector} .tm-player-transfer-history-grid__club-logo`
-    );
-
-    if (!clubAnchor || !clubLogo) return null;
+    if (!clubAnchor) return null;
 
     const clubName = await clubAnchor.evaluate(
       (el) => (el as HTMLElement).textContent?.trim() ?? null
@@ -37,14 +31,6 @@ async function scrapeAndUpsertClubFromRow(
     const clubHref = await clubAnchor.evaluate((el) =>
       (el as HTMLElement).getAttribute("href")
     );
-    const logoSrc = await clubLogo.evaluate(
-      (el) =>
-        (el as HTMLElement)
-          .getAttribute("srcset")
-          ?.split(",")[0]
-          ?.split(" ")[0] ?? (el as HTMLElement).getAttribute("src")
-    );
-
     if (!clubName || !clubHref) return null;
 
     const idMatch = clubHref.match(/verein\/(\d+)/);
@@ -54,34 +40,7 @@ async function scrapeAndUpsertClubFromRow(
     const exists = db.prepare("SELECT 1 FROM clubs WHERE id = ?").get(clubId);
     if (exists) return clubId;
 
-    let finalLogoPath: string | null = null;
-    if (logoSrc) {
-      const safeLogoUrl = logoSrc.startsWith("http")
-        ? logoSrc
-        : `https:${logoSrc}`;
-      const logoSizedUrl = safeLogoUrl.replace("/tiny/", "/header/");
-      const safeName = clubName
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9\-]/g, "");
-      const filename = `${safeName}.png`;
-      const logoPath = `/assets/logos/${filename}`;
-      const logoDir = path.resolve("public/assets/logos");
-      const fullPath = path.join(logoDir, filename);
-
-      if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
-      if (!fs.existsSync(fullPath)) {
-        const res = await fetch(logoSizedUrl);
-        if (res.ok) {
-          const buffer = await res.arrayBuffer();
-          fs.writeFileSync(fullPath, Buffer.from(buffer));
-        }
-      }
-
-      finalLogoPath = logoPath;
-    }
-
-    upsertClub(clubId, clubName, finalLogoPath);
+    upsertClub(clubId, clubName, null);
     return clubId;
   } catch (err) {
     console.error("❌ Fehler beim Scrapen des Clubs:", err);
@@ -128,6 +87,9 @@ export async function scrapeTransfersForPlayer(
         className: el.className,
       }))
     );
+
+    let retiredDateFromHistory: string | null = null;
+    let retiredFound = false;
 
     for (const row of allRows) {
       const isHeading =
@@ -214,6 +176,20 @@ export async function scrapeTransfersForPlayer(
         ".tm-player-transfer-history-grid__new-club"
       );
 
+      if (!retiredDateFromHistory) {
+        const clubTexts = await element
+          .$$eval(".tm-player-transfer-history-grid__club-link", (nodes) =>
+            nodes.map((el) => el.textContent?.trim() || "")
+          )
+          .catch(() => []);
+        if (clubTexts.some((text) => text.toLowerCase() === "retired")) {
+          retiredFound = true;
+          const retiredCandidate =
+            transfer_date ?? (dateRaw ? parseDateToISO(dateRaw) : null);
+          if (retiredCandidate) retiredDateFromHistory = retiredCandidate;
+        }
+      }
+
       if (!season && !transfer_date && !fee && !from_club_id && !to_club_id)
         continue;
 
@@ -261,6 +237,16 @@ export async function scrapeTransfersForPlayer(
     }
 
     updatePlayerWorth(playerId, totalFee);
+    if (retiredFound) {
+      db.prepare(
+        `
+        UPDATE players
+        SET active = 0,
+            retired_since = COALESCE(retired_since, ?)
+        WHERE id = ?
+        `
+      ).run(retiredDateFromHistory, playerId);
+    }
     console.log(`✅ Transfers für ${playerName} gespeichert.`);
   } catch (err) {
     console.error(`❌ Fehler bei ${playerName}:`, err);

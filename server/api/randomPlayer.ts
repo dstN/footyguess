@@ -43,8 +43,7 @@ export default defineEventHandler(async (event) => {
         `
         SELECT
           p.*,
-          c.name AS currentClub,
-          c.logo_path AS clubLogo
+          c.name AS currentClub
         FROM players p
         LEFT JOIN clubs c ON p.current_club_id = c.id
         ${filterClause}
@@ -81,10 +80,8 @@ export default defineEventHandler(async (event) => {
         t.upcoming,
         fc.id AS from_club_id,
         fc.name AS from_club,
-        fc.logo_path AS from_club_logo,
         tc.id AS to_club_id,
-        tc.name AS to_club,
-        tc.logo_path AS to_club_logo
+        tc.name AS to_club
       FROM transfers t
       LEFT JOIN clubs fc ON t.from_club_id = fc.id
       LEFT JOIN clubs tc ON t.to_club_id = tc.id
@@ -118,8 +115,7 @@ export default defineEventHandler(async (event) => {
           ps.minutes_played,
           ps.average_minutes_per_match,
           c.id AS competition_id,
-          c.name AS competition,
-          c.logo_path AS competition_logo
+          c.name AS competition
         FROM player_stats ps
         JOIN competitions c ON ps.competition_id = c.id
         WHERE ps.player_id = ?

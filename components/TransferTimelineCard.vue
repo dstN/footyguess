@@ -49,32 +49,151 @@
         />
       </div>
 
-      <div
-        v-else-if="items.length"
-        class="border-primary-700/40 relative space-y-5 border-l pl-4"
-      >
+      <div v-else-if="items.length">
         <div
-          v-for="item in items"
-          :key="item.id"
-          class="border-primary-900/40 relative rounded-xl border bg-white/5 px-4 py-3 shadow-sm backdrop-blur-sm"
+          v-if="useTwoColumn"
+          class="border-primary-700/40 relative space-y-5 border-l pl-4 sm:hidden"
         >
-          <span
-            class="bg-primary-400 absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-          />
-          <p class="text-primary-200 text-xs tracking-[0.14em] uppercase">
-            {{ item.date }}
-          </p>
-          <div class="flex items-center gap-3 text-sm text-slate-200">
-            <span class="font-semibold text-white">{{ item.from }}</span>
-            <UIcon
-              name="i-lucide-arrow-right"
-              class="text-primary-200"
+          <div
+            v-for="entry in itemsWithIndex"
+            :key="entry.item.id"
+            class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
+            :class="getCardClass(entry.index)"
+          >
+            <span
+              class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+              :class="getDotClass(entry.index)"
             />
-            <span class="font-semibold text-white">{{ item.to }}</span>
+            <p
+              class="text-xs tracking-[0.14em] uppercase"
+              :class="getMetaClass(entry.index)"
+            >
+              {{ entry.item.date }}
+            </p>
+            <div class="flex items-center gap-3 text-sm text-slate-200">
+              <span class="font-semibold text-white">{{
+                entry.item.from
+              }}</span>
+              <UIcon
+                name="i-lucide-arrow-right"
+                :class="getArrowClass(entry.index)"
+              />
+              <span class="font-semibold text-white">{{ entry.item.to }}</span>
+            </div>
+            <p class="min-h-[1.25rem] text-sm text-slate-300">
+              {{ entry.item.description }}
+            </p>
           </div>
-          <p class="min-h-[1.25rem] text-sm text-slate-300">
-            {{ item.description }}
-          </p>
+        </div>
+
+        <div
+          v-if="useTwoColumn"
+          class="hidden gap-6 sm:grid sm:grid-cols-2"
+        >
+          <div class="border-primary-700/40 relative space-y-5 border-l pl-4">
+            <div
+              v-for="entry in leftItems"
+              :key="entry.item.id"
+              class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
+              :class="getCardClass(entry.index)"
+            >
+              <span
+                class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+                :class="getDotClass(entry.index)"
+              />
+              <p
+                class="text-xs tracking-[0.14em] uppercase"
+                :class="getMetaClass(entry.index)"
+              >
+                {{ entry.item.date }}
+              </p>
+              <div class="flex items-center gap-3 text-sm text-slate-200">
+                <span class="font-semibold text-white">{{
+                  entry.item.from
+                }}</span>
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  :class="getArrowClass(entry.index)"
+                />
+                <span class="font-semibold text-white">{{
+                  entry.item.to
+                }}</span>
+              </div>
+              <p class="min-h-[1.25rem] text-sm text-slate-300">
+                {{ entry.item.description }}
+              </p>
+            </div>
+          </div>
+          <div class="border-primary-700/40 relative space-y-5 border-l pl-4">
+            <div
+              v-for="entry in rightItems"
+              :key="entry.item.id"
+              class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
+              :class="getCardClass(entry.index)"
+            >
+              <span
+                class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+                :class="getDotClass(entry.index)"
+              />
+              <p
+                class="text-xs tracking-[0.14em] uppercase"
+                :class="getMetaClass(entry.index)"
+              >
+                {{ entry.item.date }}
+              </p>
+              <div class="flex items-center gap-3 text-sm text-slate-200">
+                <span class="font-semibold text-white">{{
+                  entry.item.from
+                }}</span>
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  :class="getArrowClass(entry.index)"
+                />
+                <span class="font-semibold text-white">{{
+                  entry.item.to
+                }}</span>
+              </div>
+              <p class="min-h-[1.25rem] text-sm text-slate-300">
+                {{ entry.item.description }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="border-primary-700/40 relative space-y-5 border-l pl-4"
+        >
+          <div
+            v-for="entry in itemsWithIndex"
+            :key="entry.item.id"
+            class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
+            :class="getCardClass(entry.index)"
+          >
+            <span
+              class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+              :class="getDotClass(entry.index)"
+            />
+            <p
+              class="text-xs tracking-[0.14em] uppercase"
+              :class="getMetaClass(entry.index)"
+            >
+              {{ entry.item.date }}
+            </p>
+            <div class="flex items-center gap-3 text-sm text-slate-200">
+              <span class="font-semibold text-white">{{
+                entry.item.from
+              }}</span>
+              <UIcon
+                name="i-lucide-arrow-right"
+                :class="getArrowClass(entry.index)"
+              />
+              <span class="font-semibold text-white">{{ entry.item.to }}</span>
+            </div>
+            <p class="min-h-[1.25rem] text-sm text-slate-300">
+              {{ entry.item.description }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -168,4 +287,25 @@ const difficultyBadge = computed<{
   }
   return { color: "neutral", class: "" };
 });
+
+const useTwoColumn = computed(() => props.items.length >= 8);
+const itemsWithIndex = computed(() =>
+  props.items.map((item, index) => ({ item, index })),
+);
+const splitIndex = computed(() => Math.ceil(itemsWithIndex.value.length / 2));
+const leftItems = computed(() =>
+  itemsWithIndex.value.slice(0, splitIndex.value),
+);
+const rightItems = computed(() => itemsWithIndex.value.slice(splitIndex.value));
+
+const getCardClass = (index: number) =>
+  index % 2 === 0
+    ? "border-primary-900/40 bg-primary/10"
+    : "border-secondary-900/40 bg-secondary/10";
+const getDotClass = (index: number) =>
+  index % 2 === 0 ? "bg-primary-400" : "bg-secondary";
+const getMetaClass = (index: number) =>
+  index % 2 === 0 ? "text-primary-200" : "text-secondary";
+const getArrowClass = (index: number) =>
+  index % 2 === 0 ? "text-primary-200" : "text-secondary";
 </script>

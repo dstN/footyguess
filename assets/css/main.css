@@ -29,6 +29,7 @@
   --color-darkpurple-950: oklch(11.857% 0.02611 294.01);
 
   /* Neon pink: brighter, higher chroma */
+  --color-mew: #e317ae;
   --color-mew-50: #fff0fb;
   --color-mew-100: #ffd5f4;
   --color-mew-200: #ffb7ec;
@@ -44,11 +45,11 @@
 
 :root {
   --ui-primary: var(--color-primary-500);
-  --ui-secondary: var(--color-secondary-900);
+  --ui-secondary: var(--color-mew-500);
   --ui-bg: var(--color-primary-50);
 }
 .dark {
-  --ui-bg: var(--color-primary-900);
+  --ui-bg: var(--color-primary-950);
 }
 
 /* Offset toasts above the fixed guess bar */

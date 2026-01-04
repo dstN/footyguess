@@ -7,6 +7,7 @@ export interface ScoreBreakdown {
   cluesUsed: number;
   cluePenalty: number;
   preStreak: number;
+  timeScore: number;
   streakBonus: number;
   finalScore: number;
 }
@@ -40,7 +41,8 @@ export function calculateScore(
   const timeMultiplier = clampTimeMultiplier(getTimeMultiplier(opts.elapsedSeconds));
 
   const timeAdjusted = Math.max(preStreak * timeMultiplier, preStreak * 0.1, floor);
-  const finalScore = Math.round(timeAdjusted * (1 + streakBonus));
+  const timeScore = Math.round(timeAdjusted);
+  const finalScore = Math.round(timeScore * (1 + streakBonus));
 
   return {
     base: basePoints,
@@ -49,6 +51,7 @@ export function calculateScore(
     cluesUsed,
     cluePenalty,
     preStreak,
+    timeScore,
     streakBonus,
     finalScore,
   };

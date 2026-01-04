@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody, createError, sendError } from "h3";
 import db from "../db/connection";
 import { verifyRoundToken } from "../utils/tokens";
+import { enforceRateLimit } from "../utils/rate-limit";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -23,6 +24,14 @@ export default defineEventHandler(async (event) => {
         createError({ statusCode: 400, statusMessage: "Round mismatch" }),
       );
     }
+
+    const rateError = enforceRateLimit(event, {
+      key: "clue",
+      windowMs: 10_000,
+      max: 5,
+      sessionId: payload.sessionId,
+    });
+    if (rateError) return sendError(event, rateError);
 
     const round = db
       .prepare(

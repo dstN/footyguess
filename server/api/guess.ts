@@ -8,6 +8,7 @@ import db from "../db/connection";
 import { verifyRoundToken } from "../utils/tokens";
 import { computeDifficulty } from "../utils/difficulty";
 import { calculateScore } from "../utils/scoring";
+import { enforceRateLimit } from "../utils/rate-limit";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -31,6 +32,14 @@ export default defineEventHandler(async (event) => {
         createError({ statusCode: 400, statusMessage: "Round mismatch" }),
       );
     }
+
+    const rateError = enforceRateLimit(event, {
+      key: "guess",
+      windowMs: 10_000,
+      max: 10,
+      sessionId: payload.sessionId,
+    });
+    if (rateError) return sendError(event, rateError);
 
     const round = db
       .prepare(
@@ -111,17 +120,38 @@ export default defineEventHandler(async (event) => {
     const nextStreak = correct ? (sessionRow?.streak ?? 0) + 1 : 0;
     const nextBest = Math.max(sessionRow?.best_streak ?? 0, nextStreak);
 
-    db.prepare(
-      `UPDATE sessions SET streak = ?, best_streak = ? WHERE id = ?`,
-    ).run(nextStreak, nextBest, round.session_id);
+    const earnedScore = correct ? breakdown.finalScore : 0;
+    const earnedBase = correct ? breakdown.preStreak : 0;
+    const earnedTime = correct ? breakdown.timeScore : 0;
 
     db.prepare(
-      `INSERT INTO scores (session_id, round_id, score, base_score, correct, streak, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `UPDATE sessions
+       SET streak = ?,
+           best_streak = ?,
+           total_score = COALESCE(total_score, 0) + ?,
+           total_rounds = COALESCE(total_rounds, 0) + 1,
+           last_round_score = ?,
+           last_round_base = ?,
+           last_round_time_score = ?
+       WHERE id = ?`,
+    ).run(
+      nextStreak,
+      nextBest,
+      earnedScore,
+      earnedScore,
+      earnedBase,
+      earnedTime,
+      round.session_id,
+    );
+
+    db.prepare(
+      `INSERT INTO scores (session_id, round_id, score, base_score, time_score, correct, streak, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       round.session_id,
       round.id,
-      correct ? breakdown.finalScore : 0,
-      correct ? breakdown.preStreak : 0,
+      earnedScore,
+      earnedBase,
+      earnedTime,
       correct ? 1 : 0,
       nextStreak,
       Math.floor(Date.now() / 1000),

@@ -67,20 +67,22 @@ export function computeDifficulty(
   const intlApps = sumWeightedInternational(stats);
   const top5Apps = sumAppearances(stats, TOP5_LEAGUES);
 
-  // compute both and pick the harsher tier (higher multiplier) to avoid easy tiers on obscure players
+  // Prefer international weighted apps; fall back to top5 only when international doesn't meet thresholds.
   const intlTier = intlApps > 0 ? getTier("international", intlApps) : null;
   const top5Tier = top5Apps > 0 ? getTier("top5", top5Apps) : null;
 
-  let chosen: { basis: DifficultyBasis; total: number; tier: { tier: DifficultyTier; multiplier: number } };
-  if (intlTier && top5Tier) {
-    chosen =
-      intlTier.multiplier >= top5Tier.multiplier
-        ? { basis: "international", total: intlApps, tier: intlTier }
-        : { basis: "top5", total: top5Apps, tier: top5Tier };
-  } else if (intlTier) {
+  let chosen: {
+    basis: DifficultyBasis;
+    total: number;
+    tier: { tier: DifficultyTier; multiplier: number };
+  };
+
+  if (intlTier && intlTier.tier !== "ultra") {
     chosen = { basis: "international", total: intlApps, tier: intlTier };
   } else if (top5Tier) {
     chosen = { basis: "top5", total: top5Apps, tier: top5Tier };
+  } else if (intlTier) {
+    chosen = { basis: "international", total: intlApps, tier: intlTier };
   } else {
     const fallback = getTier("international", 0);
     chosen = { basis: "international", total: 0, tier: fallback };

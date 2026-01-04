@@ -1,4 +1,3 @@
-// 📁 server/db/schema.ts
 import db from "./connection";
 
 export function initSchema() {
@@ -6,6 +5,14 @@ export function initSchema() {
     CREATE TABLE IF NOT EXISTS players (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
+      name_search TEXT,
+      tm_id INTEGER,
+      tm_url TEXT,
+      tm_short_name TEXT,
+      tm_short_name_search TEXT,
+      tm_full_name TEXT,
+      tm_full_name_search TEXT,
+      last_scraped_at INTEGER,
       birthdate TEXT,
       height_cm INTEGER,
       active INTEGER,
@@ -75,6 +82,11 @@ export function initSchema() {
       nickname TEXT,
       streak INTEGER DEFAULT 0,
       best_streak INTEGER DEFAULT 0,
+      total_score INTEGER DEFAULT 0,
+      total_rounds INTEGER DEFAULT 0,
+      last_round_score INTEGER,
+      last_round_base INTEGER,
+      last_round_time_score INTEGER,
       created_at INTEGER DEFAULT (strftime('%s','now'))
     );
 
@@ -96,6 +108,7 @@ export function initSchema() {
       score INTEGER,
       correct INTEGER,
       streak INTEGER,
+      time_score INTEGER,
       created_at INTEGER DEFAULT (strftime('%s','now')),
       FOREIGN KEY (session_id) REFERENCES sessions(id),
       FOREIGN KEY (round_id) REFERENCES rounds(id)
@@ -113,10 +126,66 @@ export function initSchema() {
       created_at INTEGER DEFAULT (strftime('%s','now')),
       FOREIGN KEY (session_id) REFERENCES sessions(id)
     );
+
+    CREATE TABLE IF NOT EXISTS requested_players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      url TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      player_id INTEGER,
+      error TEXT,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      updated_at INTEGER DEFAULT (strftime('%s','now'))
+    );
   `);
 
   // lightweight migrations for added columns
   try {
     db.prepare(`ALTER TABLE scores ADD COLUMN base_score INTEGER`).run();
   } catch {}
+  try {
+    db.prepare(`ALTER TABLE scores ADD COLUMN time_score INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_id INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN name_search TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_url TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_short_name TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_short_name_search TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_full_name TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN tm_full_name_search TEXT`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE players ADD COLUMN last_scraped_at INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE sessions ADD COLUMN total_score INTEGER DEFAULT 0`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE sessions ADD COLUMN total_rounds INTEGER DEFAULT 0`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_score INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_base INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`).run();
+  } catch {}
+  try {
+    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`).run();
+  } catch {}
 }
+

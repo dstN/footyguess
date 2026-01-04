@@ -1,8 +1,6 @@
 // 📁 server/scraper/scrape-career-stats.ts
 import puppeteer, { Page } from "puppeteer";
 import db from "../db/connection";
-import path from "path";
-import fs from "fs";
 import {
   upsertCompetition,
   upsertPlayerStats,
@@ -14,42 +12,6 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 interface PlayerRow {
   id: number;
   name: string;
-}
-
-async function extractFilenameFromUrl(url: string) {
-  const match = url.match(/\/([^\/?#]+)\.png/i);
-  return match ? match[1] : null;
-}
-
-async function downloadImage(
-  url: string,
-  filename: string
-): Promise<string | null> {
-  try {
-    const fullUrl = url.startsWith("http") ? url : `https:${url}`;
-    const safeUrl = fullUrl.replace("/tiny/", "/medium/");
-    const competition_id = await extractFilenameFromUrl(fullUrl);
-    const safeName = filename
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "");
-    const localPath = `/assets/competitions/${safeName}-${competition_id}.png`;
-    const outputDir = path.resolve("public/assets/competitions");
-    const fullPath = path.join(outputDir, `${safeName}-${competition_id}.png`);
-
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    if (!fs.existsSync(fullPath)) {
-      const res = await fetch(safeUrl);
-      if (res.ok) {
-        const buffer = await res.arrayBuffer();
-        fs.writeFileSync(fullPath, Buffer.from(buffer));
-      }
-    }
-    return localPath;
-  } catch (err) {
-    console.error("Fehler beim Laden des Competition-Logos:", err);
-    return null;
-  }
 }
 
 export async function scrapeCareerStatsForPlayer(
@@ -72,11 +34,6 @@ export async function scrapeCareerStatsForPlayer(
       const cells = await row.$$("td");
       if (cells.length < 14) continue;
 
-      const logoImg = await cells[0].$("img");
-      const logoUrl = logoImg
-        ? await logoImg.evaluate((el) => el.getAttribute("src"))
-        : null;
-
       const nameAnchor = await cells[1].$("a");
       const competitionName = nameAnchor
         ? await nameAnchor.evaluate((el) => el.textContent?.trim() || "")
@@ -92,14 +49,10 @@ export async function scrapeCareerStatsForPlayer(
 
       if (!competitionIdMatch || !competitionName) continue;
 
-      const logo_path = logoUrl
-        ? await downloadImage(logoUrl, competitionName)
-        : null;
-
       upsertCompetition({
         id: competitionIdMatch,
         name: competitionName,
-        logo_path: logo_path,
+        logo_path: null,
       });
 
       const text = await Promise.all(

@@ -6,6 +6,10 @@ export interface Player {
   height_cm: number | null;
   foot: string | null;
   shirt_number: number | null;
+  tm_id?: number | null;
+  tm_url?: string | null;
+  tm_short_name?: string | null;
+  tm_full_name?: string | null;
   main_position: string;
   secondary_positions: string[];
   nationalities: string[];
@@ -14,7 +18,6 @@ export interface Player {
   total_stats: Record<string, number | string> | null;
   current_club_id: number | null;
   currentClub: string | null;
-  clubLogo: string | null;
   transfers: any[]; // kannst du später noch genauer typisieren
   stats: any[]; // kannst du später noch genauer typisieren
   difficulty?: {

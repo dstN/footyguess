@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import { performance } from "perf_hooks";
-// 📁 server/scraper/scrape-players.ts
 import puppeteer from "puppeteer";
 import db from "../db/connection";
 import { upsertClub, upsertPlayer } from "../db/insert";
@@ -12,12 +11,28 @@ import { scrapeTransfersForPlayer } from "./scrape-transfers";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+function titleizeSlug(slug: string) {
+  return slug
+    .split("-")
+    .map((part) => (part.length ? part[0].toUpperCase() + part.slice(1) : part))
+    .join(" ");
+}
+
+function logScrapeError(context: string, name: string, err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  const errorLog = `[${new Date().toISOString()}] ${context} ${name}: ${message}\n`;
+  fs.appendFileSync("error.txt", errorLog, "utf8");
+}
+
 (async () => {
   initSchema();
 
-  const inputPath = path.resolve("all_players.json");
-  const rawData = fs.readFileSync(inputPath, "utf8");
-  const players = JSON.parse(rawData).map((p: { name: string }) => p.name);
+  const requestedUrls = process.env.REQUESTED_URLS;
+  const players = requestedUrls
+    ? (JSON.parse(requestedUrls) as string[])
+    : JSON.parse(fs.readFileSync(path.resolve("all_players.json"), "utf8")).map(
+        (p: { name: string }) => p.name,
+      );
 
   const chunkedPlayers = chunkArray<string>(players, 3); // Number specifies browser instances and amount of arrays to process
   const globalStart = performance.now();
@@ -42,33 +57,69 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
       await page.setViewport({ width: 1080, height: 2000 });
       let cookieHandled = false;
 
-      for (const name of chunk) {
-        const label = `[${players.indexOf(name) + 1}/${players.length}]`;
+      for (let i = 0; i < chunk.length; i++) {
+        const name = chunk[i];
+        let nameForDb = name;
+        const label = `[${i + 1}/${chunk.length}]`;
+        const isUrl = /^https?:\/\//i.test(name);
+        const tmIdFromUrl = isUrl
+          ? Number.parseInt(name.match(/spieler\/(\d+)/i)?.[1] ?? "", 10)
+          : null;
 
-        // 👉 Skip if player already exists in DB
-        const existing = db
-          .prepare("SELECT 1 FROM players WHERE name = ?")
-          .get(name);
-        if (existing) {
-          console.log(
-            `${label} ⏭️ ${name} bereits in der Datenbank – übersprungen.`
-          );
-          continue;
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const staleCutoff = nowSeconds - 60 * 60 * 24 * 7 * 8;
+
+        if (isUrl && tmIdFromUrl) {
+          const existing = db
+            .prepare("SELECT last_scraped_at FROM players WHERE tm_id = ?")
+            .get(tmIdFromUrl) as
+            | { last_scraped_at: number | null }
+            | undefined;
+          if (
+            existing?.last_scraped_at &&
+            existing.last_scraped_at >= staleCutoff
+          ) {
+            console.log(
+              `${label} Skip: tm_id ${tmIdFromUrl} recently scraped.`,
+            );
+            continue;
+          }
+        }
+
+        // Skip if player already exists in DB and was scraped recently
+        if (!isUrl) {
+          const existing = db
+            .prepare("SELECT last_scraped_at FROM players WHERE name = ?")
+            .get(name) as { last_scraped_at: number | null } | undefined;
+          if (existing) {
+            if (existing.last_scraped_at && existing.last_scraped_at >= staleCutoff) {
+              console.log(`${label} Skip: ${name} recently scraped.`);
+              continue;
+            }
+            console.log(`${label} Re-scrape: ${name} last updated > 8 weeks ago.`);
+          }
         }
 
         const start = performance.now();
-        console.log(`${label} 🔍 Lade ${name} ...`);
+        console.log(`${label} Loading ${name}...`);
 
         try {
-          await page.goto(
-            `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(
-              name
-            )}`,
-            {
+          if (isUrl) {
+            await page.goto(name, {
               waitUntil: "networkidle2",
               timeout: 0,
-            }
-          );
+            });
+          } else {
+            await page.goto(
+              `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(
+                name
+              )}`,
+              {
+                waitUntil: "networkidle2",
+                timeout: 0,
+              }
+            );
+          }
 
           if (!cookieHandled) {
             try {
@@ -86,10 +137,12 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
             } catch {}
           }
 
-          const firstLink =
-            ".responsive-table:first-of-type tbody tr:first-of-type td.hauptlink>a";
-          await page.waitForSelector(firstLink, { timeout: 60000 });
-          await page.click(firstLink);
+          if (!isUrl) {
+            const firstLink =
+              ".responsive-table:first-of-type tbody tr:first-of-type td.hauptlink>a";
+            await page.waitForSelector(firstLink, { timeout: 60000 });
+            await page.click(firstLink);
+          }
           await page.waitForSelector("div.spielerdatenundfakten", {
             timeout: 60000,
           });
@@ -189,9 +242,9 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
             );
           });
 
-          const active: boolean | null = await page.evaluate(() => {
+          const active: boolean = await page.evaluate(() => {
             const box = document.querySelector("div.data-header__box--big");
-            if (!box) return null;
+            if (!box) return true;
             const club = box
               .querySelector("span.data-header__club")
               ?.textContent?.trim();
@@ -231,6 +284,42 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
             return label?.nextElementSibling?.textContent?.trim() ?? null;
           });
 
+          const profileUrl = page.url();
+          const urlMatch = profileUrl.match(
+            /transfermarkt\.com\/([^\/]+)\/profil\/spieler\/(\d+)/i
+          );
+          const tmShortSlug = urlMatch?.[1] ?? null;
+          const tmId = urlMatch?.[2] ? Number.parseInt(urlMatch[2], 10) : null;
+          const tmShortName = tmShortSlug ? titleizeSlug(tmShortSlug) : null;
+
+          const headlineName = await page.evaluate(() => {
+            const h1 = document.querySelector("h1");
+            if (!h1) return null;
+            h1.querySelectorAll("span.data-header__shirt-number").forEach((el) =>
+              el.remove(),
+            );
+            return h1.textContent?.trim() || null;
+          });
+
+          const fullName = await page.evaluate(() => {
+            const label = Array.from(
+              document.querySelectorAll("span.info-table__content--regular")
+            ).find((el) => el.textContent?.trim() === "Full name:");
+            const value = label?.nextElementSibling;
+            return value && value.textContent ? value.textContent.trim() : null;
+          });
+
+          const shortName = await page.evaluate(() => {
+            const label = Array.from(
+              document.querySelectorAll("span.info-table__content--regular")
+            ).find((el) => el.textContent?.trim() === "Short name:");
+            const value = label?.nextElementSibling;
+            return value && value.textContent ? value.textContent.trim() : null;
+          });
+
+          nameForDb = shortName || headlineName || tmShortName || name;
+          const tmShortDisplay = shortName || headlineName || tmShortName;
+
           let current_club_id: number | null = null;
 
           if (active === true) {
@@ -241,14 +330,10 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
               const value = label?.nextElementSibling;
               const name =
                 value?.querySelector("a[title]")?.textContent?.trim() ?? null;
-              const href =
-                value?.querySelector("a")?.getAttribute("href") ?? "";
+              const href = value?.querySelector("a")?.getAttribute("href") ?? "";
               const idMatch = href.match(/verein\/(\d+)/);
               const clubId = idMatch ? Number.parseInt(idMatch[1], 10) : null;
-              const img = value?.querySelector("img");
-              const srcset = img?.getAttribute("srcset") ?? "";
-              const logo = srcset.split(",")[0]?.split(" ")[0] ?? null;
-              return { name, clubId, logo };
+              return { name, clubId };
             });
 
             if (clubInfo?.clubId) {
@@ -257,40 +342,22 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
                 .get(clubInfo.clubId);
               current_club_id = clubInfo.clubId;
 
-              if (!exists && clubInfo.name && clubInfo.logo) {
-                const safeLogoUrl = clubInfo.logo.startsWith("http")
-                  ? clubInfo.logo
-                  : `https:${clubInfo.logo}`;
-                const logoSizedUrl = safeLogoUrl.replace("/small/", "/header/");
-                const safeName = clubInfo.name
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")
-                  .replace(/[^a-z0-9\-]/g, "");
-                const filename = `${safeName}.png`;
-                const logoPath = `/assets/logos/${filename}`;
-                const logoDir = path.resolve("public/assets/logos");
-                const fullPath = path.join(logoDir, filename);
-
-                if (!fs.existsSync(logoDir))
-                  fs.mkdirSync(logoDir, { recursive: true });
-                if (!fs.existsSync(fullPath)) {
-                  const res = await fetch(logoSizedUrl);
-                  if (res.ok) {
-                    const buffer = await res.arrayBuffer();
-                    fs.writeFileSync(fullPath, Buffer.from(buffer));
-                  }
-                }
-
-                upsertClub(clubInfo.clubId, clubInfo.name as string, logoPath);
+              if (!exists && clubInfo.name) {
+                upsertClub(clubInfo.clubId, clubInfo.name as string, null);
               }
             }
           }
 
           upsertPlayer({
-            name,
+            name: nameForDb,
+            tm_id: tmId,
+            tm_url: profileUrl,
+            tm_short_name: tmShortDisplay,
+            tm_full_name: fullName,
+            last_scraped_at: nowSeconds,
             birthdate: birthdate ?? null,
             height_cm,
-            active: active === null ? null : active ? 1 : 0,
+            active: active ? 1 : 0,
             retired_since,
             foot,
             current_club_id,
@@ -303,24 +370,33 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
             total_stats: [],
           });
 
-          const playerRecord = db
-            .prepare("SELECT id FROM players WHERE name = ?")
-            .get(name) as { id: number } | undefined;
+          const playerRecord = (tmId
+            ? db.prepare("SELECT id FROM players WHERE tm_id = ?").get(tmId)
+            : db
+                .prepare("SELECT id FROM players WHERE name = ?")
+                .get(nameForDb)) as { id: number } | undefined;
           const playerId = playerRecord?.id;
           if (playerId) {
-            await scrapeTransfersForPlayer(page, playerId, name, true);
-            await scrapeCareerStatsForPlayer(page, playerId, name);
+            try {
+              await scrapeTransfersForPlayer(page, playerId, nameForDb, true);
+            } catch (err) {
+              console.warn("Transfers scrape failed for:", nameForDb, err);
+              logScrapeError("transfer-scrape", nameForDb, err);
+            }
+            try {
+              await scrapeCareerStatsForPlayer(page, playerId, nameForDb);
+            } catch (err) {
+              console.warn("Stats scrape failed for:", nameForDb, err);
+              logScrapeError("stats-scrape", nameForDb, err);
+            }
           }
 
           const duration = (performance.now() - start) / 1000;
           totalScrapeTime += duration;
-          console.log(`${label} ✅ ${name} fertig in ${duration.toFixed(2)}s`);
+          console.log(`${label} Done: ${nameForDb} in ${duration.toFixed(2)}s`);
         } catch (err) {
-          console.error("❌ Fehler bei:", name, err);
-          const errorLog = `[${new Date().toISOString()}] ${name}: ${
-            err instanceof Error ? err.message : String(err)
-          }\n`;
-          fs.appendFileSync("error.txt", errorLog, "utf8");
+          console.error("Error for:", nameForDb, err);
+          logScrapeError("player-scrape", nameForDb, err);
         }
 
         await sleep(500);
@@ -333,10 +409,8 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
   );
 
   const totalDuration = (performance.now() - globalStart) / 1000;
-  console.log(`\n🏁 Gesamtdauer: ${totalDuration.toFixed(2)}s`);
+  console.log(`\nTotal duration: ${totalDuration.toFixed(2)}s`);
   console.log(
-    `📊 Ø Scrape-Zeit pro Spieler: ${(totalScrapeTime / players.length).toFixed(
-      2
-    )}s`
+    `Scrape time per player: ${(totalScrapeTime / players.length).toFixed(2)}s`
   );
 })();

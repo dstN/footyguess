@@ -13,17 +13,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const session = db
-    .prepare(`SELECT id, streak, best_streak, nickname FROM sessions WHERE id = ?`)
-    .get(sessionId) as { id: string; streak: number; best_streak: number; nickname?: string } | undefined;
-
-  const totals = db
-    .prepare(`SELECT IFNULL(SUM(score),0) AS totalScore FROM scores WHERE session_id = ?`)
-    .get(sessionId) as { totalScore: number };
+    .prepare(
+      `SELECT id, streak, best_streak, nickname, total_score FROM sessions WHERE id = ?`,
+    )
+    .get(sessionId) as
+    | { id: string; streak: number; best_streak: number; nickname?: string; total_score?: number }
+    | undefined;
 
   const lastScore = db
     .prepare(
       `
-      SELECT s.score, s.base_score, s.streak, r.player_id
+      SELECT s.score, s.base_score, s.time_score, s.streak, r.player_id
       FROM scores s
       JOIN rounds r ON r.id = s.round_id
       WHERE s.session_id = ?
@@ -31,7 +31,9 @@ export default defineEventHandler(async (event) => {
       LIMIT 1
     `,
     )
-    .get(sessionId) as { score: number; base_score: number; streak: number; player_id: number } | undefined;
+    .get(sessionId) as
+    | { score: number; base_score: number; time_score: number; streak: number; player_id: number }
+    | undefined;
 
   const lastPlayer = lastScore
     ? (db
@@ -39,19 +41,25 @@ export default defineEventHandler(async (event) => {
         .get(lastScore.player_id) as { name: string } | undefined)
     : undefined;
 
+  const cachedTotal =
+    session?.total_score === null || session?.total_score === undefined
+      ? (db
+          .prepare(`SELECT IFNULL(SUM(score),0) AS totalScore FROM scores WHERE session_id = ?`)
+          .get(sessionId) as { totalScore: number }).totalScore
+      : session.total_score;
+
   return {
     sessionId,
     nickname: session?.nickname ?? null,
     streak: session?.streak ?? 0,
     bestStreak: session?.best_streak ?? 0,
-    totalScore: (totals?.totalScore ?? 0) + (session?.streak ?? 0),
+    totalScore: (cachedTotal ?? 0) + (session?.streak ?? 0),
     lastScore: lastScore
       ? (() => {
           const streakBonus = getStreakBonusMultiplier(lastScore.streak ?? 0);
           const timeMultiplier =
-            lastScore.base_score && lastScore.score
-              ? lastScore.score /
-                (lastScore.base_score * (1 + streakBonus) || 1)
+            lastScore.base_score && lastScore.time_score
+              ? lastScore.time_score / (lastScore.base_score || 1)
               : 1;
           return {
             score: lastScore.score,

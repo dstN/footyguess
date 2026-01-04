@@ -1,5 +1,15 @@
-// 📁 server/db/insert.ts
 import db from "./connection";
+
+function normalizeSearch(value?: string | null) {
+  if (!value) return null;
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['’]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
 
 export function upsertClub(id: number, name: string, logoPath: string | null) {
   const stmt = db.prepare(`
@@ -14,6 +24,11 @@ export function upsertClub(id: number, name: string, logoPath: string | null) {
 
 export interface PlayerInsert {
   name: string;
+  tm_id?: number | null;
+  tm_url?: string | null;
+  tm_short_name?: string | null;
+  tm_full_name?: string | null;
+  last_scraped_at?: number | null;
   birthdate?: string | null;
   height_cm?: number | null;
   active?: number | null;
@@ -30,35 +45,11 @@ export interface PlayerInsert {
 }
 
 export function upsertPlayer(player: PlayerInsert) {
-  const stmt = db.prepare(`
-    INSERT INTO players (
-      name, birthdate, height_cm, active, retired_since, foot, current_club_id,
-      total_worth, shirt_number, main_position, secondary_positions,
-      birthplace, nationalities, total_stats
-    )
-    VALUES (
-      @name, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
-      @total_worth, @shirt_number, @main_position, @secondary_positions,
-      @birthplace, @nationalities, @total_stats
-    )
-    ON CONFLICT(name) DO UPDATE SET
-      birthdate = excluded.birthdate,
-      height_cm = excluded.height_cm,
-      active = excluded.active,
-      retired_since = excluded.retired_since,
-      foot = excluded.foot,
-      current_club_id = excluded.current_club_id,
-      total_worth = excluded.total_worth,
-      shirt_number = excluded.shirt_number,
-      main_position = excluded.main_position,
-      secondary_positions = excluded.secondary_positions,
-      birthplace = excluded.birthplace,
-      nationalities = excluded.nationalities,
-      total_stats = excluded.total_stats;
-  `);
-
-  stmt.run({
+  const data = {
     ...player,
+    name_search: normalizeSearch(player.name),
+    tm_short_name_search: normalizeSearch(player.tm_short_name),
+    tm_full_name_search: normalizeSearch(player.tm_full_name),
     secondary_positions: player.secondary_positions
       ? JSON.stringify(player.secondary_positions)
       : null,
@@ -66,7 +57,83 @@ export function upsertPlayer(player: PlayerInsert) {
       ? JSON.stringify(player.nationalities)
       : null,
     total_stats: player.total_stats ? JSON.stringify(player.total_stats) : null,
-  });
+  };
+
+  if (player.tm_id) {
+    const stmt = db.prepare(`
+      INSERT INTO players (
+        name, name_search, tm_id, tm_url, tm_short_name, tm_short_name_search, tm_full_name, tm_full_name_search, last_scraped_at, birthdate, height_cm, active, retired_since, foot, current_club_id,
+        total_worth, shirt_number, main_position, secondary_positions,
+        birthplace, nationalities, total_stats
+      )
+      VALUES (
+        @name, @name_search, @tm_id, @tm_url, @tm_short_name, @tm_short_name_search, @tm_full_name, @tm_full_name_search, @last_scraped_at, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
+        @total_worth, @shirt_number, @main_position, @secondary_positions,
+        @birthplace, @nationalities, @total_stats
+      )
+      ON CONFLICT(tm_id) DO UPDATE SET
+        name = excluded.name,
+        name_search = excluded.name_search,
+        tm_url = excluded.tm_url,
+        tm_short_name = excluded.tm_short_name,
+        tm_short_name_search = excluded.tm_short_name_search,
+        tm_full_name = excluded.tm_full_name,
+        tm_full_name_search = excluded.tm_full_name_search,
+        last_scraped_at = excluded.last_scraped_at,
+        birthdate = excluded.birthdate,
+        height_cm = excluded.height_cm,
+        active = excluded.active,
+        retired_since = excluded.retired_since,
+        foot = excluded.foot,
+        current_club_id = excluded.current_club_id,
+        total_worth = excluded.total_worth,
+        shirt_number = excluded.shirt_number,
+        main_position = excluded.main_position,
+        secondary_positions = excluded.secondary_positions,
+        birthplace = excluded.birthplace,
+        nationalities = excluded.nationalities,
+        total_stats = excluded.total_stats;
+    `);
+    stmt.run(data);
+    return;
+  }
+
+  const stmt = db.prepare(`
+      INSERT INTO players (
+        name, name_search, tm_id, tm_url, tm_short_name, tm_short_name_search, tm_full_name, tm_full_name_search, last_scraped_at, birthdate, height_cm, active, retired_since, foot, current_club_id,
+        total_worth, shirt_number, main_position, secondary_positions,
+        birthplace, nationalities, total_stats
+      )
+      VALUES (
+        @name, @name_search, @tm_id, @tm_url, @tm_short_name, @tm_short_name_search, @tm_full_name, @tm_full_name_search, @last_scraped_at, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
+        @total_worth, @shirt_number, @main_position, @secondary_positions,
+        @birthplace, @nationalities, @total_stats
+      )
+      ON CONFLICT(name) DO UPDATE SET
+        tm_id = excluded.tm_id,
+        tm_url = excluded.tm_url,
+        tm_short_name = excluded.tm_short_name,
+        tm_short_name_search = excluded.tm_short_name_search,
+        tm_full_name = excluded.tm_full_name,
+        tm_full_name_search = excluded.tm_full_name_search,
+        name_search = excluded.name_search,
+        last_scraped_at = excluded.last_scraped_at,
+        birthdate = excluded.birthdate,
+        height_cm = excluded.height_cm,
+        active = excluded.active,
+        retired_since = excluded.retired_since,
+        foot = excluded.foot,
+        current_club_id = excluded.current_club_id,
+        total_worth = excluded.total_worth,
+        shirt_number = excluded.shirt_number,
+        main_position = excluded.main_position,
+        secondary_positions = excluded.secondary_positions,
+        birthplace = excluded.birthplace,
+        nationalities = excluded.nationalities,
+        total_stats = excluded.total_stats;
+    `);
+
+  stmt.run(data);
 }
 
 export function insertTransfer(data: {
@@ -194,3 +261,4 @@ export function updateTotalStatsForPlayer(
   `);
   stmt.run(totalStatsJson, playerId);
 }
+

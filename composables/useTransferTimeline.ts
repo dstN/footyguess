@@ -15,11 +15,10 @@ export function useTransferTimeline(player: Ref<Player | null>) {
     if (!player.value?.transfers?.length) return [];
     const isRetired = player.value?.active === 0;
 
-    const ordered = [...player.value.transfers].reverse();
-    let prevWasFreeAgent = false;
+    const ordered = [...player.value.transfers];
 
     return ordered.map((transfer: any, index: number, arr: any[]) => {
-      const isLatest = index === arr.length - 1;
+      const isLatest = index === 0;
       const isToUnknown = !transfer.to_club || transfer.to_club === "Unknown club";
       const toLabel =
         isRetired && isLatest
@@ -28,9 +27,16 @@ export function useTransferTimeline(player: Ref<Player | null>) {
             ? "Free agent"
             : transfer.to_club;
 
+      const nextTransfer = arr[index + 1];
+      const nextToLabel = nextTransfer
+        ? !nextTransfer.to_club || nextTransfer.to_club === "Unknown club"
+          ? "Free agent"
+          : nextTransfer.to_club
+        : null;
+      const fromIsUnknown =
+        transfer.from_club === null || transfer.from_club === "Unknown club";
       const fromLabel =
-        prevWasFreeAgent &&
-        (transfer.from_club === null || transfer.from_club === "Unknown club")
+        nextToLabel === "Free agent" && fromIsUnknown
           ? "Free agent"
           : transfer.from_club || "Unknown club";
 
@@ -41,8 +47,6 @@ export function useTransferTimeline(player: Ref<Player | null>) {
         fromLabel === "Free agent" ||
         (isRetired && isLatest);
       const description = hideDescription ? "" : baseDescription;
-
-      prevWasFreeAgent = toLabel === "Free agent";
 
       return {
         id: `${transfer.transfer_date ?? transfer.season ?? Math.random()}`,

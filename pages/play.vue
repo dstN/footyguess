@@ -117,6 +117,44 @@
         :difficulty="difficulty"
         :current-streak="streak"
       />
+
+      <UCard
+        v-if="isDev"
+        class="border-primary-900/40 border bg-slate-950/60"
+      >
+        <template #header>
+          <p class="text-primary-200 text-xs tracking-[0.18em] uppercase">
+            Dev only
+          </p>
+        </template>
+        <div class="space-y-3">
+          <p class="text-sm text-slate-300">
+            Request a player by Transfermarkt URL.
+          </p>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <UInput
+              v-model="devUrl"
+              placeholder="https://www.transfermarkt.com/..."
+              size="lg"
+              class="flex-1"
+            />
+            <UButton
+              color="primary"
+              :loading="devSubmitting"
+              @click="submitDevUrl"
+            >
+              Submit URL
+            </UButton>
+          </div>
+          <p v-if="devStatus" class="text-sm text-slate-200">
+            Status: {{ devStatus }}
+            <span v-if="devPlayerId"> (Player ID: {{ devPlayerId }})</span>
+          </p>
+          <p v-if="devError" class="text-sm text-red-400">
+            {{ devError }}
+          </p>
+        </div>
+      </UCard>
     </section>
 
     <GuessFooter
@@ -176,6 +214,66 @@ const {
   onSubmit,
   clearGuess,
 } = usePlayGame();
+
+const isDev = import.meta.dev;
+const devUrl = ref("");
+const devStatus = ref<string | null>(null);
+const devError = ref<string | null>(null);
+const devSubmitting = ref(false);
+const devRequestId = ref<number | null>(null);
+const devPlayerId = ref<number | null>(null);
+let devPollTimer: ReturnType<typeof setInterval> | null = null;
+
+async function pollDevStatus() {
+  if (!devRequestId.value) return;
+  try {
+    const res = await $fetch<{
+      status: string;
+      playerId: number | null;
+      error: string | null;
+    }>(`/api/requestStatus?id=${devRequestId.value}`);
+    devStatus.value = res.status;
+    devPlayerId.value = res.playerId ?? null;
+    if (res.error) devError.value = res.error;
+    if (["done", "failed"].includes(res.status) && devPollTimer) {
+      clearInterval(devPollTimer);
+      devPollTimer = null;
+    }
+  } catch (err) {
+    devError.value = "Failed to fetch request status.";
+  }
+}
+
+async function submitDevUrl() {
+  devError.value = null;
+  devStatus.value = null;
+  devPlayerId.value = null;
+  if (!devUrl.value.trim()) return;
+  devSubmitting.value = true;
+  try {
+    const res = await $fetch<{ id: number; status: string; playerId: number | null }>(
+      "/api/requestPlayer",
+      {
+        method: "POST",
+        body: { url: devUrl.value.trim() },
+      },
+    );
+    devRequestId.value = res.id;
+    devStatus.value = res.status;
+    devPlayerId.value = res.playerId ?? null;
+    if (!devPollTimer) {
+      devPollTimer = setInterval(pollDevStatus, 5000);
+    }
+  } catch (err) {
+    devError.value = "Failed to submit URL.";
+  } finally {
+    devSubmitting.value = false;
+  }
+}
+
+onBeforeUnmount(() => {
+  if (devPollTimer) clearInterval(devPollTimer);
+});
 </script>
 
 <style scoped>
