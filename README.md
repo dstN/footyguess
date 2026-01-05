@@ -52,7 +52,7 @@ A football guessing game where players decode the mystery of a footballer's care
 - **Nitro** (Nuxt server engine)
 - **SQLite** with better-sqlite3 for fast local queries
 - **Valibot** for runtime validation
-- **Puppeteer** for web scraping TransferMarkt data
+- **Puppeteer** for data integration and enrichment
 
 ### Architecture
 - **Server-side API routes** for secure data handling
@@ -114,7 +114,7 @@ footyguess/
 │   │   ├── schema.ts          # Database schema
 │   │   ├── insert.ts          # Data insertion utilities
 │   │   └── file/
-│   ├── scraper/               # TransferMarkt scraper
+│   ├── scraper/               # External data integration
 │   │   ├── scrape-players.ts
 │   │   ├── scrape-transfers.ts
 │   │   ├── scrape-career.ts
@@ -219,9 +219,9 @@ npm run preview
 
 ### Schema Highlights
 - **players** (1,900+ records with seed data)
-  - Includes TransferMarkt data: position, nationality, market value
+  - Includes comprehensive player data: position, nationality, market value
   - Indexed for fast name search (name_search, tm_short_name_search, tm_full_name_search)
-  - Scraped from Wikidata + TransferMarkt
+  - Data from public sources
 - **clubs** 
   - Club information with logo paths
 - **transfers** (500K+ total records across all players)
@@ -406,7 +406,7 @@ MIT License - Feel free to use and modify.
 
 ## 🙏 Credits
 
-- **Data**: TransferMarkt (via Puppeteer scraper)
+- **Data**: Public football data sources
 - **UI Library**: Nuxt UI v4 + Tailwind CSS
 - **Icons**: Lucide React
 - **Framework**: Nuxt 4 & Vue 3 Composition API
