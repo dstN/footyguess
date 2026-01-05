@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from "vue";
 import type { Player } from "~/types/player";
 import { SeededRandom } from "~/utils/seeded-random";
 
+/** Types of clues available in the game */
 export type ClueKey =
   | "age"
   | "origin"
@@ -16,14 +17,51 @@ export type ClueKey =
   | "discipline"
   | "mostAppearances";
 
+/** A single clue that can be revealed to the player */
 export interface Clue {
+  /** Unique identifier for the clue type */
   key: ClueKey;
+  /** Human-readable label for UI display (e.g., "Age", "Position") */
   label: string;
+  /** The actual clue value (e.g., "27 years", "Striker"), null if unknown */
   value: string | null;
+  /** Icon class for the clue (lucide icon, e.g., "i-lucide-hourglass") */
   icon: string;
+  /** Color accent for styling the clue badge */
   accent: "primary" | "secondary" | "info" | "success" | "warning";
 }
 
+/**
+ * Composable for managing the pool of clues about a player.
+ * 
+ * Key features:
+ * - Generates 12 available clues from player data
+ * - Tracks which clues have been revealed (max 10 due to capping)
+ * - Uses seeded randomness for deterministic initial clue selection
+ * - Handles clue revelation via API with loading/error states
+ * - Validates max clues allowed from server response
+ *
+ * Clue types available:
+ * - Demographics: age, height, birthplace, origin
+ * - Playing style: foot, position
+ * - Performance: totals, goals per game, assists per game, discipline
+ * - Competition: most frequent competition
+ *
+ * @param player - Reactive reference to the current player (triggers clue regeneration)
+ * @param opts.isLoading - Optional loading state reference to use
+ * @returns Object with clue state and functions
+ *
+ * @example
+ * const { revealedClues, hiddenClueLabels, selectRandomClues, revealNextClue } 
+ *   = useCluePool(playerRef, { isLoading: loadingRef });
+ *
+ * // Initial clues selected deterministically by player ID
+ * // Player 123 always gets same first 3 clues revealed
+ * selectRandomClues();
+ *
+ * // Reveal one more clue via API
+ * await revealNextClue();
+ */
 export function useCluePool(
   player: Ref<Player | null>,
   opts: { isLoading?: Ref<boolean> } = {},
@@ -34,6 +72,15 @@ export function useCluePool(
   const availableClues = ref<Clue[]>([]);
   const revealedTips = ref<ClueKey[]>([]);
 
+  /**
+   * Compute all available clues for the current player.
+   * 
+   * Generates a full pool of 12 clues from player data fields.
+   * Handles missing/null data gracefully (clue.value = null).
+   * Computed automatically when player changes.
+   *
+   * @returns Array of Clue objects with all information available
+   */
   const cluePool = computed<Clue[]>(() => {
     if (!player.value) return [];
     const age = getAge(player.value.birthdate);

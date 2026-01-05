@@ -28,12 +28,40 @@ export interface Difficulty {
 
 type StatRow = { competition_id: string; appearances: number };
 
+/**
+ * Sum appearances from stats rows for specific competition IDs.
+ * Used to count total appearances in a group of competitions (e.g., Top 5 leagues).
+ *
+ * @param stats - Array of player statistics by competition
+ * @param ids - Array of competition IDs to sum
+ * @returns Total appearances in the specified competitions
+ *
+ * @example
+ * const top5Apps = sumAppearances(stats, TOP5_LEAGUES);
+ * // Returns: 250 (total apps in Premier League, La Liga, etc.)
+ */
 function sumAppearances(stats: StatRow[], ids: string[]) {
   return stats
     .filter((s) => ids.includes(s.competition_id))
     .reduce((acc, s) => acc + (Number(s.appearances) || 0), 0);
 }
 
+/**
+ * Calculate weighted appearance count for international competitions.
+ * Different competitions have different weights based on prestige:
+ * - Champions League: 1.25x (most prestigious)
+ * - Europa League: 1.25x
+ * - UEFA competitions: 0.75x
+ * - National league cups: 0.5x
+ * - Lesser competitions: 0.25x
+ *
+ * @param stats - Array of player statistics by competition
+ * @returns Weighted sum of international competition appearances
+ *
+ * @example
+ * const intlApps = sumWeightedInternational(stats);
+ * // A player with 20 CL apps + 30 Europa apps = 20*1.25 + 30*1.25 = 62.5
+ */
 function sumWeightedInternational(stats: StatRow[]) {
   return stats
     .filter((s) => INTL_COMPS.includes(s.competition_id))
@@ -44,6 +72,30 @@ function sumWeightedInternational(stats: StatRow[]) {
     }, 0);
 }
 
+/**
+ * Determine difficulty tier and point multiplier based on appearance count.
+ * Tier is determined by competition basis:
+ * 
+ * International basis thresholds:
+ * - >80 apps: Easy (1.0x)
+ * - 60-80 apps: Medium (1.25x)
+ * - 45-60 apps: Hard (1.5x)
+ * - <45 apps: Ultra (2.0x)
+ *
+ * Top 5 leagues basis thresholds:
+ * - >400 apps: Easy (1.0x)
+ * - 200-400 apps: Medium (1.25x)
+ * - 100-200 apps: Hard (1.5x)
+ * - <100 apps: Ultra (2.0x)
+ *
+ * @param basis - Whether calculating by international or top5 league experience
+ * @param totalApps - Total weighted appearances
+ * @returns Object containing tier name and point multiplier
+ *
+ * @example
+ * getTier("international", 70) // => { tier: 'medium', multiplier: 1.25 }
+ * getTier("top5", 250) // => { tier: 'medium', multiplier: 1.25 }
+ */
 function getTier(
   basis: DifficultyBasis,
   totalApps: number,
@@ -66,6 +118,38 @@ function getTier(
   return { tier: "ultra", multiplier: 2 };
 }
 
+/**
+ * Compute the difficulty tier for a player based on their competition appearances.
+ * 
+ * Algorithm:
+ * 1. Calculate weighted international appearances (applies INTL_WEIGHTS multipliers)
+ * 2. Calculate total Top 5 league appearances
+ * 3. Prefer international tier if it's not ultra; otherwise use Top 5 tier
+ * 4. Special case: if basis is Top 5 and tier is easy but intl apps <50, downgrade to medium
+ *    (to prevent obscure players from feeling too easy)
+ * 5. Apply forceUltra override if specified (for hard mode)
+ *
+ * @param stats - Array of player statistics with competition_id and appearances
+ * @param opts - Options object
+ * @param opts.forceUltra - If true, always return ultra tier (for hard mode)
+ * @returns Difficulty object with tier, multiplier, basis, and total appearances
+ *
+ * @example
+ * const difficulty = computeDifficulty(playerStats);
+ * // Returns: {
+ * //   tier: 'hard',
+ * //   multiplier: 1.5,
+ * //   basis: 'international',
+ * //   totalAppearances: 55,
+ * //   basePoints: 100,
+ * //   cluePenalty: 10
+ * // }
+ *
+ * @example
+ * // Hard mode forces ultra difficulty
+ * const hardModeDiff = computeDifficulty(playerStats, { forceUltra: true });
+ * // Returns: { tier: 'ultra', multiplier: 2, ...}
+ */
 export function computeDifficulty(
   stats: StatRow[],
   opts: { forceUltra?: boolean } = {},
