@@ -1,5 +1,6 @@
 import { computed, ref, type Ref } from "vue";
 import type { Player } from "~/types/player";
+import { SeededRandom } from "~/utils/seeded-random";
 
 export type ClueKey =
   | "age"
@@ -123,7 +124,10 @@ export function useCluePool(
 
   function selectRandomClues() {
     const pool = cluePool.value.filter((clue) => Boolean(clue.value));
-    const shuffled = shuffle(pool);
+    // Use seeded random based on player ID for deterministic clue selection
+    // Same player always gets same random clues
+    const rng = new SeededRandom(player.value?.id ?? 0);
+    const shuffled = shuffle(pool, rng);
     availableClues.value = shuffled.slice(0, 5);
     revealedTips.value = [];
   }
@@ -189,10 +193,10 @@ function getMostAppearancesCompetition(stats: any[]) {
   return `${top.competition} (${top.appearances ?? "?"} apps)`;
 }
 
-function shuffle<T>(arr: T[]): T[] {
+function shuffle<T>(arr: T[], rng?: SeededRandom): T[] {
   const copy: T[] = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = rng ? rng.nextInt(i + 1) : Math.floor(Math.random() * (i + 1));
     const tmp = copy[i] as T;
     copy[i] = copy[j] as T;
     copy[j] = tmp;
