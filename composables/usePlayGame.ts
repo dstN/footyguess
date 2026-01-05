@@ -2,6 +2,8 @@ import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import * as v from "valibot";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
+import type { GuessFormState, GuessFormOutput } from "~/types/forms";
+import { GuessFormSchema } from "~/types/forms";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
@@ -33,12 +35,9 @@ export function usePlayGame() {
   const confirmResetOpen = ref(false);
   const pendingName = ref<string | undefined>(undefined);
 
-  const schema = v.object({
-    guess: v.pipe(v.string(), v.minLength(1, "Please guess a player")),
-  });
-  type Schema = v.InferOutput<typeof schema>;
+  const schema = GuessFormSchema;
 
-  const formState = reactive<Schema>({
+  const formState = reactive<GuessFormState>({
     guess: "",
   });
 
@@ -128,7 +127,7 @@ export function usePlayGame() {
     }
   }
 
-  async function onSubmit(event: FormSubmitEvent<any>) {
+  async function onSubmit(event: FormSubmitEvent<GuessFormOutput>) {
     event.preventDefault();
     if (!player.value || !round.value) return;
     const rawGuess = (event as any).data?.guess as unknown;
@@ -141,14 +140,13 @@ export function usePlayGame() {
     onSubmit({
       preventDefault: () => {},
       data: { guess: formState.guess },
-    } as FormSubmitEvent<any>);
+    } as FormSubmitEvent<GuessFormOutput>);
   }
 
   function clearGuess() {
     formState.guess = "";
     clearSearch();
   }
-
   function requestNewPlayer(name?: string) {
     if (streak.value > 0) {
       pendingName.value = name;

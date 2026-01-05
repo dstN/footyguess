@@ -76,10 +76,11 @@
 
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
+import type { GuessFormState, GuessFormOutput } from "~/types/forms";
 
 const props = defineProps<{
-  schema: any;
-  state: any;
+  schema: any; // Still using any because UForm passes schema at runtime
+  state: GuessFormState;
   modelValue: string;
   searchTerm: string;
   suggestions: string[];
@@ -91,7 +92,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "update:modelValue", value: string): void;
   (e: "update:searchTerm", value: string): void;
-  (e: "submit", event: FormSubmitEvent<any>): void;
+  (e: "submit", event: FormSubmitEvent<GuessFormOutput>): void;
   (e: "enter"): void;
   (e: "clear"): void;
 }>();
