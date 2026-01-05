@@ -29,12 +29,9 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return errorResponse(
-        400,
-        "Invalid request body",
-        event,
-        { received: body },
-      );
+      return errorResponse(400, "Invalid request body", event, {
+        received: body,
+      });
     }
 
     // Verify token and validate round
@@ -55,11 +52,7 @@ export default defineEventHandler(async (event) => {
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return errorResponse(
-        404,
-        "Round not found",
-        event,
-      );
+      return errorResponse(404, "Round not found", event);
     }
 
     // Validate round ownership
@@ -73,39 +66,23 @@ export default defineEventHandler(async (event) => {
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return errorResponse(
-        410,
-        "Round expired",
-        event,
-      );
+      return errorResponse(410, "Round expired", event);
     }
 
     // Check clue limit
     if (hasReachedClueLimit(round.clues_used, round.max_clues_allowed ?? 0)) {
-      return errorResponse(
-        429,
-        "Clue limit reached",
-        event,
-      );
+      return errorResponse(429, "Clue limit reached", event);
     }
 
     // Record clue usage
     const result = useClue(parsed.data.roundId);
 
-    return successResponse(
-      {
-        cluesUsed: result.cluesUsed,
-        cluesRemaining: result.cluesRemaining,
-      },
-      event,
-    );
+    return {
+      cluesUsed: result.cluesUsed,
+      cluesRemaining: result.cluesRemaining,
+    };
   } catch (error) {
     logError("useClue error", error);
-    return errorResponse(
-      500,
-      "Failed to record clue",
-      event,
-      { error: error instanceof Error ? error.message : "Unknown error" },
-    );
+    throw createError({ statusCode: 500, statusMessage: "Failed to record clue" });
   }
 });

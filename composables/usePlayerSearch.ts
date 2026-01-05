@@ -18,7 +18,7 @@ export function usePlayerSearch() {
   const suggestions = ref<string[]>([]);
   const searchTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
   const abortController = ref<AbortController | null>(null);
-  
+
   // LRU cache: keep 20 most recent searches
   const searchCache = ref<Map<string, string[]>>(new Map());
   const recentSearches = ref<string[]>([]);
@@ -26,23 +26,23 @@ export function usePlayerSearch() {
 
   function updateCache(term: string, results: string[]) {
     searchCache.value.set(term, results);
-    
+
     // Maintain LRU - most recent first
     recentSearches.value = [
       term,
-      ...recentSearches.value.filter(s => s !== term)
+      ...recentSearches.value.filter((s) => s !== term),
     ].slice(0, 20);
   }
 
   function scheduleSearch(term: string) {
     if (searchTimeout.value) clearTimeout(searchTimeout.value);
-    
+
     searchTimeout.value = setTimeout(() => performSearch(term), 200);
   }
 
   async function performSearch(term: string) {
     const query = term.trim();
-    
+
     if (query.length < 2) {
       suggestions.value = [];
       return;
@@ -64,10 +64,10 @@ export function usePlayerSearch() {
       const results = await $fetch<string[]>(
         `/api/searchPlayers?q=${encodeURIComponent(query)}&limit=10`,
         {
-          signal: abortController.value.signal
-        }
+          signal: abortController.value.signal,
+        },
       );
-      
+
       // Only update if this request wasn't aborted
       if (!abortController.value.signal.aborted) {
         updateCache(query, results);
@@ -75,7 +75,7 @@ export function usePlayerSearch() {
       }
     } catch (error) {
       // Ignore AbortError from cancelled requests
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         return;
       }
       if (import.meta.dev) console.error("Search failed", error);

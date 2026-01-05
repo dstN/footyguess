@@ -53,7 +53,7 @@ describe("api routes", () => {
     });
 
     const result = await useClueHandler(event);
-    expect(result?.data?.cluesUsed).toBe(1);
+    expect(result?.cluesUsed).toBe(1);
   });
 
   it("guess awards score and updates session", async () => {
@@ -84,8 +84,8 @@ describe("api routes", () => {
     });
 
     const result = await guessHandler(event);
-    expect(result?.data?.correct).toBe(true);
-    expect(result?.data?.score).toBeGreaterThan(0);
+    expect(result?.correct).toBe(true);
+    expect(result?.score).toBeGreaterThan(0);
 
     const session = db
       .prepare(`SELECT streak, total_score FROM sessions WHERE id = ?`)

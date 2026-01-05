@@ -78,9 +78,7 @@ async function fetchStats() {
         playerName: string | null;
       } | null;
       nickname: string | null;
-    }>(
-      `/api/sessionStats?sessionId=${encodeURIComponent(sessionId.value)}`,
-    );
+    }>(`/api/sessionStats?sessionId=${encodeURIComponent(sessionId.value)}`);
     streak.value = res.streak ?? streak.value;
     bestStreak.value = res.bestStreak ?? bestStreak.value;
     totalScore.value = res.totalScore ?? 0;

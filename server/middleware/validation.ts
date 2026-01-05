@@ -145,11 +145,8 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     logError("Validation middleware error", error);
-    return errorResponse(
-      500,
-      "Validation failed",
-      event,
-      { error: error instanceof Error ? error.message : "Unknown error" },
-    );
+    return errorResponse(500, "Validation failed", event, {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 });

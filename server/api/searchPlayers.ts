@@ -79,20 +79,9 @@ export default defineEventHandler((event) => {
       name: string;
     }[];
 
-    return paginatedResponse(
-      rows.map((row) => row.name),
-      rows.length,
-      safeLimit,
-      0,
-      event,
-    );
+    return rows.map((row) => row.name);
   } catch (error) {
     logError("searchPlayers error", error);
-    return errorResponse(
-      500,
-      "Search failed",
-      event,
-      { error: error instanceof Error ? error.message : "Unknown error" },
-    );
+    throw createError({ statusCode: 500, statusMessage: "Search failed" });
   }
 });

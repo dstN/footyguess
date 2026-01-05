@@ -2,10 +2,10 @@
 
 /**
  * Bundle Size Monitoring Script
- * 
+ *
  * Checks production bundle size after build and enforces limits.
  * Helps prevent performance regressions.
- * 
+ *
  * Usage: node scripts/check-bundle-size.ts
  */
 

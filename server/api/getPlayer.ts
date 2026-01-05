@@ -21,12 +21,9 @@ export default defineEventHandler(async (event) => {
       query,
     );
     if (!parsed.ok) {
-      return errorResponse(
-        400,
-        "Invalid query parameters",
-        event,
-        { received: query },
-      );
+      return errorResponse(400, "Invalid query parameters", event, {
+        received: query,
+      });
     }
 
     const name = parsed.data.name;
@@ -47,11 +44,7 @@ export default defineEventHandler(async (event) => {
       .get(name) as Player | undefined;
 
     if (!player) {
-      return errorResponse(
-        404,
-        `Player "${name}" not found`,
-        event,
-      );
+      return errorResponse(404, `Player "${name}" not found`, event);
     }
 
     try {
@@ -137,29 +130,21 @@ export default defineEventHandler(async (event) => {
       exp: expiresAt,
     });
 
-    return successResponse(
-      {
-        ...player,
-        transfers,
-        stats,
-        difficulty,
-        round: {
-          id: roundId,
-          token,
-          sessionId,
-          expiresAt,
-          cluesUsed: 0,
-        },
+    return {
+      ...player,
+      transfers,
+      stats,
+      difficulty,
+      round: {
+        id: roundId,
+        token,
+        sessionId,
+        expiresAt,
+        cluesUsed: 0,
       },
-      event,
-    );
+    };
   } catch (error) {
     logError("getPlayer error", error);
-    return errorResponse(
-      500,
-      "Failed to load player",
-      event,
-      { error: error instanceof Error ? error.message : "Unknown error" },
-    );
+    throw createError({ statusCode: 500, statusMessage: "Failed to load player" });
   }
 });

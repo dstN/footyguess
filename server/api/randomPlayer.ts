@@ -26,12 +26,9 @@ export default defineEventHandler(async (event) => {
     query,
   );
   if (!parsed.ok) {
-    return errorResponse(
-      400,
-      "Invalid query parameters",
-      event,
-      { received: query },
-    );
+    return errorResponse(400, "Invalid query parameters", event, {
+      received: query,
+    });
   }
 
   const hardMode = parsed.data.mode === "hard";
@@ -194,20 +191,17 @@ export default defineEventHandler(async (event) => {
     exp: expiresAt,
   });
 
-  return successResponse(
-    {
-      ...base,
-      transfers,
-      stats,
-      difficulty,
-      round: {
-        id: roundId,
-        token,
-        sessionId,
-        expiresAt,
-        cluesUsed: 0,
-      },
+  return {
+    ...base,
+    transfers,
+    stats,
+    difficulty,
+    round: {
+      id: roundId,
+      token,
+      sessionId,
+      expiresAt,
+      cluesUsed: 0,
     },
-    event,
-  );
+  };
 });

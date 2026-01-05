@@ -73,110 +73,107 @@
   </ErrorBoundary>
 </template>
 
-<script
-  setup
-  lang="ts"
->
-  import ErrorBoundary from "~/components/ErrorBoundary.vue";
-  import ClueBar from "~/components/ClueBar.vue";
-  import GuessFooter from "~/components/GuessFooter.vue";
-  import TransferTimelineCard from "~/components/TransferTimelineCard.vue";
-  import PlayHeader from "~/components/PlayHeader.vue";
-  import DevPanel from "~/components/DevPanel.vue";
-  import { usePlayGame } from "~/composables/usePlayGame";
-  import { ref, onBeforeUnmount } from "vue";
+<script setup lang="ts">
+import ErrorBoundary from "~/components/ErrorBoundary.vue";
+import ClueBar from "~/components/ClueBar.vue";
+import GuessFooter from "~/components/GuessFooter.vue";
+import TransferTimelineCard from "~/components/TransferTimelineCard.vue";
+import PlayHeader from "~/components/PlayHeader.vue";
+import DevPanel from "~/components/DevPanel.vue";
+import { usePlayGame } from "~/composables/usePlayGame";
+import { ref, onBeforeUnmount } from "vue";
 
-  useHead({
-    title: "Footyguess - Mystery Player",
-  });
+useHead({
+  title: "Footyguess - Mystery Player",
+});
 
-  const {
-    schema,
-    formState,
-    hasGuess,
-    currentName,
-    isLoading,
-    errorMessage,
-    isError,
-    revealedClues,
-    hiddenClueLabels,
-    tipButtonDisabled,
-    careerTimeline,
-    suggestions,
-    searchTerm,
-    streak,
-    bestStreak,
-    difficulty,
-    confirmResetOpen,
-    confirmNewPlayer,
-    cancelNewPlayer,
-    loadPlayer,
-    requestNewPlayer,
-    revealNextClue,
-    onSearch,
-    submitGuessViaEnter,
-    onSubmit,
-    clearGuess,
-  } = usePlayGame();
+const {
+  schema,
+  formState,
+  hasGuess,
+  currentName,
+  isLoading,
+  errorMessage,
+  isError,
+  revealedClues,
+  hiddenClueLabels,
+  tipButtonDisabled,
+  careerTimeline,
+  suggestions,
+  searchTerm,
+  streak,
+  bestStreak,
+  difficulty,
+  confirmResetOpen,
+  confirmNewPlayer,
+  cancelNewPlayer,
+  loadPlayer,
+  requestNewPlayer,
+  revealNextClue,
+  onSearch,
+  submitGuessViaEnter,
+  onSubmit,
+  clearGuess,
+} = usePlayGame();
 
-  const isDev = import.meta.dev;
-  const devUrl = ref("");
-  const devStatus = ref<string | null>(null);
-  const devError = ref<string | null>(null);
-  const devSubmitting = ref(false);
-  const devRequestId = ref<number | null>(null);
-  const devPlayerId = ref<number | null>(null);
-  let devPollTimer: ReturnType<typeof setInterval> | null = null;
+const isDev = import.meta.dev;
+const devUrl = ref("");
+const devStatus = ref<string | null>(null);
+const devError = ref<string | null>(null);
+const devSubmitting = ref(false);
+const devRequestId = ref<number | null>(null);
+const devPlayerId = ref<number | null>(null);
+let devPollTimer: ReturnType<typeof setInterval> | null = null;
 
-  async function pollDevStatus() {
-    if (!devRequestId.value) return;
-    try {
-      const res = await $fetch<{
-        status: string;
-        playerId: number | null;
-        error: string | null;
-      }>(`/api/requestStatus?id=${devRequestId.value}`);
-      devStatus.value = res.status;
-      devPlayerId.value = res.playerId ?? null;
-      if (res.error) devError.value = res.error;
-      if (["done", "failed"].includes(res.status) && devPollTimer) {
-        clearInterval(devPollTimer);
-        devPollTimer = null;
-      }
-    } catch (err) {
-      devError.value = "Failed to fetch request status.";
+async function pollDevStatus() {
+  if (!devRequestId.value) return;
+  try {
+    const res = await $fetch<{
+      status: string;
+      playerId: number | null;
+      error: string | null;
+    }>(`/api/requestStatus?id=${devRequestId.value}`);
+    devStatus.value = res.status;
+    devPlayerId.value = res.playerId ?? null;
+    if (res.error) devError.value = res.error;
+    if (["done", "failed"].includes(res.status) && devPollTimer) {
+      clearInterval(devPollTimer);
+      devPollTimer = null;
     }
+  } catch (err) {
+    devError.value = "Failed to fetch request status.";
   }
+}
 
-  async function submitDevUrl() {
-    devError.value = null;
-    devStatus.value = null;
-    devPlayerId.value = null;
-    if (!devUrl.value.trim()) return;
-    devSubmitting.value = true;
-    try {
-      const res = await $fetch<{
-        id: number;
-        status: string;
-        playerId: number | null;
-      }>("/api/requestPlayer", {
-        method: "POST",
-        body: { url: devUrl.value.trim() },
-      });
-      devRequestId.value = res.id;
-      devStatus.value = res.status;
-      devPlayerId.value = res.playerId ?? null;
-      if (!devPollTimer) {
-        devPollTimer = setInterval(pollDevStatus, 5000);
-      }
-    } catch (err) {
-      devError.value = "Failed to submit URL.";
-    } finally {
-      devSubmitting.value = false;
+async function submitDevUrl() {
+  devError.value = null;
+  devStatus.value = null;
+  devPlayerId.value = null;
+  if (!devUrl.value.trim()) return;
+  devSubmitting.value = true;
+  try {
+    const res = await $fetch<{
+      id: number;
+      status: string;
+      playerId: number | null;
+    }>("/api/requestPlayer", {
+      method: "POST",
+      body: { url: devUrl.value.trim() },
+    });
+    devRequestId.value = res.id;
+    devStatus.value = res.status;
+    devPlayerId.value = res.playerId ?? null;
+    if (!devPollTimer) {
+      devPollTimer = setInterval(pollDevStatus, 5000);
     }
+  } catch (err) {
+    devError.value = "Failed to submit URL.";
+  } finally {
+    devSubmitting.value = false;
   }
+}
 
-  onBeforeUnmount(() => {
-    if (devPollTimer) clearInterval(devPollTimer);
-  });
+onBeforeUnmount(() => {
+  if (devPollTimer) clearInterval(devPollTimer);
+});
 </script>

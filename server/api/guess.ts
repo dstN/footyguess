@@ -32,12 +32,9 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return errorResponse(
-        400,
-        "Invalid request body",
-        event,
-        { received: body },
-      );
+      return errorResponse(400, "Invalid request body", event, {
+        received: body,
+      });
     }
 
     // Verify token and validate round
@@ -58,20 +55,12 @@ export default defineEventHandler(async (event) => {
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return errorResponse(
-        404,
-        "Round not found",
-        event,
-      );
+      return errorResponse(404, "Round not found", event);
     }
 
     // Check if already scored
     if (hasBeenScored(round.id)) {
-      return errorResponse(
-        409,
-        "Round already scored",
-        event,
-      );
+      return errorResponse(409, "Round already scored", event);
     }
 
     // Validate round ownership
@@ -85,21 +74,13 @@ export default defineEventHandler(async (event) => {
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return errorResponse(
-        410,
-        "Round expired",
-        event,
-      );
+      return errorResponse(410, "Round expired", event);
     }
 
     // Get player data
     const roundData = getRoundWithPlayer(round.id);
     if (!roundData?.player) {
-      return errorResponse(
-        404,
-        "Player not found",
-        event,
-      );
+      return errorResponse(404, "Player not found", event);
     }
 
     const { player } = roundData;
@@ -120,26 +101,18 @@ export default defineEventHandler(async (event) => {
       elapsedSeconds,
     );
 
-    return successResponse(
-      {
-        correct: result.correct,
-        score: result.score,
-        breakdown: result.breakdown,
-        streak: result.streak,
-        bestStreak: result.bestStreak,
-        sessionId,
-        playerName: result.playerName,
-        difficulty: result.difficulty,
-      },
-      event,
-    );
+    return {
+      correct: result.correct,
+      score: result.score,
+      breakdown: result.breakdown,
+      streak: result.streak,
+      bestStreak: result.bestStreak,
+      sessionId,
+      playerName: result.playerName,
+      difficulty: result.difficulty,
+    };
   } catch (error) {
     logError("guess error", error);
-    return errorResponse(
-      500,
-      "Failed to submit guess",
-      event,
-      { error: error instanceof Error ? error.message : "Unknown error" },
-    );
+    throw createError({ statusCode: 500, statusMessage: "Failed to submit guess" });
   }
 });

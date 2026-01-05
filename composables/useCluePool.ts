@@ -28,7 +28,9 @@ export function useCluePool(
   const clueData = useClueData(player);
 
   // User interaction handling
-  const interaction = useClueInteraction(clueData, { isLoading: opts.isLoading });
+  const interaction = useClueInteraction(clueData, {
+    isLoading: opts.isLoading,
+  });
 
   // Re-export all state and methods for backward compatibility
   return {
@@ -37,7 +39,7 @@ export function useCluePool(
     availableClues: clueData.availableClues,
     revealedClues: clueData.revealedClues,
     hiddenClueLabels: clueData.hiddenClueLabels,
-    
+
     // Interaction exports
     tipButtonDisabled: interaction.tipButtonDisabled,
     revealNextClue: interaction.revealNextClue,

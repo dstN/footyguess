@@ -28,10 +28,7 @@ export interface ApiResponse<T = unknown> {
 /**
  * Creates a successful API response
  */
-export function successResponse<T>(
-  data: T,
-  event: H3Event,
-): ApiResponse<T> {
+export function successResponse<T>(data: T, event: H3Event): ApiResponse<T> {
   const requestId = event.node.res.getHeader("x-request-id") as string;
 
   return {
