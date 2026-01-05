@@ -38,7 +38,8 @@
 
       <div class="flex flex-wrap justify-end gap-2">
         <UModal
-          v-model="confirmResetOpen"
+          :model-value="confirmResetOpen"
+          @update:model-value="$emit('update:confirmResetOpen', $event)"
           :overlay="true"
           :dissmissible="false"
           :modal="true"

@@ -68,7 +68,9 @@ export interface ApiSuccessResponse<T = any> {
 export function validateRequest<TSchema extends BaseSchema<any, any, any>>(
   schema: TSchema,
   data: unknown,
-): { ok: true; data: any } | { ok: false; error: ReturnType<typeof createError> } {
+):
+  | { ok: true; data: any }
+  | { ok: false; error: ReturnType<typeof createError> } {
   try {
     const parsed = parse(schema, data);
     return { ok: true, data: parsed };
