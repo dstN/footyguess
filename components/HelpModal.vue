@@ -9,7 +9,7 @@
       :color="buttonColor"
       :variant="buttonVariant"
       :size="buttonSize"
-      :class="buttonClass"
+      :class="`cursor-pointer ${buttonClass}`"
       @click="openModal"
     >
       <span v-if="showLabel">{{ buttonLabel }}</span>
@@ -236,6 +236,7 @@
       <div class="flex justify-end">
         <UButton
           color="primary"
+          class="cursor-pointer"
           @click="close"
         >
           Got it!

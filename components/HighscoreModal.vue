@@ -8,6 +8,7 @@
       icon="i-lucide-trophy"
       color="neutral"
       variant="ghost"
+      class="cursor-pointer"
       @click="openModal"
     >
       Highscores
@@ -46,6 +47,7 @@
                   color="neutral"
                   variant="ghost"
                   size="xs"
+                  class="cursor-pointer"
                   @click="clearPlayerSelection"
                 />
               </div>
@@ -153,6 +155,7 @@
       <div class="flex justify-end">
         <UButton
           color="primary"
+          class="cursor-pointer"
           @click="close"
         >
           Close

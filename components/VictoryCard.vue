@@ -34,6 +34,7 @@
           to="/play"
           color="primary"
           icon="i-lucide-shuffle"
+          class="cursor-pointer"
         >
           New mystery
         </UButton>
@@ -41,6 +42,7 @@
           to="/"
           variant="ghost"
           color="neutral"
+          class="cursor-pointer"
         >
           Back home
         </UButton>

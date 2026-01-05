@@ -22,6 +22,7 @@
           block
           color="primary"
           size="lg"
+          class="cursor-pointer"
           :disabled="
             !canSubmit || !lastScore || submittedTypes.includes('round')
           "
@@ -46,6 +47,7 @@
           color="neutral"
           variant="soft"
           size="lg"
+          class="cursor-pointer"
           :disabled="!canSubmit || submittedTypes.includes('total')"
           @click="$emit('submit', 'total')"
         >
@@ -67,6 +69,7 @@
           block
           color="secondary"
           size="lg"
+          class="cursor-pointer"
           :disabled="!canSubmit || submittedTypes.includes('streak')"
           @click="$emit('submit', 'streak')"
         >

@@ -52,6 +52,7 @@
               icon="i-lucide-shuffle"
               color="neutral"
               variant="ghost"
+              class="cursor-pointer"
               :disabled="isLoading"
               @click="$emit('request-new-player')"
             >
@@ -64,6 +65,7 @@
               <UButton
                 variant="ghost"
                 color="neutral"
+                class="cursor-pointer"
                 @click="
                   () => {
                     $emit('cancel-new-player');
@@ -75,6 +77,7 @@
               </UButton>
               <UButton
                 color="primary"
+                class="cursor-pointer"
                 @click="
                   () => {
                     $emit('confirm-new-player');
@@ -91,6 +94,7 @@
           icon="i-lucide-sparkles"
           color="primary"
           variant="solid"
+          class="cursor-pointer"
           :disabled="tipButtonDisabled"
           @click="$emit('reveal-clue')"
         >

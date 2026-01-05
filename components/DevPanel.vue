@@ -22,6 +22,7 @@
         />
         <UButton
           color="primary"
+          class="cursor-pointer"
           :loading="submitting"
           @click="$emit('submit')"
         >
