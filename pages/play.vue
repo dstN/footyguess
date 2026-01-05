@@ -1,101 +1,17 @@
 <template>
   <main class="flex flex-1 flex-col gap-6 text-slate-100" role="main" aria-label="Game play area">
-    <header class="flex flex-col gap-4" role="banner">
-      <div
-        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div class="flex items-center gap-2">
-          <UBadge
-            color="primary"
-            variant="soft"
-            class="tracking-[0.18em] uppercase"
-          >
-            Mystery player
-          </UBadge>
-        </div>
-        <StreakBar
-          :streak="streak"
-          :best-streak="bestStreak"
-          aria-label="Streak information"
-        />
-      </div>
-
-      <div
-        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div class="space-y-1">
-          <h1
-            class="text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white"
-          >
-            Footyguess: Transfer Trail
-          </h1>
-          <p class="text-sm text-slate-600 sm:text-base dark:text-slate-300">
-            Decode the career path, grab a random tip, and lock in your guess.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap justify-end gap-2">
-          <UModal
-            v-model="confirmResetOpen"
-            :overlay="true"
-            :dissmissible="false"
-            :modal="true"
-            :scrollable="false"
-            title="Confirm"
-            description="Starting a new mystery now will reset your current streak. Continue?"
-          >
-            <template #default>
-              <UButton
-                icon="i-lucide-shuffle"
-                color="neutral"
-                variant="ghost"
-                :disabled="isLoading"
-                @click="requestNewPlayer()"
-              >
-                New mystery
-              </UButton>
-            </template>
-
-            <template #footer="{ close }">
-              <div class="flex justify-end gap-2">
-                <UButton
-                  variant="ghost"
-                  color="neutral"
-                  @click="
-                    () => {
-                      cancelNewPlayer();
-                      close();
-                    }
-                  "
-                >
-                  Cancel
-                </UButton>
-                <UButton
-                  color="primary"
-                  @click="
-                    () => {
-                      confirmNewPlayer();
-                      close();
-                    }
-                  "
-                >
-                  Yes, reset &amp; load
-                </UButton>
-              </div>
-            </template>
-          </UModal>
-          <UButton
-            icon="i-lucide-sparkles"
-            color="primary"
-            variant="solid"
-            :disabled="tipButtonDisabled"
-            @click="revealNextClue"
-          >
-            Get a tip
-          </UButton>
-        </div>
-      </div>
-    </header>
+    <PlayHeader
+      :streak="streak"
+      :best-streak="bestStreak"
+      :is-loading="isLoading"
+      :tip-button-disabled="tipButtonDisabled"
+      :confirm-reset-open="confirmResetOpen"
+      @confirm-new-player="confirmNewPlayer"
+      @cancel-new-player="cancelNewPlayer"
+      @request-new-player="requestNewPlayer"
+      @reveal-clue="revealNextClue"
+      @update:confirmResetOpen="(val) => (confirmResetOpen = val)"
+    />
 
     <UAlert
       v-if="errorMessage"
@@ -119,43 +35,16 @@
         :current-streak="streak"
       />
 
-      <UCard
-        v-if="isDev"
-        class="border-primary-900/40 border bg-slate-950/60"
-      >
-        <template #header>
-          <p class="text-primary-200 text-xs tracking-[0.18em] uppercase">
-            Dev only
-          </p>
-        </template>
-        <div class="space-y-3">
-          <p class="text-sm text-slate-300">
-            Request a player by Transfermarkt URL.
-          </p>
-          <div class="flex flex-col gap-2 sm:flex-row">
-            <UInput
-              v-model="devUrl"
-              placeholder="https://www.transfermarkt.com/..."
-              size="lg"
-              class="flex-1"
-            />
-            <UButton
-              color="primary"
-              :loading="devSubmitting"
-              @click="submitDevUrl"
-            >
-              Submit URL
-            </UButton>
-          </div>
-          <p v-if="devStatus" class="text-sm text-slate-200">
-            Status: {{ devStatus }}
-            <span v-if="devPlayerId"> (Player ID: {{ devPlayerId }})</span>
-          </p>
-          <p v-if="devError" class="text-sm text-red-400">
-            {{ devError }}
-          </p>
-        </div>
-      </UCard>
+      <DevPanel
+        :visible="isDev"
+        :url="devUrl"
+        :submitting="devSubmitting"
+        :status="devStatus"
+        :player-id="devPlayerId"
+        :error="devError"
+        @update:url="(val) => (devUrl = val)"
+        @submit="submitDevUrl"
+      />
     </section>
 
     <GuessFooter
@@ -180,8 +69,10 @@
 import ClueBar from "~/components/ClueBar.vue";
 import GuessFooter from "~/components/GuessFooter.vue";
 import TransferTimelineCard from "~/components/TransferTimelineCard.vue";
-import StreakBar from "~/components/StreakBar.vue";
+import PlayHeader from "~/components/PlayHeader.vue";
+import DevPanel from "~/components/DevPanel.vue";
 import { usePlayGame } from "~/composables/usePlayGame";
+import { ref, onBeforeUnmount } from "vue";
 
 useHead({
   title: "Footyguess - Mystery Player",
