@@ -130,6 +130,8 @@ export function useCluePool(
 
   function revealNextClue() {
     if (tipButtonDisabled.value) return;
+    // Prevent unbounded array growth - cap at 10 clues max
+    if (revealedTips.value.length >= 10) return;
     const next =
       hiddenClues.value[Math.floor(Math.random() * hiddenClues.value.length)];
     if (!next) return;
