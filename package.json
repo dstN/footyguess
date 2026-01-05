@@ -23,7 +23,7 @@
     "valibot": "^1.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.57.0",
     "@types/better-sqlite3": "^7.6.12",
     "@vitest/ui": "^3.0.5",
     "prettier": "^3.5.3",

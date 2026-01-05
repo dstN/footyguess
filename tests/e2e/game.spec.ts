@@ -9,14 +9,14 @@
  * - Winning the game
  */
 
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const BASE_URL = "http://localhost:3000";
 
 test.describe("FootyGuess E2E Tests", () => {
   let page: Page;
 
-  test.beforeEach(async ({ browser }) => {
+  test.beforeEach(async ({ browser }: { browser: any }) => {
     page = await browser.newPage();
     await page.goto(BASE_URL);
   });

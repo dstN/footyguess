@@ -94,13 +94,13 @@ export function useClueData(player: Ref<Player | null>) {
     const minutesPerMatch =
       totals && totals.minutes_played && totals.appearances
         ? `${Math.round(
-            (totals.minutes_played ?? 0) / (totals.appearances || 1),
+            (totals.minutes_played as number) / (totals.appearances as number),
           )} mins/match`
         : null;
 
     const assistRate =
       totals && totals.appearances && totals.assists
-        ? `${(totals.assists / totals.appearances).toFixed(2)} assists/match`
+        ? `${((totals.assists as number) / (totals.appearances as number)).toFixed(2)} assists/match`
         : null;
 
     const discipline =
