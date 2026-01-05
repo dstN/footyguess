@@ -44,5 +44,3 @@ export function useCluePool(
     selectRandomClues: clueData.selectRandomClues,
   };
 }
-
-export type { Clue, ClueKey } from "./useClueData";
