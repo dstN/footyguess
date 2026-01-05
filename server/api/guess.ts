@@ -2,6 +2,7 @@ import { createError, defineEventHandler, readBody, sendError } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import { successResponse, errorResponse } from "../utils/response.ts";
 import {
   verifyAndValidateRound,
   getRound,
@@ -31,9 +32,11 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return sendError(
+      return errorResponse(
+        400,
+        "Invalid request body",
         event,
-        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
+        { received: body },
       );
     }
 
@@ -55,42 +58,47 @@ export default defineEventHandler(async (event) => {
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return sendError(
+      return errorResponse(
+        404,
+        "Round not found",
         event,
-        createError({ statusCode: 404, statusMessage: "Round not found" }),
       );
     }
 
     // Check if already scored
     if (hasBeenScored(round.id)) {
-      return sendError(
+      return errorResponse(
+        409,
+        "Round already scored",
         event,
-        createError({ statusCode: 409, statusMessage: "Round already scored" }),
       );
     }
 
     // Validate round ownership
     if (!validateRoundOwnership(round, sessionId)) {
-      return sendError(
+      return errorResponse(
+        401,
+        "Unauthorized - round does not belong to this session",
         event,
-        createError({ statusCode: 401, statusMessage: "Unauthorized round" }),
       );
     }
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return sendError(
+      return errorResponse(
+        410,
+        "Round expired",
         event,
-        createError({ statusCode: 410, statusMessage: "Round expired" }),
       );
     }
 
     // Get player data
     const roundData = getRoundWithPlayer(round.id);
     if (!roundData?.player) {
-      return sendError(
+      return errorResponse(
+        404,
+        "Player not found",
         event,
-        createError({ statusCode: 404, statusMessage: "Player not found" }),
       );
     }
 
@@ -112,21 +120,26 @@ export default defineEventHandler(async (event) => {
       elapsedSeconds,
     );
 
-    return {
-      correct: result.correct,
-      score: result.score,
-      breakdown: result.breakdown,
-      streak: result.streak,
-      bestStreak: result.bestStreak,
-      sessionId,
-      playerName: result.playerName,
-      difficulty: result.difficulty,
-    };
+    return successResponse(
+      {
+        correct: result.correct,
+        score: result.score,
+        breakdown: result.breakdown,
+        streak: result.streak,
+        bestStreak: result.bestStreak,
+        sessionId,
+        playerName: result.playerName,
+        difficulty: result.difficulty,
+      },
+      event,
+    );
   } catch (error) {
     logError("guess error", error);
-    return sendError(
+    return errorResponse(
+      500,
+      "Failed to submit guess",
       event,
-      createError({ statusCode: 500, statusMessage: "Failed to submit guess" }),
+      { error: error instanceof Error ? error.message : "Unknown error" },
     );
   }
 });

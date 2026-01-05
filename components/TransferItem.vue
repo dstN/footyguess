@@ -2,6 +2,7 @@
   <div
     class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
     :class="cardClass"
+    data-testid="transfer-card"
   >
     <span
       class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"

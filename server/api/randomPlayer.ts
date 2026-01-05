@@ -13,6 +13,7 @@ import { createRoundToken, generateSessionId } from "../utils/tokens";
 import { parseSchema } from "../utils/validate";
 import { parsePlayerData } from "../utils/player-parser";
 import { logError } from "../utils/logger";
+import { successResponse, errorResponse } from "../utils/response";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -25,9 +26,11 @@ export default defineEventHandler(async (event) => {
     query,
   );
   if (!parsed.ok) {
-    return sendError(
+    return errorResponse(
+      400,
+      "Invalid query parameters",
       event,
-      createError({ statusCode: 400, statusMessage: "Invalid query" }),
+      { received: query },
     );
   }
 
@@ -163,9 +166,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!base || (!hardMode && difficulty?.tier === "ultra")) {
-    return sendError(
+    return errorResponse(
+      404,
+      "No matching player found for selected difficulty",
       event,
-      createError({ statusCode: 404, statusMessage: "No player found" }),
     );
   }
 
@@ -190,17 +194,20 @@ export default defineEventHandler(async (event) => {
     exp: expiresAt,
   });
 
-  return {
-    ...base,
-    transfers,
-    stats,
-    difficulty,
-    round: {
-      id: roundId,
-      token,
-      sessionId,
-      expiresAt,
-      cluesUsed: 0,
+  return successResponse(
+    {
+      ...base,
+      transfers,
+      stats,
+      difficulty,
+      round: {
+        id: roundId,
+        token,
+        sessionId,
+        expiresAt,
+        cluesUsed: 0,
+      },
     },
-  };
+    event,
+  );
 });

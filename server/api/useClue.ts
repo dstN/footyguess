@@ -2,6 +2,7 @@ import { defineEventHandler, readBody, createError, sendError } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import { successResponse, errorResponse } from "../utils/response.ts";
 import {
   verifyAndValidateRound,
   getRound,
@@ -28,9 +29,11 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return sendError(
+      return errorResponse(
+        400,
+        "Invalid request body",
         event,
-        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
+        { received: body },
       );
     }
 
@@ -52,48 +55,57 @@ export default defineEventHandler(async (event) => {
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return sendError(
+      return errorResponse(
+        404,
+        "Round not found",
         event,
-        createError({ statusCode: 404, statusMessage: "Round not found" }),
       );
     }
 
     // Validate round ownership
     if (!validateRoundOwnership(round, sessionId)) {
-      return sendError(
+      return errorResponse(
+        401,
+        "Unauthorized - round does not belong to this session",
         event,
-        createError({ statusCode: 401, statusMessage: "Unauthorized round" }),
       );
     }
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return sendError(
+      return errorResponse(
+        410,
+        "Round expired",
         event,
-        createError({ statusCode: 410, statusMessage: "Round expired" }),
       );
     }
 
     // Check clue limit
     if (hasReachedClueLimit(round.clues_used, round.max_clues_allowed ?? 0)) {
-      return sendError(
+      return errorResponse(
+        429,
+        "Clue limit reached",
         event,
-        createError({ statusCode: 429, statusMessage: "Clue limit reached" }),
       );
     }
 
     // Record clue usage
     const result = useClue(parsed.data.roundId);
 
-    return {
-      cluesUsed: result.cluesUsed,
-      cluesRemaining: result.cluesRemaining,
-    };
+    return successResponse(
+      {
+        cluesUsed: result.cluesUsed,
+        cluesRemaining: result.cluesRemaining,
+      },
+      event,
+    );
   } catch (error) {
     logError("useClue error", error);
-    return sendError(
+    return errorResponse(
+      500,
+      "Failed to record clue",
       event,
-      createError({ statusCode: 500, statusMessage: "Failed to record clue" }),
+      { error: error instanceof Error ? error.message : "Unknown error" },
     );
   }
 });

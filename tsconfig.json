@@ -3,6 +3,18 @@
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"],
+      "@components/*": ["./components/*"],
+      "@composables/*": ["./composables/*"],
+      "@pages/*": ["./pages/*"],
+      "@layouts/*": ["./layouts/*"],
+      "@utils/*": ["./utils/*"],
+      "@types/*": ["./types/*"],
+      "@server/*": ["./server/*"],
+      "@tests/*": ["./tests/*"]
+    }
   }
 }

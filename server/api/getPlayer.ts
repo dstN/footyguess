@@ -7,6 +7,7 @@ import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { parsePlayerData } from "../utils/player-parser.ts";
 import { logError } from "../utils/logger.ts";
+import { successResponse, errorResponse } from "../utils/response.ts";
 import { object, string, minLength, maxLength, optional, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -20,9 +21,11 @@ export default defineEventHandler(async (event) => {
       query,
     );
     if (!parsed.ok) {
-      return sendError(
+      return errorResponse(
+        400,
+        "Invalid query parameters",
         event,
-        createError({ statusCode: 400, statusMessage: "Invalid query" }),
+        { received: query },
       );
     }
 
@@ -44,9 +47,10 @@ export default defineEventHandler(async (event) => {
       .get(name) as Player | undefined;
 
     if (!player) {
-      return sendError(
+      return errorResponse(
+        404,
+        `Player "${name}" not found`,
         event,
-        createError({ statusCode: 404, statusMessage: "Player not found" }),
       );
     }
 
@@ -133,24 +137,29 @@ export default defineEventHandler(async (event) => {
       exp: expiresAt,
     });
 
-    return {
-      ...player,
-      transfers,
-      stats,
-      difficulty,
-      round: {
-        id: roundId,
-        token,
-        sessionId,
-        expiresAt,
-        cluesUsed: 0,
+    return successResponse(
+      {
+        ...player,
+        transfers,
+        stats,
+        difficulty,
+        round: {
+          id: roundId,
+          token,
+          sessionId,
+          expiresAt,
+          cluesUsed: 0,
+        },
       },
-    };
+      event,
+    );
   } catch (error) {
     logError("getPlayer error", error);
-    return sendError(
+    return errorResponse(
+      500,
+      "Failed to load player",
       event,
-      createError({ statusCode: 500, statusMessage: "Failed to load player" }),
+      { error: error instanceof Error ? error.message : "Unknown error" },
     );
   }
 });

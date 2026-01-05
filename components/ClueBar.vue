@@ -3,6 +3,7 @@
     class="border-primary-900/60 flex flex-wrap items-center gap-2 rounded-2xl border bg-slate-900/60 px-3 py-3"
     role="region"
     aria-label="Clue information"
+    data-testid="clues"
   >
     <p
       class="text-primary-200 text-xs tracking-[0.18em] uppercase"
@@ -26,6 +27,7 @@
         class="bg-primary-500/10 text-xs"
         role="listitem"
         :aria-label="`${clue.label}${clue.value ? ': ' + clue.value : ''}`"
+        data-testid="clue-item"
       >
         {{ clue.label
         }}<span

@@ -4,13 +4,16 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "build:check": "nuxt build && node scripts/check-bundle-size.ts",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "scrape": "tsx server/scraper/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@nuxt/ui": "^4.3.0",
@@ -20,6 +23,7 @@
     "valibot": "^1.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "@types/better-sqlite3": "^7.6.12",
     "@vitest/ui": "^3.0.5",
     "prettier": "^3.5.3",

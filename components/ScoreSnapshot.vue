@@ -9,6 +9,7 @@
       <p
         v-if="lastScore"
         class="text-sm"
+        data-testid="score"
       >
         <span class="font-semibold">Last round:</span>
         {{ lastBaseWithTime }} base+time →
@@ -28,7 +29,7 @@
       </p>
       <p class="text-sm">
         <span class="font-semibold">Best streak:</span>
-        {{ bestStreak }}
+        <span data-testid="streak">{{ bestStreak }}</span>
       </p>
     </div>
   </UCard>

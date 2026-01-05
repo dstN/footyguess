@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from "h3";
 import db from "../db/connection.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import { paginatedResponse, errorResponse } from "../utils/response.ts";
 import { object, optional, string, minLength, maxLength, pipe } from "valibot";
 
 function normalizeSearch(value: string) {
@@ -78,12 +79,20 @@ export default defineEventHandler((event) => {
       name: string;
     }[];
 
-    return rows.map((row) => row.name);
+    return paginatedResponse(
+      rows.map((row) => row.name),
+      rows.length,
+      safeLimit,
+      0,
+      event,
+    );
   } catch (error) {
     logError("searchPlayers error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Search failed",
-    });
+    return errorResponse(
+      500,
+      "Search failed",
+      event,
+      { error: error instanceof Error ? error.message : "Unknown error" },
+    );
   }
 });

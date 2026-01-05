@@ -4,6 +4,7 @@
       class="flex flex-1 flex-col gap-6 text-slate-100"
       role="main"
       aria-label="Game play area"
+      data-testid="game-container"
     >
     <PlayHeader
       :streak="streak"
