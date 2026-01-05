@@ -11,7 +11,7 @@ import { scrapeTransfersForPlayer } from "./scrape-transfers.ts";
 import { logError, rotateTextLog } from "../utils/logger.ts";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-const SCRAPER_WORKERS = Math.max(1, Number(process.env.SCRAPER_WORKERS ?? 3));
+const SCRAPER_WORKERS = Math.max(1, Number(process.env.SCRAPER_WORKERS ?? 1));
 const SCRAPER_DELAY_MS = Number(process.env.SCRAPER_DELAY_MS ?? 500);
 
 function titleizeSlug(slug: string) {
