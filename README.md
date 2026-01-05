@@ -44,7 +44,7 @@ A football guessing game where players decode the mystery of a footballer's care
 ### Frontend
 - **Nuxt 4** with Vue 3 Composition API
 - **TypeScript** for type safety
-- **Nuxt UI** (v2.x) for modern components
+- **Nuxt UI** (v4.x) for modern components
 - **Tailwind CSS** with cyberpunk glassmorphism design
 - **Vitest** & **Playwright** for testing
 
@@ -329,7 +329,7 @@ MIT License - Feel free to use and modify.
 ## 🙏 Credits
 
 - **Data**: TransferMarkt (via Puppeteer scraper)
-- **UI Library**: Nuxt UI v2 + Tailwind CSS
+- **UI Library**: Nuxt UI v4 + Tailwind CSS
 - **Icons**: Lucide React
 - **Framework**: Nuxt 4 & Vue 3 Composition API
 - **Styling**: Cyberpunk glassmorphism design system
