@@ -92,8 +92,10 @@ function logScrapeError(context: string, name: string, err: unknown) {
 
   async function runWorker(workerId: number) {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 2000 });
-    while (true) {
+    await page.setViewport({ width: 1080, height: 2000 });    // Set realistic user-agent to avoid blocking
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    );    while (true) {
       const currentIndex = nextIndex++;
       if (currentIndex >= players.length) break;
 
@@ -144,13 +146,14 @@ function logScrapeError(context: string, name: string, err: unknown) {
       console.log(`${label} Loading ${name}...`);
 
       try {
+        let response;
         if (isUrl) {
-          await page.goto(name, {
+          response = await page.goto(name, {
             waitUntil: "networkidle2",
             timeout: 0,
           });
         } else {
-          await page.goto(
+          response = await page.goto(
             `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(
               name,
             )}`,
@@ -159,6 +162,12 @@ function logScrapeError(context: string, name: string, err: unknown) {
               timeout: 0,
             },
           );
+        }
+
+        // Check for rate limiting or server errors
+        if (response && (response.status() === 429 || response.status() === 503 || response.status() === 504)) {
+          logScrapeError("Network Error", name, `HTTP ${response.status()} - Server blocked/overloaded. Stopping scraper.`);
+          process.exit(1);
         }
 
         await ensureCookies(page);
