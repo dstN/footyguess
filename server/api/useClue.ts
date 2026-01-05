@@ -1,9 +1,15 @@
 import { defineEventHandler, readBody, createError, sendError } from "h3";
-import db from "../db/connection.ts";
-import { verifyRoundToken } from "../utils/tokens.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import {
+  verifyAndValidateRound,
+  getRound,
+  validateRoundOwnership,
+  isRoundExpired,
+  hasReachedClueLimit,
+  useClue,
+} from "../services/index.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -28,37 +34,23 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    const payload = verifyRoundToken(parsed.data.token);
-    if (payload.roundId !== parsed.data.roundId) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Round mismatch" }),
-      );
-    }
+    // Verify token and validate round
+    const { sessionId } = verifyAndValidateRound(
+      parsed.data.token,
+      parsed.data.roundId,
+    );
 
+    // Enforce rate limit
     const rateError = enforceRateLimit(event, {
       key: "clue",
       windowMs: 10_000,
       max: 5,
-      sessionId: payload.sessionId,
+      sessionId,
     });
     if (rateError) return sendError(event, rateError);
 
-    const round = db
-      .prepare(
-        `SELECT id, session_id, player_id, clues_used, max_clues_allowed, expires_at FROM rounds WHERE id = ?`,
-      )
-      .get(parsed.data.roundId) as
-      | {
-          id: string;
-          session_id: string;
-          player_id: number;
-          clues_used: number;
-          max_clues_allowed: number;
-          expires_at: number | null;
-        }
-      | undefined;
-
+    // Get round data
+    const round = getRound(parsed.data.roundId);
     if (!round) {
       return sendError(
         event,
@@ -66,43 +58,36 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    if (round.session_id !== payload.sessionId) {
+    // Validate round ownership
+    if (!validateRoundOwnership(round, sessionId)) {
       return sendError(
         event,
         createError({ statusCode: 401, statusMessage: "Unauthorized round" }),
       );
     }
 
-    if (round.expires_at && round.expires_at * 1000 < Date.now()) {
+    // Check if round expired
+    if (isRoundExpired(round)) {
       return sendError(
         event,
         createError({ statusCode: 410, statusMessage: "Round expired" }),
       );
     }
 
-    if (round.clues_used >= round.max_clues_allowed) {
+    // Check clue limit
+    if (hasReachedClueLimit(round.clues_used, round.max_clues_allowed ?? 0)) {
       return sendError(
         event,
         createError({ statusCode: 429, statusMessage: "Clue limit reached" }),
       );
     }
 
-    db.prepare(
-      `UPDATE rounds SET clues_used = clues_used + 1 WHERE id = ?`,
-    ).run(parsed.data.roundId);
-
-    const updated = db
-      .prepare(`SELECT clues_used, max_clues_allowed FROM rounds WHERE id = ?`)
-      .get(parsed.data.roundId) as {
-      clues_used: number;
-      max_clues_allowed: number;
-    };
+    // Record clue usage
+    const result = useClue(parsed.data.roundId);
 
     return {
-      cluesUsed: updated?.clues_used ?? round.clues_used + 1,
-      cluesRemaining:
-        (updated?.max_clues_allowed ?? round.max_clues_allowed) -
-        (updated?.clues_used ?? round.clues_used + 1),
+      cluesUsed: result.cluesUsed,
+      cluesRemaining: result.cluesRemaining,
     };
   } catch (error) {
     logError("useClue error", error);

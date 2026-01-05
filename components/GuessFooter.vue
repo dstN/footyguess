@@ -34,7 +34,7 @@
             :aria-invalid="isError"
             :aria-describedby="isError ? 'error-message' : undefined"
             @update:search-term="(val) => emit('update:searchTerm', val)"
-            @keydown.enter.prevent="emit('enter')"
+            @keydown.enter.prevent="emit('enter', modelValue)"
             :content="{
               position: 'popper',
               align: 'start',
@@ -112,7 +112,7 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: string): void;
   (e: "update:searchTerm", value: string): void;
   (e: "submit", event: FormSubmitEvent<GuessFormOutput>): void;
-  (e: "enter"): void;
+  (e: "enter", guess: string): void;
   (e: "clear"): void;
 }>();
 
