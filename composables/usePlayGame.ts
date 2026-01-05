@@ -6,6 +6,7 @@ import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
 import { calculateScore, getStreakBonusMultiplier } from "~/server/utils/scoring";
+import { sanitizeText } from "~/utils/sanitize";
 
 interface RoundState {
   id: string;
@@ -169,7 +170,7 @@ export function usePlayGame() {
 
   function persistLastPlayer(name: string) {
     if (import.meta.client) {
-      localStorage.setItem("footyguess_last_player", name);
+      localStorage.setItem("footyguess_last_player", sanitizeText(name));
     }
   }
 
