@@ -22,8 +22,10 @@ describe("usePlayerSearch", () => {
     onSearch("Ro");
     await vi.runAllTimersAsync();
 
+    // Check that $fetch was called with correct URL (signal is second arg)
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/searchPlayers?q=Ro&limit=10",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     await Promise.resolve();
     expect(searchTerm.value).toBe("Ro");

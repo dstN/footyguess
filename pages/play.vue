@@ -1,9 +1,10 @@
 <template>
-  <main
-    class="flex flex-1 flex-col gap-6 text-slate-100"
-    role="main"
-    aria-label="Game play area"
-  >
+  <ErrorBoundary>
+    <main
+      class="flex flex-1 flex-col gap-6 text-slate-100"
+      role="main"
+      aria-label="Game play area"
+    >
     <PlayHeader
       :streak="streak"
       :best-streak="bestStreak"
@@ -18,7 +19,7 @@
     />
 
     <UAlert
-      v-if="errorMessage"
+      v-show="Boolean(errorMessage)"
       color="error"
       icon="i-lucide-alert-triangle"
       :title="errorMessage"
@@ -32,6 +33,7 @@
       />
 
       <TransferTimelineCard
+        v-memo="[careerTimeline, difficulty, currentName, streak]"
         :items="careerTimeline"
         :is-loading="isLoading"
         :show-badge="Boolean(currentName)"
@@ -67,9 +69,10 @@
       @clear="clearGuess"
     />
   </main>
-</template>
+  </ErrorBoundary>
 
 <script setup lang="ts">
+import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import ClueBar from "~/components/ClueBar.vue";
 import GuessFooter from "~/components/GuessFooter.vue";
 import TransferTimelineCard from "~/components/TransferTimelineCard.vue";

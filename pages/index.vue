@@ -1,5 +1,6 @@
 <template>
-  <main class="flex flex-1 flex-col gap-6">
+  <ErrorBoundary>
+    <main class="flex flex-1 flex-col gap-6">
     <UCard class="relative overflow-hidden border border-primary-900/50 bg-slate-950/60">
       <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.12),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(236,72,153,0.12),transparent_32%)]" />
       <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -30,4 +31,9 @@
       </div>
     </UCard>
   </main>
+  </ErrorBoundary>
 </template>
+
+<script setup lang="ts">
+import ErrorBoundary from "~/components/ErrorBoundary.vue";
+</script>

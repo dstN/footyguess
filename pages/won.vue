@@ -1,5 +1,6 @@
 <template>
-  <main class="flex flex-1 items-center justify-center">
+  <ErrorBoundary>
+    <main class="flex flex-1 items-center justify-center">
     <div class="w-full max-w-3xl space-y-6">
       <VictoryCard
         :streak="streak"
@@ -25,9 +26,10 @@
       </div>
     </div>
   </main>
-</template>
+  </ErrorBoundary>
 
 <script setup lang="ts">
+import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import { ref, onMounted, computed } from "vue";
 import VictoryCard from "~/components/VictoryCard.vue";
 import ScoreSnapshot from "~/components/ScoreSnapshot.vue";
