@@ -16,7 +16,7 @@ A football guessing game where players decode the mystery of a footballer's care
 ### Core Gameplay
 - **Transfer Timeline**: Real transfer history data with club logos and dates
 - **Random Clues**: Reveal hints (nationality, position, stats, career achievements) for -10 points each
-- **Smart Search**: Autocomplete player search with +40,000 football players
+- **Smart Search**: Autocomplete player search with 1,900+ international football players
 - **Difficulty Tiers**: Easy (1×) → Medium (1.25×) → Hard (1.5×) → Ultra (2×) multipliers
 - **Streak System**: Build consecutive wins for +5% to +30% score bonuses
 
@@ -70,17 +70,28 @@ footyguess/
 │   ├── HighscoreModal.vue     # Leaderboard with player search
 │   ├── DifficultyBadge.vue    # Difficulty hover popover
 │   ├── TransferTimelineCard.vue
+│   ├── TransferTimelineView.vue
+│   ├── TransferItem.vue
 │   ├── LeaderboardSubmit.vue
 │   ├── PlayHeader.vue
 │   ├── StreakBar.vue
 │   ├── ClueBar.vue
 │   ├── GuessFooter.vue
+│   ├── ScoreSnapshot.vue
+│   ├── VictoryCard.vue
+│   ├── ErrorBoundary.vue
+│   ├── DevPanel.vue
 │   └── ...
 ├── composables/                # Game logic
 │   ├── usePlayGame.ts         # Main game flow
 │   ├── useCluePool.ts         # Clue system
+│   ├── useClueData.ts         # Clue data management
+│   ├── useClueInteraction.ts  # Clue UI interactions
+│   ├── useGameSession.ts      # Session management
+│   ├── useGameStreak.ts       # Streak tracking
+│   ├── useGuessSubmission.ts  # Guess submission logic
 │   ├── usePlayerSearch.ts     # Search logic
-│   ├── useTransferTimeline.ts # Timeline rendering
+│   └── useTransferTimeline.ts # Timeline rendering
 ├── server/
 │   ├── api/                    # API endpoints
 │   │   ├── submitScore.ts     # Score submission + auto-update
@@ -90,37 +101,71 @@ footyguess/
 │   │   ├── guess.ts           # Guess validation
 │   │   ├── useClue.ts         # Clue revelation
 │   │   ├── getPlayer.ts       # Player details
-│   │   └── searchPlayers.ts   # Player search
+│   │   ├── searchPlayers.ts   # Player search
+│   │   ├── requestPlayer.ts   # Player request queue
+│   │   └── requestStatus.ts   # Request status
+│   ├── services/              # Business logic
+│   │   ├── guess.ts
+│   │   ├── clue.ts
+│   │   ├── round.ts
+│   │   └── index.ts
 │   ├── db/
 │   │   ├── connection.ts      # SQLite connection
 │   │   ├── schema.ts          # Database schema
-│   │   └── insert.ts          # Data insertion utilities
+│   │   ├── insert.ts          # Data insertion utilities
+│   │   └── file/
 │   ├── scraper/               # TransferMarkt scraper
 │   │   ├── scrape-players.ts
 │   │   ├── scrape-transfers.ts
 │   │   ├── scrape-career.ts
-│   │   └── queue-worker.ts
+│   │   ├── queue-worker.ts
+│   │   ├── index.ts
+│   │   └── ...
+│   ├── middleware/
+│   ├── plugins/
+│   │   └── db-init.ts
 │   └── utils/
 │       ├── scoring.ts         # Score calculations
 │       ├── difficulty.ts      # Difficulty detection
 │       ├── rate-limit.ts      # Request throttling
-│       └── validate.ts        # Input validation
+│       ├── validate.ts        # Input validation
+│       ├── logger.ts          # Logging utilities
+│       ├── response.ts
+│       ├── tokens.ts
+│       └── chunk-array.ts
 ├── tests/                      # Test suites
 │   ├── usePlayGame.test.ts
 │   ├── scraper-fixtures.test.ts
 │   ├── useCluePool.test.ts
-│   └── ...
+│   ├── usePlayerSearch.test.ts
+│   ├── useTransferTimeline.test.ts
+│   ├── api-routes.test.ts
+│   ├── setup.ts
+│   ├── fixtures/
+│   │   ├── career-stats.html
+│   │   └── transfer-history.html
+│   └── utils/
+│       ├── db.ts
+│       └── h3.ts
 ├── layouts/
 │   └── default.vue            # Main layout with cyberpunk effects
 ├── assets/
 │   └── css/main.css           # Tailwind + animations
 ├── types/
-│   └── player.ts              # TypeScript interfaces
+│   ├── player.ts              # TypeScript interfaces
+│   └── forms.ts
+├── public/
+│   └── robots.txt
 ├── app.config.ts              # UI theme config
 ├── nuxt.config.ts
-├── package.json
+├── tailwind.config.ts
 ├── vitest.config.ts
-└── README.md
+├── package.json
+├── tsconfig.json
+├── README.md
+├── all_players.json           # Player database seed
+├── issues.md
+└── TODO.md
 ```
 
 ## 🚀 Getting Started
@@ -170,18 +215,40 @@ npm run preview
 
 ## 🗄️ Database
 
+### Database
+
 ### Schema Highlights
-- **players** (40,000+ records)
+- **players** (1,900+ records with seed data)
   - Includes TransferMarkt data: position, nationality, market value
-  - Indexed for fast name search
-- **transfers** (~500K+ records)
+  - Indexed for fast name search (name_search, tm_short_name_search, tm_full_name_search)
+  - Scraped from Wikidata + TransferMarkt
+- **clubs** 
+  - Club information with logo paths
+- **transfers** (500K+ total records across all players)
   - Complete career transfer history per player
   - Dates, clubs, transfer fees, types (loan, permanent, etc.)
+  - Indexed by player_id + transfer_date
 - **sessions**
   - User gameplay sessions with streak/score tracking
+  - Persistent across page reloads
+- **rounds**
+  - Individual puzzle games with expiration
+  - Links to players and sessions
+- **scores**
+  - Score records for each round with breakdowns
+  - Base score, time score, streak multiplier tracking
 - **leaderboard_entries**
   - Three types: `round` (per-player), `total`, `streak`
   - Player-specific round scores with lookup indexes
+- **player_stats**
+  - Career statistics by competition
+  - Used for difficulty calculation
+- **competitions**
+  - Competition reference table (Champions League, Premier League, etc.)
+- **requested_players**
+  - Queue of players requested by users
+- **scrape_jobs**
+  - Background job queue for data updates
 
 ### Key Queries
 - Player search: O(1) with name_search index
@@ -209,9 +276,9 @@ Player: Cristiano Ronaldo (Ultra difficulty)
 
 ### Time Bonus Breakdown
 - **≤1 second**: +120% bonus (instant guess reward)
-- **1s → 2 minutes**: Linear drop from +120% to 0%
-- **2min → 5min**: No bonus, no penalty (neutral zone)
-- **>5 minutes**: -10% per 30s penalty (max -50%)
+- **1s → 2 minutes**: Linear drop from +120% to 0% (penalty-free zone)
+- **2min → 5min**: No bonus, no penalty (safe zone)
+- **>5 minutes**: -10% per 30s penalty starting immediately (max -50%)
 
 ### Difficulty Multipliers
 Based on player fame (international + league appearances). **More experience = easier!**
@@ -238,18 +305,20 @@ Based on player fame (international + league appearances). **More experience = e
 ## 🌐 API Endpoints
 
 ### Game Flow
-- `GET /api/randomPlayer` - Get mystery player
-- `POST /api/guess` - Validate guess
-- `POST /api/useClue` - Reveal clue
-- `GET /api/getPlayer` - Player details + stats
+- `GET /api/randomPlayer` - Get new mystery player with transfers
+- `POST /api/guess` - Validate guess and calculate score
+- `POST /api/useClue` - Reveal clue and deduct points
+- `GET /api/getPlayer` - Get full player details + stats
 
 ### Scoring & Leaderboard
-- `POST /api/submitScore` - Submit score to leaderboard
-- `GET /api/sessionStats` - User's session stats
-- `GET /api/leaderboard` - Top scores by type/player
+- `POST /api/submitScore` - Submit score to leaderboard (supports auto-update)
+- `GET /api/sessionStats` - User's current session stats (streak, total, lastPlayerId, submittedTypes)
+- `GET /api/leaderboard` - Top scores by type/player with optional player search
 
-### Search
-- `GET /api/searchPlayers` - Find players by name
+### Search & Management
+- `GET /api/searchPlayers` - Find players by name (for leaderboard search)
+- `POST /api/requestPlayer` - Request player data scrape (adds to queue)
+- `GET /api/requestStatus` - Check status of player scrape requests
 
 ## 🔧 Configuration
 
