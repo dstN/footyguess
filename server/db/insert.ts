@@ -59,46 +59,49 @@ export function upsertPlayer(player: PlayerInsert) {
     total_stats: player.total_stats ? JSON.stringify(player.total_stats) : null,
   };
 
-  if (player.tm_id) {
-    const stmt = db.prepare(`
-      INSERT INTO players (
-        name, name_search, tm_id, tm_url, tm_short_name, tm_short_name_search, tm_full_name, tm_full_name_search, last_scraped_at, birthdate, height_cm, active, retired_since, foot, current_club_id,
-        total_worth, shirt_number, main_position, secondary_positions,
-        birthplace, nationalities, total_stats
-      )
-      VALUES (
-        @name, @name_search, @tm_id, @tm_url, @tm_short_name, @tm_short_name_search, @tm_full_name, @tm_full_name_search, @last_scraped_at, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
-        @total_worth, @shirt_number, @main_position, @secondary_positions,
-        @birthplace, @nationalities, @total_stats
-      )
-      ON CONFLICT(tm_id) DO UPDATE SET
-        name = excluded.name,
-        name_search = excluded.name_search,
-        tm_url = excluded.tm_url,
-        tm_short_name = excluded.tm_short_name,
-        tm_short_name_search = excluded.tm_short_name_search,
-        tm_full_name = excluded.tm_full_name,
-        tm_full_name_search = excluded.tm_full_name_search,
-        last_scraped_at = excluded.last_scraped_at,
-        birthdate = excluded.birthdate,
-        height_cm = excluded.height_cm,
-        active = excluded.active,
-        retired_since = excluded.retired_since,
-        foot = excluded.foot,
-        current_club_id = excluded.current_club_id,
-        total_worth = excluded.total_worth,
-        shirt_number = excluded.shirt_number,
-        main_position = excluded.main_position,
-        secondary_positions = excluded.secondary_positions,
-        birthplace = excluded.birthplace,
-        nationalities = excluded.nationalities,
-        total_stats = excluded.total_stats;
-    `);
-    stmt.run(data);
-    return;
-  }
+  // Use single UPSERT that handles both tm_id and name conflicts
+  const upsertStmt = db.prepare(`
+    INSERT INTO players (
+      name, name_search, tm_id, tm_url, tm_short_name, tm_short_name_search, tm_full_name, tm_full_name_search, last_scraped_at, birthdate, height_cm, active, retired_since, foot, current_club_id,
+      total_worth, shirt_number, main_position, secondary_positions,
+      birthplace, nationalities, total_stats
+    )
+    VALUES (
+      @name, @name_search, @tm_id, @tm_url, @tm_short_name, @tm_short_name_search, @tm_full_name, @tm_full_name_search, @last_scraped_at, @birthdate, @height_cm, @active, @retired_since, @foot, @current_club_id,
+      @total_worth, @shirt_number, @main_position, @secondary_positions,
+      @birthplace, @nationalities, @total_stats
+    )
+    ON CONFLICT(tm_id) DO UPDATE SET
+      name = excluded.name,
+      name_search = excluded.name_search,
+      tm_url = excluded.tm_url,
+      tm_short_name = excluded.tm_short_name,
+      tm_short_name_search = excluded.tm_short_name_search,
+      tm_full_name = excluded.tm_full_name,
+      tm_full_name_search = excluded.tm_full_name_search,
+      last_scraped_at = excluded.last_scraped_at,
+      birthdate = excluded.birthdate,
+      height_cm = excluded.height_cm,
+      active = excluded.active,
+      retired_since = excluded.retired_since,
+      foot = excluded.foot,
+      current_club_id = excluded.current_club_id,
+      total_worth = excluded.total_worth,
+      shirt_number = excluded.shirt_number,
+      main_position = excluded.main_position,
+      secondary_positions = excluded.secondary_positions,
+      birthplace = excluded.birthplace,
+      nationalities = excluded.nationalities,
+      total_stats = excluded.total_stats
+    WHERE tm_id IS NOT NULL
+  `);
 
-  const stmt = db.prepare(`
+  // If tm_id provided, use primary key conflict, otherwise use name conflict
+  if (player.tm_id) {
+    upsertStmt.run(data);
+  } else {
+    // For players without tm_id, use name as unique constraint
+    const nameUpsertStmt = db.prepare(`
       INSERT INTO players (
         name, name_search, tm_id, tm_url, tm_short_name, tm_short_name_search, tm_full_name, tm_full_name_search, last_scraped_at, birthdate, height_cm, active, retired_since, foot, current_club_id,
         total_worth, shirt_number, main_position, secondary_positions,
@@ -130,10 +133,10 @@ export function upsertPlayer(player: PlayerInsert) {
         secondary_positions = excluded.secondary_positions,
         birthplace = excluded.birthplace,
         nationalities = excluded.nationalities,
-        total_stats = excluded.total_stats;
+        total_stats = excluded.total_stats
     `);
-
-  stmt.run(data);
+    nameUpsertStmt.run(data);
+  }
 }
 
 export function insertTransfer(data: {

@@ -31,7 +31,13 @@ describe("api routes", () => {
     db.prepare(
       `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
        VALUES (?, ?, ?, 0, ?, ?, 10)`,
-    ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
+    ).run(
+      "round1",
+      1,
+      "sess1",
+      Math.floor(Date.now() / 1000),
+      Math.floor(Date.now() / 1000) + 600,
+    );
 
     const token = createRoundToken({
       roundId: "round1",
@@ -56,7 +62,13 @@ describe("api routes", () => {
     db.prepare(
       `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
        VALUES (?, ?, ?, 0, ?, ?, 10)`,
-    ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
+    ).run(
+      "round1",
+      1,
+      "sess1",
+      Math.floor(Date.now() / 1000),
+      Math.floor(Date.now() / 1000) + 600,
+    );
 
     const token = createRoundToken({
       roundId: "round1",
@@ -88,7 +100,13 @@ describe("api routes", () => {
     db.prepare(
       `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
        VALUES (?, ?, ?, 0, ?, ?, 10)`,
-    ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
+    ).run(
+      "round1",
+      1,
+      "sess1",
+      Math.floor(Date.now() / 1000),
+      Math.floor(Date.now() / 1000) + 600,
+    );
 
     const token = createRoundToken({
       roundId: "round1",
@@ -114,7 +132,9 @@ describe("api routes", () => {
     expect(result?.ok).toBe(true);
 
     const entry = db
-      .prepare(`SELECT value FROM leaderboard_entries WHERE session_id = ? AND type = ?`)
+      .prepare(
+        `SELECT value FROM leaderboard_entries WHERE session_id = ? AND type = ?`,
+      )
       .get("sess1", "round") as { value: number };
     expect(entry.value).toBeGreaterThan(0);
   });

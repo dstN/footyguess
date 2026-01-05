@@ -5,7 +5,10 @@ import type { Player } from "~/types/player";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
-import { calculateScore, getStreakBonusMultiplier } from "~/server/utils/scoring";
+import {
+  calculateScore,
+  getStreakBonusMultiplier,
+} from "~/server/utils/scoring";
 import { sanitizeText } from "~/utils/sanitize";
 
 interface RoundState {
@@ -44,12 +47,13 @@ export function usePlayGame() {
 
   const hasGuess = computed(() => formState.guess.trim().length > 0);
 
-  watch(
-    () => formState.guess,
-    () => {
-      if (isError.value) isError.value = false;
-    },
-  );
+  // Clear error when user starts typing (no unnecessary watcher)
+  const onGuessInput = () => {
+    if (isError.value) {
+      isError.value = false;
+      errorMessage.value = "";
+    }
+  };
 
   const { searchTerm, suggestions, onSearch, clearSearch } = usePlayerSearch();
   const { careerTimeline } = useTransferTimeline(player);
@@ -99,9 +103,11 @@ export function usePlayGame() {
         ? `/api/getPlayer?name=${encodeURIComponent(name)}&sessionId=${encodeURIComponent(sid)}`
         : `/api/randomPlayer?sessionId=${encodeURIComponent(sid)}`;
 
-      const response = await $fetch<{
-        round: RoundState;
-      } & Player>(endpoint);
+      const response = await $fetch<
+        {
+          round: RoundState;
+        } & Player
+      >(endpoint);
 
       player.value = response;
       currentName.value = response?.name;
@@ -211,8 +217,18 @@ export function usePlayGame() {
       if (res?.cluesUsed !== undefined) {
         round.value = { ...round.value, cluesUsed: res.cluesUsed };
       }
+      errorMessage.value = ""; // Clear error on success
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to reveal clue";
+      errorMessage.value = message;
       if (import.meta.dev) console.error("Failed to record clue", err);
+      toast.add({
+        title: "Clue error",
+        description: message,
+        color: "error",
+        icon: "i-lucide-alert-triangle",
+      });
+      throw err; // Propagate to caller
     }
   }
 
@@ -223,6 +239,7 @@ export function usePlayGame() {
 
   async function submitGuess(guess: string) {
     if (!round.value) return;
+    errorMessage.value = "";
     try {
       const res = await $fetch<{
         correct: boolean;
@@ -257,6 +274,7 @@ export function usePlayGame() {
         router.push("/won");
       } else {
         isError.value = true;
+        errorMessage.value = "Incorrect guess - follow the clues more carefully";
         toast.add({
           title: "Wrong player",
           description: "Try again - follow the clues.",
@@ -266,10 +284,13 @@ export function usePlayGame() {
         triggerShake?.();
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to submit guess";
+      errorMessage.value = message;
+      isError.value = true;
       if (import.meta.dev) console.error("Failed to submit guess", err);
       toast.add({
         title: "Guess failed",
-        description: "Please try again.",
+        description: message,
         color: "error",
         icon: "i-lucide-alert-triangle",
       });
@@ -308,6 +329,7 @@ export function usePlayGame() {
     cancelNewPlayer,
     revealNextClue: revealNextClueWithServer,
     onSearch,
+    onGuessInput,
     submitGuessViaEnter,
     onSubmit,
     clearGuess,

@@ -50,7 +50,9 @@ export function useCluePool(
         ? capitalize(rawFoot)
         : null;
 
-    const height = player.value.height_cm ? `${player.value.height_cm} cm` : null;
+    const height = player.value.height_cm
+      ? `${player.value.height_cm} cm`
+      : null;
 
     const positionParts = [
       cleanValue(player.value.main_position),
@@ -89,23 +91,97 @@ export function useCluePool(
     const mostApps = getMostAppearancesCompetition(player.value.stats);
 
     return [
-      { key: "age", label: "Age", value: age ? `${age} years` : null, icon: "i-lucide-hourglass", accent: "primary" },
-      { key: "height", label: "Height", value: height, icon: "i-lucide-ruler", accent: "info" },
-      { key: "origin", label: "Origin", value: cleanOrigin, icon: "i-lucide-map-pin", accent: "secondary" },
-      { key: "birthplace", label: "Birthplace", value: cleanValue(player.value.birthplace), icon: "i-lucide-earth", accent: "secondary" },
-      { key: "foot", label: "Strong foot", value: foot, icon: "i-lucide-footprints", accent: "info" },
-      { key: "position", label: "Position", value: position, icon: "i-lucide-crosshair", accent: "success" },
-      { key: "totals", label: "Career totals", value: totalsClue, icon: "i-lucide-bar-chart-3", accent: "primary" },
-      { key: "minutesPerGoal", label: "Avg mins/goal", value: minutesPerGoal, icon: "i-lucide-gauge", accent: "info" },
-      { key: "minutesPerMatch", label: "Avg mins/match", value: minutesPerMatch, icon: "i-lucide-timer", accent: "info" },
-      { key: "assistRate", label: "Assist rate", value: assistRate, icon: "i-lucide-hand-coins", accent: "success" },
-      { key: "discipline", label: "Discipline", value: discipline, icon: "i-lucide-shield", accent: "warning" },
-      { key: "mostAppearances", label: "Most appearances", value: mostApps, icon: "i-lucide-trophy", accent: "primary" },
+      {
+        key: "age",
+        label: "Age",
+        value: age ? `${age} years` : null,
+        icon: "i-lucide-hourglass",
+        accent: "primary",
+      },
+      {
+        key: "height",
+        label: "Height",
+        value: height,
+        icon: "i-lucide-ruler",
+        accent: "info",
+      },
+      {
+        key: "origin",
+        label: "Origin",
+        value: cleanOrigin,
+        icon: "i-lucide-map-pin",
+        accent: "secondary",
+      },
+      {
+        key: "birthplace",
+        label: "Birthplace",
+        value: cleanValue(player.value.birthplace),
+        icon: "i-lucide-earth",
+        accent: "secondary",
+      },
+      {
+        key: "foot",
+        label: "Strong foot",
+        value: foot,
+        icon: "i-lucide-footprints",
+        accent: "info",
+      },
+      {
+        key: "position",
+        label: "Position",
+        value: position,
+        icon: "i-lucide-crosshair",
+        accent: "success",
+      },
+      {
+        key: "totals",
+        label: "Career totals",
+        value: totalsClue,
+        icon: "i-lucide-bar-chart-3",
+        accent: "primary",
+      },
+      {
+        key: "minutesPerGoal",
+        label: "Avg mins/goal",
+        value: minutesPerGoal,
+        icon: "i-lucide-gauge",
+        accent: "info",
+      },
+      {
+        key: "minutesPerMatch",
+        label: "Avg mins/match",
+        value: minutesPerMatch,
+        icon: "i-lucide-timer",
+        accent: "info",
+      },
+      {
+        key: "assistRate",
+        label: "Assist rate",
+        value: assistRate,
+        icon: "i-lucide-hand-coins",
+        accent: "success",
+      },
+      {
+        key: "discipline",
+        label: "Discipline",
+        value: discipline,
+        icon: "i-lucide-shield",
+        accent: "warning",
+      },
+      {
+        key: "mostAppearances",
+        label: "Most appearances",
+        value: mostApps,
+        icon: "i-lucide-trophy",
+        accent: "primary",
+      },
     ];
   });
 
   const revealedClues = computed(() =>
-    availableClues.value.filter((clue) => revealedTips.value.includes(clue.key)),
+    availableClues.value.filter((clue) =>
+      revealedTips.value.includes(clue.key),
+    ),
   );
 
   const hiddenClues = computed(() =>

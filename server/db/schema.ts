@@ -260,6 +260,8 @@ export function initSchema() {
     ).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`).run();
+    db.prepare(
+      `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
+    ).run();
   } catch {}
 }

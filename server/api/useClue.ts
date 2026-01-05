@@ -93,9 +93,17 @@ export default defineEventHandler(async (event) => {
 
     const updated = db
       .prepare(`SELECT clues_used, max_clues_allowed FROM rounds WHERE id = ?`)
-      .get(parsed.data.roundId) as { clues_used: number; max_clues_allowed: number };
+      .get(parsed.data.roundId) as {
+      clues_used: number;
+      max_clues_allowed: number;
+    };
 
-    return { cluesUsed: updated?.clues_used ?? round.clues_used + 1, cluesRemaining: (updated?.max_clues_allowed ?? round.max_clues_allowed) - (updated?.clues_used ?? round.clues_used + 1) };
+    return {
+      cluesUsed: updated?.clues_used ?? round.clues_used + 1,
+      cluesRemaining:
+        (updated?.max_clues_allowed ?? round.max_clues_allowed) -
+        (updated?.clues_used ?? round.clues_used + 1),
+    };
   } catch (error) {
     logError("useClue error", error);
     return sendError(
