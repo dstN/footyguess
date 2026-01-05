@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, onUnmounted } from "vue";
 
 /**
  * Lightweight search composable with debounced remote suggestions.
@@ -39,6 +39,11 @@ export function usePlayerSearch() {
     suggestions.value = [];
     if (searchTimeout.value) clearTimeout(searchTimeout.value);
   }
+
+  // Clean up timeout on component unmount
+  onUnmounted(() => {
+    clearSearch();
+  });
 
   return {
     searchTerm,
