@@ -120,14 +120,17 @@ export default defineEventHandler(async (event) => {
 
     const difficulty = computeDifficulty(stats);
 
-    // Ensure session exists
-    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(
-      round.session_id,
-    );
+    // Ensure session exists and read atomically to prevent race condition
+    const insertAndRead = db.transaction(() => {
+      db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(
+        round.session_id,
+      );
+      return db
+        .prepare(`SELECT streak, best_streak FROM sessions WHERE id = ?`)
+        .get(round.session_id) as { streak: number; best_streak: number };
+    });
 
-    const sessionRow = db
-      .prepare(`SELECT streak, best_streak FROM sessions WHERE id = ?`)
-      .get(round.session_id) as { streak: number; best_streak: number };
+    const sessionRow = insertAndRead();
 
     const normalizedGuess = parsed.data.guess.trim().toLowerCase();
     const correct = normalizedGuess === player.name.trim().toLowerCase();
