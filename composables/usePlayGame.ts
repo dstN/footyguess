@@ -1,49 +1,58 @@
-import { computed, inject, onMounted, reactive, ref, watch } from "vue";
-import * as v from "valibot";
+import { computed, inject, onMounted, reactive, ref } from "vue";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import type { GuessFormState, GuessFormOutput } from "~/types/forms";
 import { GuessFormSchema } from "~/types/forms";
+import { useGameSession } from "~/composables/useGameSession";
+import { useGuessSubmission } from "~/composables/useGuessSubmission";
+import { useGameStreak } from "~/composables/useGameStreak";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
-import type { ScoreBreakdown } from "~/server/utils/scoring";
 import { sanitizeText } from "~/utils/sanitize";
 
-interface RoundState {
-  id: string;
-  token: string;
-  sessionId: string;
-  expiresAt: number;
-  cluesUsed: number;
-}
-
+/**
+ * Main game composable that orchestrates all game logic
+ * Coordinates session management, guess submission, streak tracking, and clue system
+ *
+ * @example
+ * ```ts
+ * const gameState = usePlayGame();
+ * // Access player data, form state, game methods
+ * ```
+ */
 export function usePlayGame() {
   const router = useRouter();
   const toast = useToast();
   const triggerShake = inject<() => void>("triggerShake");
 
-  const player = ref<Player | null>(null);
-  const currentName = ref<string | undefined>(undefined);
-  const isLoading = ref(false);
-  const errorMessage = ref("");
-  const isError = ref(false);
-  const streak = ref(0);
-  const bestStreak = ref(0);
-  const sessionId = ref<string | null>(null);
-  const round = ref<RoundState | null>(null);
-  const confirmResetOpen = ref(false);
-  const pendingName = ref<string | undefined>(undefined);
+  // Composable orchestration
+  const {
+    sessionId,
+    player,
+    round,
+    currentName,
+    isLoading,
+    errorMessage,
+    isError,
+    loadPlayer: loadPlayerSession,
+  } = useGameSession();
 
+  const { streak, bestStreak, loadStreakFromStorage, resetStreak, updateStreak } =
+    useGameStreak();
+
+  // Form and UI state
   const schema = GuessFormSchema;
-
   const formState = reactive<GuessFormState>({
     guess: "",
   });
 
+  const confirmResetOpen = ref(false);
+  const pendingName = ref<string | undefined>(undefined);
+
   const hasGuess = computed(() => formState.guess.trim().length > 0);
 
-  // Clear error when user starts typing (no unnecessary watcher)
+  // Clear error when user starts typing
   const onGuessInput = () => {
     if (isError.value) {
       isError.value = false;
@@ -51,6 +60,7 @@ export function usePlayGame() {
     }
   };
 
+  // Dependent composables
   const { searchTerm, suggestions, onSearch, clearSearch } = usePlayerSearch();
   const { careerTimeline } = useTransferTimeline(player);
   const {
@@ -68,138 +78,29 @@ export function usePlayGame() {
       : 0,
   );
 
-  function ensureSessionId() {
-    if (sessionId.value) return sessionId.value;
-    if (import.meta.client) {
-      const stored = localStorage.getItem("footyguess_session_id");
-      if (stored) {
-        sessionId.value = stored;
-        return stored;
-      }
-    }
-    const generated = crypto.randomUUID();
-    sessionId.value = generated;
-    if (import.meta.client) {
-      localStorage.setItem("footyguess_session_id", generated);
-    }
-    return generated;
-  }
-
+  /**
+   * Load player wrapper that also resets form and clues
+   */
   async function loadPlayer(name?: string) {
-    isLoading.value = true;
-    errorMessage.value = "";
-    isError.value = false;
-
-    try {
-      const sid = ensureSessionId();
-      const endpoint = name
-        ? `/api/getPlayer?name=${encodeURIComponent(name)}&sessionId=${encodeURIComponent(sid)}`
-        : `/api/randomPlayer?sessionId=${encodeURIComponent(sid)}`;
-
-      const response = await $fetch<
-        {
-          round: RoundState;
-        } & Player
-      >(endpoint);
-
-      player.value = response;
-      currentName.value = response?.name;
-      round.value = response.round;
-      sessionId.value = response.round.sessionId;
-      if (import.meta.client) {
-        localStorage.setItem("footyguess_session_id", response.round.sessionId);
-      }
-      if (import.meta.dev) {
-        console.log("[footyguess] Loaded player:", response);
-      }
-      formState.guess = "";
-      clearSearch();
-      errorMessage.value = "";
-      selectRandomClues();
-      return;
-    } catch (err) {
-      if (import.meta.dev) console.error("Failed to load player", err);
-      errorMessage.value =
-        "Couldn't fetch the mystery player. Please try again.";
-      player.value = null;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  async function onSubmit(event: FormSubmitEvent<GuessFormOutput>) {
-    event.preventDefault();
-    if (!player.value || !round.value) return;
-    const rawGuess = (event as any).data?.guess as unknown;
-    const guessValue = getGuessValue(rawGuess);
-    if (!guessValue) return;
-    await submitGuess(guessValue);
-  }
-
-  function submitGuessViaEnter() {
-    onSubmit({
-      preventDefault: () => {},
-      data: { guess: formState.guess },
-    } as FormSubmitEvent<GuessFormOutput>);
-  }
-
-  function clearGuess() {
+    await loadPlayerSession(name);
     formState.guess = "";
     clearSearch();
-  }
-  function requestNewPlayer(name?: string) {
-    if (streak.value > 0) {
-      pendingName.value = name;
-      confirmResetOpen.value = true;
-      return;
-    }
-    loadPlayer(name);
+    selectRandomClues();
   }
 
-  function confirmNewPlayer() {
-    resetStreak();
-    confirmResetOpen.value = false;
-    loadPlayer(pendingName.value);
-    pendingName.value = undefined;
-  }
-
-  function cancelNewPlayer() {
-    confirmResetOpen.value = false;
-    pendingName.value = undefined;
-  }
-
+  /**
+   * Persist last player to localStorage
+   */
   function persistLastPlayer(name: string) {
     if (import.meta.client) {
       localStorage.setItem("footyguess_last_player", sanitizeText(name));
     }
   }
 
-  function loadStreakFromStorage() {
-    if (!import.meta.client) return;
-    const stored = Number.parseInt(
-      localStorage.getItem("footyguess_streak") || "0",
-      10,
-    );
-    const storedBest = Number.parseInt(
-      localStorage.getItem("footyguess_best_streak") || "0",
-      10,
-    );
-    streak.value = Number.isFinite(stored) ? stored : 0;
-    bestStreak.value = Number.isFinite(storedBest) ? storedBest : 0;
-  }
-
-  function saveStreak() {
-    if (!import.meta.client) return;
-    localStorage.setItem("footyguess_streak", String(streak.value));
-    localStorage.setItem("footyguess_best_streak", String(bestStreak.value));
-  }
-
-  function resetStreak() {
-    streak.value = 0;
-    saveStreak();
-  }
-
-  async function useClueServer() {
+  /**
+   * Reveal next clue with server synchronization
+   */
+  async function revealNextClueWithServer() {
     if (!round.value) return;
     try {
       const res = await $fetch<{ cluesUsed: number }>("/api/useClue", {
@@ -221,75 +122,97 @@ export function usePlayGame() {
         color: "error",
         icon: "i-lucide-alert-triangle",
       });
-      throw err; // Propagate to caller
+      throw err;
     }
-  }
-
-  async function revealNextClueWithServer() {
-    await useClueServer();
     revealNextClue();
   }
 
-  async function submitGuess(guess: string) {
-    if (!round.value) return;
-    errorMessage.value = "";
-    try {
-      const res = await $fetch<{
-        correct: boolean;
-        score: number;
-        breakdown: ScoreBreakdown;
-        streak: number;
-        bestStreak: number;
-        playerName: string;
-        difficulty: Player["difficulty"];
-      }>("/api/guess", {
-        method: "POST",
-        body: {
-          roundId: round.value.id,
-          token: round.value.token,
-          guess,
-        },
-      });
+  /**
+   * Handle correct guess - navigate to results
+   */
+  function handleCorrectGuess(
+    playerName: string,
+    difficulty: Player["difficulty"],
+    breakdown: any,
+    score: number,
+    newStreak: number,
+  ) {
+    isError.value = false;
+    persistLastPlayer(playerName);
+    toast.add({
+      title: `Correct! +${breakdown.preStreak} base pts`,
+      description: `Time: +${Math.round((breakdown.timeMultiplier - 1) * 100)}% · Streak: ${Math.round(breakdown.streakBonus * 100)}% → total ${score} pts · Streak ${newStreak}`,
+      color: "primary",
+      icon: "i-lucide-party-popper",
+    });
+    router.push("/won");
+  }
 
-      streak.value = res.streak;
-      bestStreak.value = res.bestStreak;
-      saveStreak();
+  /**
+   * Handle incorrect guess - trigger shake and error message
+   */
+  function handleIncorrectGuess() {
+    isError.value = true;
+    errorMessage.value =
+      "Incorrect guess - follow the clues more carefully";
+    toast.add({
+      title: "Wrong player",
+      description: "Try again - follow the clues.",
+      color: "error",
+      icon: "i-lucide-x-circle",
+    });
+    triggerShake?.();
+  }
 
-      if (res.correct) {
-        isError.value = false;
-        persistLastPlayer(res.playerName);
-        toast.add({
-          title: `Correct! +${res.breakdown.preStreak} base pts`,
-          description: `Time: +${Math.round((res.breakdown.timeMultiplier - 1) * 100)}% · Streak: ${Math.round(res.breakdown.streakBonus * 100)}% → total ${res.score} pts · Streak ${res.streak}`,
-          color: "primary",
-          icon: "i-lucide-party-popper",
-        });
-        router.push("/won");
-      } else {
-        isError.value = true;
-        errorMessage.value =
-          "Incorrect guess - follow the clues more carefully";
-        toast.add({
-          title: "Wrong player",
-          description: "Try again - follow the clues.",
-          color: "error",
-          icon: "i-lucide-x-circle",
-        });
-        triggerShake?.();
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to submit guess";
-      errorMessage.value = message;
-      isError.value = true;
-      if (import.meta.dev) console.error("Failed to submit guess", err);
-      toast.add({
-        title: "Guess failed",
-        description: message,
-        color: "error",
-        icon: "i-lucide-alert-triangle",
-      });
+  /**
+   * Handle guess submission error
+   */
+  function handleGuessError(message: string) {
+    errorMessage.value = message;
+    isError.value = true;
+    toast.add({
+      title: "Guess failed",
+      description: message,
+      color: "error",
+      icon: "i-lucide-alert-triangle",
+    });
+  }
+
+  const { submitGuess, onSubmit, submitGuessViaEnter } = useGuessSubmission(
+    player,
+    round,
+    streak,
+    bestStreak,
+    updateStreak,
+    handleCorrectGuess,
+    handleIncorrectGuess,
+    handleGuessError,
+  );
+
+  function clearGuess() {
+    formState.guess = "";
+    clearSearch();
+  }
+
+  function requestNewPlayer(name?: string) {
+    if (streak.value > 0) {
+      pendingName.value = name;
+      confirmResetOpen.value = true;
+      return;
     }
+    loadPlayer(name);
+  }
+
+  function confirmNewPlayer() {
+    resetStreak();
+    confirmResetOpen.value = false;
+    loadPlayer(pendingName.value);
+    pendingName.value = undefined;
+  }
+
+  function cancelNewPlayer() {
+    confirmResetOpen.value = false;
+    pendingName.value = undefined;
   }
 
   onMounted(async () => {
@@ -330,11 +253,3 @@ export function usePlayGame() {
   };
 }
 
-function getGuessValue(raw: unknown) {
-  if (typeof raw === "string") return raw.trim();
-  if (raw && typeof raw === "object") {
-    const maybeValue = (raw as any).value ?? (raw as any).label;
-    if (typeof maybeValue === "string") return maybeValue.trim();
-  }
-  return "";
-}
