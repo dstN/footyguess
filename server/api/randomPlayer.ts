@@ -99,8 +99,10 @@ export default defineEventHandler(async (event) => {
       if (typeof base.total_stats === "string") {
         base.total_stats = JSON.parse(base.total_stats);
       }
-    } catch {
-      // ignore parse errors
+    } catch (error) {
+      logError(`Invalid JSON for player ${base.id}`, error);
+      attempts += 1;
+      continue;
     }
 
     transfers = db
