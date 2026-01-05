@@ -41,7 +41,7 @@ export default defineAppConfig({
         },
         overlay: {
           true: {
-            overlay: "bg-white/5 backdrop-blur-xs z-[101]",
+            overlay: "bg-black/55 backdrop-blur-sm z-[101]",
           },
         },
       },
@@ -50,6 +50,13 @@ export default defineAppConfig({
       slots: {
         content:
           "flex items-center gap-1 rounded-lg bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs text-highlighted ring ring-default h-6 px-2.5 py-1 text-xs select-none data-[state=delayed-open]:animate-[scale-in_100ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in] origin-(--reka-tooltip-content-transform-origin) pointer-events-auto",
+      },
+    },
+    popover: {
+      slots: {
+        content:
+          "rounded-2xl border border-primary-900/50 bg-slate-950/80 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] ring ring-primary-900/40 backdrop-blur-md data-[state=open]:animate-[scale-in_100ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in] origin-(--reka-popover-content-transform-origin) focus:outline-none pointer-events-auto",
+        arrow: "fill-slate-950/80",
       },
     },
   },

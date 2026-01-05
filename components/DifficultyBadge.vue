@@ -1,18 +1,55 @@
 <template>
-  <UTooltip
+  <UPopover
     v-if="difficulty"
-    :text="tooltipText"
-    :popper="{ placement: 'bottom' }"
+    mode="hover"
+    :content="{ side: 'bottom', align: 'start' }"
+    :open-delay="200"
+    :close-delay="100"
+    :ui="{
+      content: 'bg-transparent shadow-none ring-0 border-0',
+    }"
   >
-    <UBadge
-      :color="badge.color"
-      variant="soft"
-      class="text-xs"
-      :class="badge.class"
-    >
-      {{ label }}
-    </UBadge>
-  </UTooltip>
+    <div class="flex cursor-help items-center gap-1">
+      <UBadge
+        :color="badge.color"
+        variant="soft"
+        class="text-xs"
+        :class="badge.class"
+      >
+        {{ label }}
+      </UBadge>
+      <UIcon
+        name="i-lucide-help-circle"
+        class="h-3.5 w-3.5 text-slate-500 transition-colors hover:text-slate-300"
+      />
+    </div>
+
+    <template #content>
+      <div
+        class="border-primary-500/30 max-w-xs space-y-2 rounded-2xl border bg-white/5 p-3 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
+      >
+        <div class="font-medium text-white">{{ label }} Difficulty</div>
+        <div class="text-xs text-slate-300">
+          <div>
+            Base: {{ difficulty.basePoints }} pts ×
+            {{ difficulty.multiplier }} =
+            <span class="text-white">{{ maxPoints }} pts max</span>
+          </div>
+          <div
+            v-if="streakBonusPct > 0"
+            class="mt-1"
+          >
+            Streak bonus: +{{ streakBonusPct }}% → up to
+            <span class="text-mew-500">{{ potentialWithStreak }} pts</span>
+          </div>
+        </div>
+        <div class="border-t border-slate-600 pt-2 text-xs text-slate-400">
+          <div>Easy: 1× • Medium: 1.25×</div>
+          <div>Hard: 1.5× • Ultra: 2×</div>
+        </div>
+      </div>
+    </template>
+  </UPopover>
 </template>
 
 <script setup lang="ts">
@@ -109,12 +146,4 @@ const badge = computed<{
       return { color: "neutral", class: "" };
   }
 });
-
-/**
- * Build tooltip text with difficulty and scoring information
- */
-const tooltipText = computed(
-  () =>
-    `Difficulty: ${label.value} — Base max ${maxPoints.value} pts; with current streak bonus (${streakBonusPct.value}%): up to ${potentialWithStreak.value} pts.`,
-);
 </script>

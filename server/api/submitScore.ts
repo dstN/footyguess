@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     const rateError = enforceRateLimit(event, {
       key: "submitScore",
       windowMs: 60_000,
-      max: 3,
+      max: 10,
       sessionId,
     });
     if (rateError) return sendError(event, rateError);
@@ -93,13 +93,17 @@ export default defineEventHandler(async (event) => {
     let baseScore: number | null = null;
     let finalScore: number | null = null;
     let streak: number | null = null;
+    let playerId: number | null = null;
+    let playerName: string | null = null;
 
     if (type === "round") {
+      // Get the last round with player info
       const last = db
         .prepare(
           `
-          SELECT s.score, s.base_score, s.time_score, s.streak
+          SELECT s.score, s.base_score, s.time_score, s.streak, r.player_id
           FROM scores s
+          JOIN rounds r ON r.id = s.round_id
           WHERE s.session_id = ?
           ORDER BY s.id DESC
           LIMIT 1
@@ -111,6 +115,7 @@ export default defineEventHandler(async (event) => {
             base_score: number;
             time_score: number;
             streak: number;
+            player_id: number;
           }
         | undefined;
       if (!last) {
@@ -122,10 +127,76 @@ export default defineEventHandler(async (event) => {
           }),
         );
       }
+
+      playerId = last.player_id;
       value = last.time_score ?? session?.last_round_time_score ?? 0;
       baseScore = last.base_score ?? null;
       finalScore = last.score ?? null;
       streak = last.streak ?? null;
+
+      // Get player name for response
+      const player = db
+        .prepare(`SELECT name FROM players WHERE id = ?`)
+        .get(playerId) as { name: string } | undefined;
+      playerName = player?.name ?? null;
+
+      // Check if we already have a score for this player
+      const existingPlayerEntry = db
+        .prepare(
+          `SELECT id, value FROM leaderboard_entries WHERE session_id = ? AND type = 'round' AND player_id = ?`,
+        )
+        .get(sessionId, playerId) as { id: number; value: number } | undefined;
+
+      if (existingPlayerEntry) {
+        // Already have an entry for this player
+        if (value <= existingPlayerEntry.value) {
+          return {
+            ok: true,
+            type,
+            value: existingPlayerEntry.value,
+            nickname: nickname ?? null,
+            skipped: true,
+            playerName,
+            message: `You already have a higher score (${existingPlayerEntry.value}) for this player`,
+          };
+        }
+
+        // Update existing entry with higher score
+        db.prepare(
+          `UPDATE leaderboard_entries SET value = ?, base_score = ?, final_score = ?, streak = ?, nickname = (SELECT nickname FROM sessions WHERE id = ?), created_at = strftime('%s','now')
+           WHERE id = ?`,
+        ).run(
+          value,
+          baseScore,
+          finalScore,
+          streak,
+          sessionId,
+          existingPlayerEntry.id,
+        );
+      } else {
+        // Insert new entry for this player
+        db.prepare(
+          `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, player_id, created_at)
+           VALUES (?, 'round', ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), ?, strftime('%s','now'))`,
+        ).run(
+          sessionId,
+          value,
+          baseScore,
+          finalScore,
+          streak,
+          sessionId,
+          playerId,
+        );
+      }
+
+      return {
+        ok: true,
+        type,
+        value,
+        nickname: nickname ?? null,
+        skipped: false,
+        playerName,
+      };
     } else if (type === "total") {
       if (session?.total_score === null || session?.total_score === undefined) {
         const row = db
@@ -151,20 +222,28 @@ export default defineEventHandler(async (event) => {
       )
       .get(sessionId, type) as { id: number; value: number } | undefined;
 
-    const stmt = db.prepare(
-      `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))
-       ON CONFLICT(session_id, type) DO UPDATE SET
-         value = excluded.value,
-         base_score = excluded.base_score,
-         final_score = excluded.final_score,
-         streak = excluded.streak,
-         nickname = excluded.nickname,
-         created_at = excluded.created_at
-       WHERE excluded.value > leaderboard_entries.value`,
-    );
-
-    stmt.run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
+    if (existingEntry) {
+      // Update existing entry if new value is higher
+      if (value > existingEntry.value) {
+        db.prepare(
+          `UPDATE leaderboard_entries SET value = ?, base_score = ?, final_score = ?, streak = ?, nickname = (SELECT nickname FROM sessions WHERE id = ?), created_at = strftime('%s','now')
+           WHERE id = ?`,
+        ).run(
+          value,
+          baseScore,
+          finalScore,
+          streak,
+          sessionId,
+          existingEntry.id,
+        );
+      }
+    } else {
+      // Insert new entry
+      db.prepare(
+        `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))`,
+      ).run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
+    }
 
     const finalEntry = db
       .prepare(

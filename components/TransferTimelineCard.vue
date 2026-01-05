@@ -22,14 +22,23 @@
             :current-streak="currentStreak"
           />
         </div>
-        <UBadge
-          v-if="showBadge"
-          color="primary"
-          variant="soft"
-          class="bg-primary-500/10 text-primary-100 text-xs"
-        >
-          Transfers: {{ items.length }}
-        </UBadge>
+        <div class="flex items-center gap-2">
+          <UBadge
+            v-if="showBadge"
+            color="primary"
+            variant="soft"
+            class="bg-primary-500/10 text-primary-100 text-xs"
+          >
+            Transfers: {{ items.length }}
+          </UBadge>
+          <HelpModal
+            :show-label="false"
+            button-size="xs"
+            button-variant="ghost"
+            button-color="neutral"
+            button-class="opacity-60 hover:opacity-100"
+          />
+        </div>
       </div>
     </template>
 
@@ -43,6 +52,7 @@
 <script setup lang="ts">
 import DifficultyBadge from "~/components/DifficultyBadge.vue";
 import TransferTimelineView from "~/components/TransferTimelineView.vue";
+import HelpModal from "~/components/HelpModal.vue";
 
 interface TimelineItem {
   id: string;

@@ -1,6 +1,7 @@
 <template>
   <div
     class="relative min-h-screen overflow-visible bg-[#050915] text-slate-100"
+    :class="{ 'animations-paused': isModalOpen }"
   >
     <div class="pointer-events-none absolute inset-0">
       <div
@@ -12,9 +13,11 @@
       <div class="glitch-layer absolute inset-0" />
     </div>
 
-    <div class="relative mx-auto flex w-full max-w-5xl px-4 py-8 md:py-12">
+    <div
+      class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-8 md:py-12"
+    >
       <div
-        class="glass-panel border-primary-900/50 relative mb-18 w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
+        class="glass-panel border-primary-900/50 relative w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
         :class="{ 'animate-shake': shouldShake }"
         @animationend="shouldShake = false"
       >
@@ -35,12 +38,19 @@
 
 <script setup lang="ts">
 const shouldShake = ref(false);
+const isModalOpen = ref(false);
 
 function triggerShake() {
   shouldShake.value = true;
 }
 
+function setModalOpen(open: boolean) {
+  isModalOpen.value = open;
+}
+
 provide("triggerShake", triggerShake);
+provide("setModalOpen", setModalOpen);
+provide("isModalOpen", isModalOpen);
 </script>
 
 <style scoped>
@@ -135,5 +145,10 @@ provide("triggerShake", triggerShake);
 
 .animate-shake {
   animation: animate 0.4s ease-in-out;
+}
+
+.animations-paused .glitch-layer,
+.animations-paused .glitch-layer::after {
+  animation-play-state: paused;
 }
 </style>

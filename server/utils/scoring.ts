@@ -38,12 +38,12 @@ export function calculateScore(
   );
 
   const streakBonus = getStreakBonusMultiplier(streak);
-  const timeMultiplier = clampTimeMultiplier(
-    getTimeMultiplier(opts.elapsedSeconds),
-  );
+  const timeBonus = clampTimeBonus(getTimeBonus(opts.elapsedSeconds));
 
+  // Time bonus is additive: 0.2 = +20%, -0.5 = -50%
+  // Apply time bonus to preStreak, minimum is 10% of preStreak or floor
   const timeAdjusted = Math.max(
-    preStreak * timeMultiplier,
+    preStreak * (1 + timeBonus),
     preStreak * 0.1,
     floor,
   );
@@ -53,7 +53,7 @@ export function calculateScore(
   return {
     base: basePoints,
     multiplier,
-    timeMultiplier,
+    timeMultiplier: 1 + timeBonus, // For display: actual multiplier applied
     cluesUsed,
     cluePenalty,
     preStreak,
@@ -63,18 +63,34 @@ export function calculateScore(
   };
 }
 
-export function getTimeMultiplier(elapsedSeconds?: number) {
-  if (elapsedSeconds === undefined || elapsedSeconds === null) return 1;
-  if (elapsedSeconds <= 30) return 1.25;
-  if (elapsedSeconds <= 60) return 1.1;
-  if (elapsedSeconds <= 120) return 1;
-  // after 120s, drop 0.1 every 30s, capped at 0.1 min
-  const steps = Math.floor((elapsedSeconds - 120) / 30) + 1;
-  const mult = 1 - 0.1 * steps;
-  return Math.max(0.1, mult);
+export function getTimeBonus(elapsedSeconds?: number): number {
+  if (elapsedSeconds === undefined || elapsedSeconds === null) return 0;
+
+  // First second: max bonus (instant guess)
+  if (elapsedSeconds <= 1) return 1.2;
+
+  // From 1s to 120s: linear drop from +120% to 0%
+  // At 1s = +1.2 (120% bonus), at 120s = 0 (no bonus)
+  if (elapsedSeconds <= 120) {
+    // Linear interpolation: 1.2 at 1s, 0 at 120s
+    const progress = (elapsedSeconds - 1) / (120 - 1); // 0 at 1s, 1 at 120s
+    return 1.2 * (1 - progress);
+  }
+
+  // From 120s to 300s (5 min): no bonus, no penalty
+  if (elapsedSeconds <= 300) {
+    return 0;
+  }
+
+  // After 5 min: start penalty
+  // Drop 0.1 every 30s after 5 min, capped at -0.5 (50% penalty)
+  const secondsAfter5min = elapsedSeconds - 300;
+  const penaltySteps = Math.floor(secondsAfter5min / 30) + 1;
+  const penalty = -0.1 * penaltySteps;
+  return Math.max(-0.5, penalty);
 }
 
-function clampTimeMultiplier(mult: number) {
-  if (!Number.isFinite(mult)) return 1;
-  return Math.min(Math.max(mult, 0.1), 1.25);
+function clampTimeBonus(bonus: number): number {
+  if (!Number.isFinite(bonus)) return 0;
+  return Math.min(Math.max(bonus, -0.5), 1.2);
 }

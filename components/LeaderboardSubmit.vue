@@ -11,6 +11,7 @@
         placeholder="Nickname"
         size="lg"
         class="w-full"
+        :disabled="hasAutoUpdate"
         :ui="{
           base: 'w-full bg-white/5 border border-primary-900/50 text-slate-100 placeholder:text-slate-400/70 backdrop-blur-sm',
         }"
@@ -21,11 +22,22 @@
           block
           color="primary"
           size="lg"
-          :disabled="!canSubmit || !lastScore"
+          :disabled="
+            !canSubmit || !lastScore || submittedTypes.includes('round')
+          "
           @click="$emit('submit', 'round')"
         >
           <span class="flex items-center justify-center gap-2">
-            <span>Submit last round score</span>
+            <UIcon
+              v-if="submittedTypes.includes('round')"
+              name="i-lucide-check"
+              class="h-4 w-4"
+            />
+            <span>{{
+              submittedTypes.includes("round")
+                ? "Round submitted"
+                : "Submit last round score"
+            }}</span>
             <span class="font-mono opacity-80">({{ lastBaseWithTime }})</span>
           </span>
         </UButton>
@@ -34,11 +46,20 @@
           color="neutral"
           variant="soft"
           size="lg"
-          :disabled="!canSubmit"
+          :disabled="!canSubmit || submittedTypes.includes('total')"
           @click="$emit('submit', 'total')"
         >
           <span class="flex items-center justify-center gap-2">
-            <span>Submit total score</span>
+            <UIcon
+              v-if="submittedTypes.includes('total')"
+              name="i-lucide-refresh-cw"
+              class="h-4 w-4"
+            />
+            <span>{{
+              submittedTypes.includes("total")
+                ? "Auto-updating total"
+                : "Submit total score"
+            }}</span>
             <span class="font-mono opacity-80">({{ totalScore }})</span>
           </span>
         </UButton>
@@ -46,17 +67,30 @@
           block
           color="secondary"
           size="lg"
-          :disabled="!canSubmit"
+          :disabled="!canSubmit || submittedTypes.includes('streak')"
           @click="$emit('submit', 'streak')"
         >
           <span class="flex items-center justify-center gap-2">
-            <span>Submit best streak</span>
+            <UIcon
+              v-if="submittedTypes.includes('streak')"
+              name="i-lucide-refresh-cw"
+              class="h-4 w-4"
+            />
+            <span>{{
+              submittedTypes.includes("streak")
+                ? "Auto-updating streak"
+                : "Submit best streak"
+            }}</span>
             <span class="font-mono opacity-80">({{ bestStreak }})</span>
           </span>
         </UButton>
       </div>
       <p class="text-center text-xs text-slate-500">
-        Enter a nickname to submit your scores
+        {{
+          hasAutoUpdate
+            ? "Total score & streak update automatically after each win"
+            : "Enter a nickname to submit your scores"
+        }}
       </p>
     </div>
   </UCard>
@@ -77,6 +111,7 @@ const props = defineProps<{
   } | null;
   totalScore: number;
   bestStreak: number;
+  submittedTypes: string[];
 }>();
 
 defineEmits<{
@@ -85,6 +120,12 @@ defineEmits<{
 }>();
 
 const canSubmit = computed(() => props.nickname.trim().length > 0);
+
+const hasAutoUpdate = computed(
+  () =>
+    props.submittedTypes.includes("total") ||
+    props.submittedTypes.includes("streak"),
+);
 
 const lastBaseWithTime = computed(() =>
   props.lastScore

@@ -37,6 +37,7 @@
       </div>
 
       <div class="flex flex-wrap justify-end gap-2">
+        <HighscoreModal />
         <UModal
           :model-value="confirmResetOpen"
           @update:model-value="$emit('update:confirmResetOpen', $event)"
@@ -102,15 +103,27 @@
 </template>
 
 <script setup lang="ts">
+import { watch, inject } from "vue";
 import StreakBar from "./StreakBar.vue";
+import HighscoreModal from "./HighscoreModal.vue";
 
-defineProps<{
+const setModalOpen = inject<(open: boolean) => void>("setModalOpen");
+
+const props = defineProps<{
   streak: number;
   bestStreak: number;
   isLoading: boolean;
   tipButtonDisabled: boolean;
   confirmResetOpen: boolean;
 }>();
+
+// Notify layout when confirm modal opens/closes
+watch(
+  () => props.confirmResetOpen,
+  (open) => {
+    setModalOpen?.(open);
+  },
+);
 
 defineEmits<{
   (e: "confirm-new-player"): void;

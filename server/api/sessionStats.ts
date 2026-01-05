@@ -81,6 +81,7 @@ export default defineEventHandler(async (event) => {
       streak: session?.streak ?? 0,
       bestStreak: session?.best_streak ?? 0,
       totalScore: cachedTotal ?? 0,
+      lastPlayerId: lastScore?.player_id ?? null,
       lastScore: lastScore
         ? (() => {
             const streakBonus = getStreakBonusMultiplier(lastScore.streak ?? 0);
@@ -98,6 +99,14 @@ export default defineEventHandler(async (event) => {
             };
           })()
         : null,
+      submittedTypes: (() => {
+        const entries = db
+          .prepare(
+            `SELECT type FROM leaderboard_entries WHERE session_id = ? AND nickname IS NOT NULL`,
+          )
+          .all(sessionId) as { type: string }[];
+        return entries.map((e) => e.type);
+      })(),
     };
   } catch (error) {
     logError("sessionStats error", error);

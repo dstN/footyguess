@@ -245,9 +245,26 @@ export function initSchema() {
       `CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search)`,
     ).run();
   } catch {}
+  // Drop old unique index that conflicts with player-specific round scores
+  try {
+    db.prepare(`DROP INDEX IF EXISTS idx_leaderboard_session_type`).run();
+  } catch {}
+  // Create unique index for total/streak entries (non-player-specific)
   try {
     db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_session_type ON leaderboard_entries(session_id, type)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_session_type_non_round ON leaderboard_entries(session_id, type) WHERE type != 'round'`,
+    ).run();
+  } catch {}
+  // Add player_id column for player-specific round scores
+  try {
+    db.prepare(
+      `ALTER TABLE leaderboard_entries ADD COLUMN player_id INTEGER`,
+    ).run();
+  } catch {}
+  // Create index for player-specific round lookups
+  try {
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_player_round ON leaderboard_entries(session_id, type, player_id) WHERE type = 'round' AND player_id IS NOT NULL`,
     ).run();
   } catch {}
   try {
