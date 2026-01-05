@@ -25,7 +25,7 @@ export function usePlayerSearch() {
         `/api/searchPlayers?q=${encodeURIComponent(query)}&limit=10`,
       );
     } catch (error) {
-      console.error("Search failed", error);
+      if (import.meta.dev) console.error("Search failed", error);
     }
   }
 

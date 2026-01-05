@@ -110,14 +110,13 @@ export function usePlayGame() {
       if (import.meta.client) {
         localStorage.setItem("footyguess_session_id", response.round.sessionId);
       }
-      console.log("[footyguess] Loaded player:", response);
       formState.guess = "";
       clearSearch();
       errorMessage.value = "";
       selectRandomClues();
       return;
     } catch (err) {
-      console.error("Failed to load player", err);
+      if (import.meta.dev) console.error("Failed to load player", err);
       errorMessage.value =
         "Couldn't fetch the mystery player. Please try again.";
       player.value = null;
@@ -210,7 +209,7 @@ export function usePlayGame() {
         round.value = { ...round.value, cluesUsed: res.cluesUsed };
       }
     } catch (err) {
-      console.error("Failed to record clue", err);
+      if (import.meta.dev) console.error("Failed to record clue", err);
     }
   }
 
@@ -264,7 +263,7 @@ export function usePlayGame() {
         triggerShake?.();
       }
     } catch (err) {
-      console.error("Failed to submit guess", err);
+      if (import.meta.dev) console.error("Failed to submit guess", err);
       toast.add({
         title: "Guess failed",
         description: "Please try again.",
