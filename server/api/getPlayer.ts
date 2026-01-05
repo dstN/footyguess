@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
     const roundId = randomUUID();
     const expiresAt = Date.now() + 1000 * 60 * 30;
     db.prepare(
-      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed) VALUES (?, ?, ?, 0, ?, ?, 10)`,
     ).run(
       roundId,
       player.id,

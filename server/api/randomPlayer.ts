@@ -11,7 +11,7 @@ import {
 } from "../utils/difficulty";
 import { createRoundToken, generateSessionId } from "../utils/tokens";
 import { parseSchema } from "../utils/validate";
-import { object, optional, picklist, string, maxLength } from "valibot";
+import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -53,13 +53,15 @@ export default defineEventHandler(async (event) => {
       )
     `;
 
+  // Get count once outside loop
+  const countRow = db
+    .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
+    .get() as { count: number } | undefined;
+  const totalCount = countRow?.count ?? 0;
+
   function getRandomPlayer() {
-    const countRow = db
-      .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
-      .get() as { count: number } | undefined;
-    const count = countRow?.count ?? 0;
-    if (count <= 0) return undefined;
-    const offset = Math.floor(Math.random() * count);
+    if (totalCount <= 0) return undefined;
+    const offset = Math.floor(Math.random() * totalCount);
 
     return db
       .prepare(
@@ -176,7 +178,7 @@ export default defineEventHandler(async (event) => {
   const roundId = randomUUID();
   const expiresAt = Date.now() + 1000 * 60 * 30; // 30 minutes
   db.prepare(
-    `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
+    `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed) VALUES (?, ?, ?, 0, ?, ?, 10)`,
   ).run(
     roundId,
     base.id,

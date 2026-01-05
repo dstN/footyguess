@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
 
     const round = db
       .prepare(
-        `SELECT id, session_id, player_id, clues_used, expires_at FROM rounds WHERE id = ?`,
+        `SELECT id, session_id, player_id, clues_used, max_clues_allowed, expires_at FROM rounds WHERE id = ?`,
       )
       .get(parsed.data.roundId) as
       | {
@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
           session_id: string;
           player_id: number;
           clues_used: number;
+          max_clues_allowed: number;
           expires_at: number | null;
         }
       | undefined;
@@ -79,15 +80,22 @@ export default defineEventHandler(async (event) => {
       );
     }
 
+    if (round.clues_used >= round.max_clues_allowed) {
+      return sendError(
+        event,
+        createError({ statusCode: 429, statusMessage: "Clue limit reached" }),
+      );
+    }
+
     db.prepare(
       `UPDATE rounds SET clues_used = clues_used + 1 WHERE id = ?`,
     ).run(parsed.data.roundId);
 
     const updated = db
-      .prepare(`SELECT clues_used FROM rounds WHERE id = ?`)
-      .get(parsed.data.roundId) as { clues_used: number };
+      .prepare(`SELECT clues_used, max_clues_allowed FROM rounds WHERE id = ?`)
+      .get(parsed.data.roundId) as { clues_used: number; max_clues_allowed: number };
 
-    return { cluesUsed: updated?.clues_used ?? round.clues_used + 1 };
+    return { cluesUsed: updated?.clues_used ?? round.clues_used + 1, cluesRemaining: (updated?.max_clues_allowed ?? round.max_clues_allowed) - (updated?.clues_used ?? round.clues_used + 1) };
   } catch (error) {
     logError("useClue error", error);
     return sendError(

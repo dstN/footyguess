@@ -29,8 +29,8 @@ describe("api routes", () => {
     seedBasicPlayer();
     db.prepare(`INSERT INTO sessions (id) VALUES (?)`).run("sess1");
     db.prepare(
-      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at)
-       VALUES (?, ?, ?, 0, ?, ?)`,
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
+       VALUES (?, ?, ?, 0, ?, ?, 10)`,
     ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
 
     const token = createRoundToken({
@@ -54,8 +54,8 @@ describe("api routes", () => {
     seedBasicPlayer();
     db.prepare(`INSERT INTO sessions (id) VALUES (?)`).run("sess1");
     db.prepare(
-      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at)
-       VALUES (?, ?, ?, 0, ?, ?)`,
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
+       VALUES (?, ?, ?, 0, ?, ?, 10)`,
     ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
 
     const token = createRoundToken({
@@ -86,8 +86,8 @@ describe("api routes", () => {
     seedBasicPlayer();
     db.prepare(`INSERT INTO sessions (id) VALUES (?)`).run("sess1");
     db.prepare(
-      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at)
-       VALUES (?, ?, ?, 0, ?, ?)`,
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed)
+       VALUES (?, ?, ?, 0, ?, ?, 10)`,
     ).run("round1", 1, "sess1", Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 600);
 
     const token = createRoundToken({
