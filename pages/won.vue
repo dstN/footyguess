@@ -1,32 +1,33 @@
 <template>
   <ErrorBoundary>
     <main class="flex flex-1 items-center justify-center">
-    <div class="w-full max-w-3xl space-y-6">
-      <VictoryCard
-        :streak="streak"
-        :best-streak="bestStreak"
-        :last-player="lastPlayer"
-      />
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <ScoreSnapshot
-          :last-score="lastScore"
-          :total-score="totalScore"
+      <div class="w-full max-w-3xl space-y-6">
+        <VictoryCard
+          :streak="streak"
           :best-streak="bestStreak"
+          :last-player="lastPlayer"
         />
 
-        <LeaderboardSubmit
-          :nickname="nickname"
-          :last-score="lastScore"
-          :total-score="totalScore"
-          :best-streak="bestStreak"
-          @update:nickname="(val) => (nickname = val)"
-          @submit="submit"
-        />
+        <div class="grid gap-4 md:grid-cols-2">
+          <ScoreSnapshot
+            :last-score="lastScore"
+            :total-score="totalScore"
+            :best-streak="bestStreak"
+          />
+
+          <LeaderboardSubmit
+            :nickname="nickname"
+            :last-score="lastScore"
+            :total-score="totalScore"
+            :best-streak="bestStreak"
+            @update:nickname="(val) => (nickname = val)"
+            @submit="submit"
+          />
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
   </ErrorBoundary>
+</template>
 
 <script setup lang="ts">
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
@@ -77,7 +78,9 @@ async function fetchStats() {
         playerName: string | null;
       } | null;
       nickname: string | null;
-    }>(`/api/sessionStats?sessionId=${encodeURIComponent(sessionId.value)}`);
+    }>(
+      `/api/sessionStats?sessionId=${encodeURIComponent(sessionId.value)}`,
+    );
     streak.value = res.streak ?? streak.value;
     bestStreak.value = res.bestStreak ?? bestStreak.value;
     totalScore.value = res.totalScore ?? 0;
