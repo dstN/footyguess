@@ -14,6 +14,7 @@ A football guessing game where players decode the mystery of a footballer's care
 ## 🌟 Features
 
 ### Core Gameplay
+
 - **Transfer Timeline**: Real transfer history data with club logos and dates
 - **Random Clues**: Reveal hints (nationality, position, stats, career achievements) for -10 points each
 - **Smart Search**: Autocomplete player search with 1,900+ international football players
@@ -21,6 +22,7 @@ A football guessing game where players decode the mystery of a footballer's care
 - **Streak System**: Build consecutive wins for +5% to +30% score bonuses
 
 ### Scoring System
+
 - **Base Points**: 100 pts per round × difficulty multiplier
 - **Time Bonus**: 120% bonus for instant guesses, linear drop to 0% at 2 min, -10% penalties after 5 min
 - **Streak Bonus**: Up to +30% with 100+ streak
@@ -28,12 +30,14 @@ A football guessing game where players decode the mystery of a footballer's care
 - **Minimum Floor**: 10 pts guaranteed per correct guess
 
 ### Leaderboards
+
 - **Player-Specific Rounds**: Compete for best score on each footballer
 - **Session Total**: Cumulative score across all rounds in a session
 - **Best Streak**: Longest consecutive win streak
 - **Auto-Update**: Total/streak scores auto-update after initial submission
 
 ### Help & Instructions
+
 - **Interactive Tutorial**: Comprehensive "How to Play" guide
 - **Scoring Breakdown**: Detailed explanation of multipliers and bonuses
 - **Difficulty Popover**: Hover hints on difficulty badges for strategy
@@ -42,6 +46,7 @@ A football guessing game where players decode the mystery of a footballer's care
 ## 🏗️ Tech Stack
 
 ### Frontend
+
 - **Nuxt 4** with Vue 3 Composition API
 - **TypeScript** for type safety
 - **Nuxt UI** (v4.x) for modern components
@@ -49,12 +54,14 @@ A football guessing game where players decode the mystery of a footballer's care
 - **Vitest** & **Playwright** for testing
 
 ### Backend
+
 - **Nitro** (Nuxt server engine)
 - **SQLite** with better-sqlite3 for fast local queries
 - **Valibot** for runtime validation
 - **Puppeteer** for data integration and enrichment
 
 ### Architecture
+
 - **Server-side API routes** for secure data handling
 - **Client-side composables** for game logic
 - **Session-based persistence** using localStorage + database
@@ -62,7 +69,7 @@ A football guessing game where players decode the mystery of a footballer's care
 
 ## 📦 Project Structure
 
-```
+```text
 footyguess/
 ├── pages/                      # Game pages (index, play, won)
 ├── components/                 # Vue components
@@ -171,6 +178,7 @@ footyguess/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - npm, pnpm, yarn, or bun
 
@@ -215,14 +223,13 @@ npm run preview
 
 ## 🗄️ Database
 
-### Database
-
 ### Schema Highlights
+
 - **players** (1,900+ records with seed data)
   - Includes comprehensive player data: position, nationality, market value
   - Indexed for fast name search (name_search, tm_short_name_search, tm_full_name_search)
   - Data from public sources
-- **clubs** 
+- **clubs**
   - Club information with logo paths
 - **transfers** (500K+ total records across all players)
   - Complete career transfer history per player
@@ -251,6 +258,7 @@ npm run preview
   - Background job queue for data updates
 
 ### Key Queries
+
 - Player search: O(1) with name_search index
 - Recent transfers: O(1) with player_id + date index
 - Leaderboard fetch: O(log n) with type + value index
@@ -258,16 +266,18 @@ npm run preview
 ## 🎯 Game Flow
 
 1. **Load Mystery**: Random player selected, transfers shown
-2. **Study Timeline**: Examine clubs and dates (name hidden)
-3. **Strategic Clues**: Optional hints cost points
-4. **Search & Guess**: Type player name, select from autocomplete
-5. **Submit**: Correct = score calculation + streak update
-6. **Leaderboard**: Submit to permanent leaderboard for bragging rights
+1. **Study Timeline**: Examine clubs and dates (name hidden)
+1. **Strategic Clues**: Optional hints cost points
+1. **Search & Guess**: Type player name, select from autocomplete
+1. **Submit**: Correct = score calculation + streak update
+1. **Leaderboard**: Submit to permanent leaderboard for bragging rights
 
 ## 📊 Scoring Deep Dive
 
 ### Example Calculation
+
 Player: Cristiano Ronaldo (Ultra difficulty)
+
 - Base: 100 pts
 - Difficulty: 100 × 2.0 = 200 pts
 - Clues: 200 - (2 clues × 10) = 180 pts
@@ -275,27 +285,32 @@ Player: Cristiano Ronaldo (Ultra difficulty)
 - Streak: 15+ → 180 × 1.10 = **198 pts final**
 
 ### Time Bonus Breakdown
+
 - **≤1 second**: +120% bonus (instant guess reward)
 - **1s → 2 minutes**: Linear drop from +120% to 0% (penalty-free zone)
 - **2min → 5min**: No bonus, no penalty (safe zone)
 - **>5 minutes**: -10% per 30s penalty starting immediately (max -50%)
 
 ### Difficulty Multipliers
+
 Based on player fame (international + league appearances). **More experience = easier!**
 
 **By International Competitions (weighted)**:
+
 - **Easy**: >80 weighted apps = 1.0× (100 pts max)
 - **Medium**: 60-80 weighted apps = 1.25× (125 pts max)
 - **Hard**: 45-60 weighted apps = 1.5× (150 pts max)
 - **Ultra**: <45 weighted apps = 2.0× (200 pts max) — Obscure players!
 
 **By Top 5 Leagues**:
+
 - **Easy**: >400 apps = 1.0× (famous league players)
 - **Medium**: 200-400 apps = 1.25×
 - **Hard**: 100-200 apps = 1.5×
 - **Ultra**: <100 apps = 2.0× (lesser-known league players)
 
 ### Streak Bonuses
+
 - 5+ streak: +5% multiplier
 - 15+ streak: +10% multiplier
 - 30+ streak: +15% multiplier
@@ -305,17 +320,20 @@ Based on player fame (international + league appearances). **More experience = e
 ## 🌐 API Endpoints
 
 ### Game Flow
+
 - `GET /api/randomPlayer` - Get new mystery player with transfers
 - `POST /api/guess` - Validate guess and calculate score
 - `POST /api/useClue` - Reveal clue and deduct points
 - `GET /api/getPlayer` - Get full player details + stats
 
 ### Scoring & Leaderboard
+
 - `POST /api/submitScore` - Submit score to leaderboard (supports auto-update)
 - `GET /api/sessionStats` - User's current session stats (streak, total, lastPlayerId, submittedTypes)
 - `GET /api/leaderboard` - Top scores by type/player with optional player search
 
 ### Search & Management
+
 - `GET /api/searchPlayers` - Find players by name (for leaderboard search)
 - `POST /api/requestPlayer` - Request player data scrape (adds to queue)
 - `GET /api/requestStatus` - Check status of player scrape requests
@@ -323,6 +341,7 @@ Based on player fame (international + league appearances). **More experience = e
 ## 🔧 Configuration
 
 ### Theme (app.config.ts)
+
 ```typescript
 export default defineAppConfig({
   ui: {
@@ -342,13 +361,17 @@ export default defineAppConfig({
 ```
 
 ### Difficulty Thresholds (server/utils/difficulty.ts)
+
+
 The system uses two basis calculations:
+
 - **International**: Weighted appearances in Champions League, Europa League, national team, etc.
 - **Top 5**: Raw appearances in Premier League, La Liga, Serie A, Ligue 1, Bundesliga
 
 Priority: International tier is preferred unless it's Ultra, then Top 5 is used. The higher the appearances, the easier the tier.
 
 ### Rate Limiting (server/utils/rate-limit.ts)
+
 - Score submission: 10 requests per minute per session
 - Search: Standard rate limits
 
@@ -365,6 +388,7 @@ Priority: International tier is preferred unless it's Ultra, then Top 5 is used.
 ## 🐛 Known Issues & TODOs
 
 See [issues.md](issues.md) and [TODO.md](TODO.md) for:
+
 - Current bugs and edge cases
 - Planned features and improvements
 - Performance optimization ideas
@@ -395,6 +419,7 @@ See [issues.md](issues.md) and [TODO.md](TODO.md) for:
 5. Open a Pull Request
 
 ### Development Guidelines
+
 - Write tests for new features
 - Follow TypeScript strict mode
 - Use Prettier for code formatting
@@ -414,7 +439,8 @@ MIT License - Feel free to use and modify.
 
 ## 📧 Contact & Support
 
-Questions or feedback? 
+Questions or feedback?
+
 - Open an issue on GitHub
 - Check [issues.md](issues.md) for known problems
 - Review [TODO.md](TODO.md) for planned features
