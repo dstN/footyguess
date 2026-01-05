@@ -362,7 +362,6 @@ export default defineAppConfig({
 
 ### Difficulty Thresholds (server/utils/difficulty.ts)
 
-
 The system uses two basis calculations:
 
 - **International**: Weighted appearances in Champions League, Europa League, national team, etc.
