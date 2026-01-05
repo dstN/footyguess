@@ -110,6 +110,9 @@ export function usePlayGame() {
       if (import.meta.client) {
         localStorage.setItem("footyguess_session_id", response.round.sessionId);
       }
+      if (import.meta.dev) {
+        console.log("[footyguess] Loaded player:", response);
+      }
       formState.guess = "";
       clearSearch();
       errorMessage.value = "";
