@@ -214,11 +214,19 @@ Player: Cristiano Ronaldo (Ultra difficulty)
 - **>5 minutes**: -10% per 30s penalty (max -50%)
 
 ### Difficulty Multipliers
-Based on player fame (international + league appearances):
-- **Easy**: <50 apps = 1.0× (100 pts max)
-- **Medium**: 50-100 apps = 1.25× (125 pts max)
-- **Hard**: 100-300 apps = 1.5× (150 pts max)
-- **Ultra**: >300 apps = 2.0× (200 pts max)
+Based on player fame (international + league appearances). **More experience = easier!**
+
+**By International Competitions (weighted)**:
+- **Easy**: >80 weighted apps = 1.0× (100 pts max)
+- **Medium**: 60-80 weighted apps = 1.25× (125 pts max)
+- **Hard**: 45-60 weighted apps = 1.5× (150 pts max)
+- **Ultra**: <45 weighted apps = 2.0× (200 pts max) — Obscure players!
+
+**By Top 5 Leagues**:
+- **Easy**: >400 apps = 1.0× (famous league players)
+- **Medium**: 200-400 apps = 1.25×
+- **Hard**: 100-200 apps = 1.5×
+- **Ultra**: <100 apps = 2.0× (lesser-known league players)
 
 ### Streak Bonuses
 - 5+ streak: +5% multiplier
@@ -265,10 +273,11 @@ export default defineAppConfig({
 ```
 
 ### Difficulty Thresholds (server/utils/difficulty.ts)
-- Easy: `<50 international/league appearances`
-- Medium: `50-100 appearances`
-- Hard: `100-300 appearances`
-- Ultra: `>300 appearances`
+The system uses two basis calculations:
+- **International**: Weighted appearances in Champions League, Europa League, national team, etc.
+- **Top 5**: Raw appearances in Premier League, La Liga, Serie A, Ligue 1, Bundesliga
+
+Priority: International tier is preferred unless it's Ultra, then Top 5 is used. The higher the appearances, the easier the tier.
 
 ### Rate Limiting (server/utils/rate-limit.ts)
 - Score submission: 10 requests per minute per session
