@@ -1,15 +1,28 @@
 <template>
   <div
     class="border-primary-900/60 flex flex-wrap items-center gap-3 rounded-2xl border bg-slate-900/60 px-3 py-3 text-slate-100"
+    role="region"
+    aria-label="Current and best streak information"
   >
-    <p class="text-xs uppercase tracking-[0.18em] text-primary-200">
+    <p class="text-xs uppercase tracking-[0.18em] text-primary-200" id="streak-label">
       Streaks
     </p>
-    <UBadge color="primary" variant="soft" class="bg-primary-500/10 text-sm font-semibold">
-      Current {{ streak }}
+    <UBadge
+      color="primary"
+      variant="soft"
+      class="bg-primary-500/10 text-sm font-semibold"
+      role="status"
+      :aria-label="`Current streak: ${streak}`"
+    >
+      Current <span class="font-bold text-primary-300">{{ streak }}</span>
     </UBadge>
-    <UBadge color="neutral" variant="soft" class="text-sm font-semibold">
-      Best {{ bestStreak }}
+    <UBadge
+      color="neutral"
+      variant="soft"
+      class="text-sm font-semibold"
+      :aria-label="`Best streak: ${bestStreak}`"
+    >
+      Best <span class="font-bold">{{ bestStreak }}</span>
     </UBadge>
   </div>
 </template>

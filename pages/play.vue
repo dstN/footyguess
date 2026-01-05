@@ -1,6 +1,6 @@
 <template>
-  <main class="flex flex-1 flex-col gap-6 text-slate-100">
-    <header class="flex flex-col gap-4">
+  <main class="flex flex-1 flex-col gap-6 text-slate-100" role="main" aria-label="Game play area">
+    <header class="flex flex-col gap-4" role="banner">
       <div
         class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
       >
@@ -16,6 +16,7 @@
         <StreakBar
           :streak="streak"
           :best-streak="bestStreak"
+          aria-label="Streak information"
         />
       </div>
 
