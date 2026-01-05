@@ -1,4 +1,4 @@
-import type { Difficulty } from "./difficulty";
+import type { Difficulty } from "./difficulty.ts";
 
 export interface ScoreBreakdown {
   base: number;
@@ -38,9 +38,15 @@ export function calculateScore(
   );
 
   const streakBonus = getStreakBonusMultiplier(streak);
-  const timeMultiplier = clampTimeMultiplier(getTimeMultiplier(opts.elapsedSeconds));
+  const timeMultiplier = clampTimeMultiplier(
+    getTimeMultiplier(opts.elapsedSeconds),
+  );
 
-  const timeAdjusted = Math.max(preStreak * timeMultiplier, preStreak * 0.1, floor);
+  const timeAdjusted = Math.max(
+    preStreak * timeMultiplier,
+    preStreak * 0.1,
+    floor,
+  );
   const timeScore = Math.round(timeAdjusted);
   const finalScore = Math.round(timeScore * (1 + streakBonus));
 

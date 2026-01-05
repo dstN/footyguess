@@ -1,62 +1,71 @@
 import { createError, defineEventHandler, getQuery, sendError } from "h3";
 import { randomUUID } from "node:crypto";
-import db from "../db/connection";
+import db from "../db/connection.ts";
 import type { Player } from "~/types/player";
-import { computeDifficulty } from "../utils/difficulty";
-import { createRoundToken, generateSessionId } from "../utils/tokens";
+import { computeDifficulty } from "../utils/difficulty.ts";
+import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
+import { parseSchema } from "../utils/validate.ts";
+import { logError } from "../utils/logger.ts";
+import { object, string, minLength, maxLength, optional, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const { name } = query;
-  const sessionFromQuery =
-    typeof query.sessionId === "string" && query.sessionId.length > 0
-      ? (query.sessionId as string)
-      : null;
-  const sessionId = sessionFromQuery || generateSessionId();
-  if (!name || typeof name !== "string") {
-    return sendError(
-      event,
-      createError({ statusCode: 400, statusMessage: "Missing player name" }),
-    );
-  }
-
-  const player = db
-    .prepare(
-      `
-      SELECT
-        p.*,
-        c.name AS currentClub
-      FROM players p
-      LEFT JOIN clubs c ON p.current_club_id = c.id
-      WHERE p.name = ?
-    `,
-    )
-    .get(name) as Player | undefined;
-
-  if (!player) {
-    return sendError(
-      event,
-      createError({ statusCode: 404, statusMessage: "Player not found" }),
-    );
-  }
-
   try {
-    if (typeof player.secondary_positions === "string") {
-      player.secondary_positions = JSON.parse(player.secondary_positions);
+    const query = getQuery(event);
+    const parsed = parseSchema(
+      object({
+        name: pipe(string(), minLength(1), maxLength(128)),
+        sessionId: optional(pipe(string(), maxLength(128))),
+      }),
+      query,
+    );
+    if (!parsed.ok) {
+      return sendError(
+        event,
+        createError({ statusCode: 400, statusMessage: "Invalid query" }),
+      );
     }
-    if (typeof player.nationalities === "string") {
-      player.nationalities = JSON.parse(player.nationalities);
-    }
-    if (typeof player.total_stats === "string") {
-      player.total_stats = JSON.parse(player.total_stats);
-    }
-  } catch {
-    // ignore JSON parse error
-  }
 
-  const transfers = db
-    .prepare(
-      `
+    const name = parsed.data.name;
+    const sessionFromQuery = parsed.data.sessionId ?? null;
+    const sessionId = sessionFromQuery || generateSessionId();
+
+    const player = db
+      .prepare(
+        `
+        SELECT
+          p.*,
+          c.name AS currentClub
+        FROM players p
+        LEFT JOIN clubs c ON p.current_club_id = c.id
+        WHERE p.name = ?
+      `,
+      )
+      .get(name) as Player | undefined;
+
+    if (!player) {
+      return sendError(
+        event,
+        createError({ statusCode: 404, statusMessage: "Player not found" }),
+      );
+    }
+
+    try {
+      if (typeof player.secondary_positions === "string") {
+        player.secondary_positions = JSON.parse(player.secondary_positions);
+      }
+      if (typeof player.nationalities === "string") {
+        player.nationalities = JSON.parse(player.nationalities);
+      }
+      if (typeof player.total_stats === "string") {
+        player.total_stats = JSON.parse(player.total_stats);
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+
+    const transfers = db
+      .prepare(
+        `
     SELECT
       t.season,
       t.transfer_date,
@@ -80,12 +89,12 @@ export default defineEventHandler(async (event) => {
       )
     ORDER BY t.transfer_date DESC
   `,
-    )
-    .all(player.id);
+      )
+      .all(player.id);
 
-  const stats = db
-    .prepare(
-      `
+    const stats = db
+      .prepare(
+        `
       SELECT
         ps.appearances,
         ps.goals,
@@ -106,36 +115,49 @@ export default defineEventHandler(async (event) => {
       WHERE ps.player_id = ?
       ORDER BY ps.appearances DESC
     `,
-    )
-    .all(player.id) as Array<{ competition_id: string; appearances: number }>;
+      )
+      .all(player.id) as Array<{ competition_id: string; appearances: number }>;
 
-  const difficulty = computeDifficulty(stats);
-  db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
+    const difficulty = computeDifficulty(stats);
+    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
 
-  const roundId = randomUUID();
-  const expiresAt = Date.now() + 1000 * 60 * 30;
-  db.prepare(
-    `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
-  ).run(roundId, player.id, sessionId, Math.floor(Date.now() / 1000), Math.floor(expiresAt / 1000));
-
-  const token = createRoundToken({
-    roundId,
-    playerId: player.id,
-    sessionId,
-    exp: expiresAt,
-  });
-
-  return {
-    ...player,
-    transfers,
-    stats,
-    difficulty,
-    round: {
-      id: roundId,
-      token,
+    const roundId = randomUUID();
+    const expiresAt = Date.now() + 1000 * 60 * 30;
+    db.prepare(
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
+    ).run(
+      roundId,
+      player.id,
       sessionId,
-      expiresAt,
-      cluesUsed: 0,
-    },
-  };
+      Math.floor(Date.now() / 1000),
+      Math.floor(expiresAt / 1000),
+    );
+
+    const token = createRoundToken({
+      roundId,
+      playerId: player.id,
+      sessionId,
+      exp: expiresAt,
+    });
+
+    return {
+      ...player,
+      transfers,
+      stats,
+      difficulty,
+      round: {
+        id: roundId,
+        token,
+        sessionId,
+        expiresAt,
+        cluesUsed: 0,
+      },
+    };
+  } catch (error) {
+    logError("getPlayer error", error);
+    return sendError(
+      event,
+      createError({ statusCode: 500, statusMessage: "Failed to load player" }),
+    );
+  }
 });

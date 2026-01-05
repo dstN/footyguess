@@ -1,7 +1,8 @@
 // 📁 server/scraper/scrape-transfers.ts
 import puppeteer, { Page, ElementHandle } from "puppeteer";
-import db from "../db/connection";
-import { upsertClub, updatePlayerWorth } from "../db/insert";
+import db from "../db/connection.ts";
+import { upsertClub, updatePlayerWorth } from "../db/insert.ts";
+import { logError } from "../utils/logger.ts";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -17,19 +18,19 @@ function parseDateToISO(dateStr: string): string | null {
 
 async function scrapeAndUpsertClubFromRow(
   element: ElementHandle<Element>,
-  selector: string
+  selector: string,
 ): Promise<number | null> {
   try {
     const clubAnchor = await element.$(
-      `${selector} .tm-player-transfer-history-grid__club-link`
+      `${selector} .tm-player-transfer-history-grid__club-link`,
     );
     if (!clubAnchor) return null;
 
     const clubName = await clubAnchor.evaluate(
-      (el) => (el as HTMLElement).textContent?.trim() ?? null
+      (el) => (el as HTMLElement).textContent?.trim() ?? null,
     );
     const clubHref = await clubAnchor.evaluate((el) =>
-      (el as HTMLElement).getAttribute("href")
+      (el as HTMLElement).getAttribute("href"),
     );
     if (!clubName || !clubHref) return null;
 
@@ -43,7 +44,7 @@ async function scrapeAndUpsertClubFromRow(
     upsertClub(clubId, clubName, null);
     return clubId;
   } catch (err) {
-    console.error("❌ Fehler beim Scrapen des Clubs:", err);
+    logError("Failed to scrape club", err);
     return null;
   }
 }
@@ -52,17 +53,17 @@ export async function scrapeTransfersForPlayer(
   page: Page,
   playerId: number,
   playerName: string,
-  alreadyOnProfile = false
+  alreadyOnProfile = false,
 ) {
-  console.log(`🔄 Transfers von ${playerName} werden geladen...`);
+  console.log(`Transfers loading for ${playerName}...`);
 
   try {
     if (!alreadyOnProfile) {
       await page.goto(
         `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(
-          playerName
+          playerName,
         )}`,
-        { waitUntil: "networkidle2", timeout: 0 }
+        { waitUntil: "networkidle2", timeout: 0 },
       );
 
       const firstLink =
@@ -85,7 +86,7 @@ export async function scrapeTransfersForPlayer(
       nodes.map((el) => ({
         html: el.outerHTML,
         className: el.className,
-      }))
+      })),
     );
 
     let retiredDateFromHistory: string | null = null;
@@ -98,7 +99,7 @@ export async function scrapeTransfersForPlayer(
       if (isHeading) continue;
 
       const isFooter = row.className.includes(
-        "player-transfer-history__footer-container"
+        "player-transfer-history__footer-container",
       );
       if (isFooter) continue;
 
@@ -113,12 +114,12 @@ export async function scrapeTransfersForPlayer(
 
       const season = await element
         .$eval(".tm-player-transfer-history-grid__season", (el) =>
-          el.textContent?.trim()
+          el.textContent?.trim(),
         )
         .catch(() => null);
       const dateRaw = await element
         .$eval(".tm-player-transfer-history-grid__date", (el) =>
-          el.textContent?.trim()
+          el.textContent?.trim(),
         )
         .catch(() => null);
       const transfer_date = dateRaw ? parseDateToISO(dateRaw) : null;
@@ -128,7 +129,7 @@ export async function scrapeTransfersForPlayer(
 
       const feeRaw = await element
         .$eval(".tm-player-transfer-history-grid__fee", (el) =>
-          el.textContent?.trim()
+          el.textContent?.trim(),
         )
         .catch(() => null);
 
@@ -158,10 +159,10 @@ export async function scrapeTransfersForPlayer(
           const multiplier = feeRaw.includes("m")
             ? 1_000_000
             : feeRaw.includes("k")
-            ? 1_000
-            : 1;
+              ? 1_000
+              : 1;
           const number = parseFloat(
-            feeRaw.replace("\u20ac", "").replace("m", "").replace("k", "")
+            feeRaw.replace("\u20ac", "").replace("m", "").replace("k", ""),
           );
           if (!isNaN(number)) fee = String(Math.round(number * multiplier));
         }
@@ -169,17 +170,17 @@ export async function scrapeTransfersForPlayer(
 
       const from_club_id = await scrapeAndUpsertClubFromRow(
         element,
-        ".tm-player-transfer-history-grid__old-club"
+        ".tm-player-transfer-history-grid__old-club",
       );
       const to_club_id = await scrapeAndUpsertClubFromRow(
         element,
-        ".tm-player-transfer-history-grid__new-club"
+        ".tm-player-transfer-history-grid__new-club",
       );
 
       if (!retiredDateFromHistory) {
         const clubTexts = await element
           .$$eval(".tm-player-transfer-history-grid__club-link", (nodes) =>
-            nodes.map((el) => el.textContent?.trim() || "")
+            nodes.map((el) => el.textContent?.trim() || ""),
           )
           .catch(() => []);
         if (clubTexts.some((text) => text.toLowerCase() === "retired")) {
@@ -193,17 +194,27 @@ export async function scrapeTransfersForPlayer(
       if (!season && !transfer_date && !fee && !from_club_id && !to_club_id)
         continue;
 
+      const transferKey = [
+        season ?? "",
+        transfer_date ?? "",
+        from_club_id ?? "",
+        to_club_id ?? "",
+        fee ?? "",
+        transferType ?? "",
+      ].join("|");
+
       db.prepare(
         `INSERT INTO transfers (
-          player_id, season, transfer_date, from_club_id, to_club_id, fee, transfer_type, upcoming
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(player_id, transfer_date) DO UPDATE SET
+          player_id, season, transfer_date, from_club_id, to_club_id, fee, transfer_type, upcoming, transfer_key
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(player_id, transfer_key) DO UPDATE SET
           season = excluded.season,
           from_club_id = excluded.from_club_id,
           to_club_id = excluded.to_club_id,
           fee = excluded.fee,
           transfer_type = excluded.transfer_type,
-          upcoming = excluded.upcoming`
+          upcoming = excluded.upcoming,
+          transfer_key = excluded.transfer_key`,
       ).run(
         playerId,
         season ?? null,
@@ -212,14 +223,15 @@ export async function scrapeTransfersForPlayer(
         to_club_id ?? null,
         fee ?? null,
         transferType ?? null,
-        upcoming === null ? null : Number(upcoming)
+        upcoming === null ? null : Number(upcoming),
+        transferKey,
       );
     }
 
     const totalFeeRaw = await page
       .$eval(
         ".player-transfer-history__footer-container .tm-player-transfer-history-grid__fee",
-        (el: Element) => el.textContent?.trim()
+        (el: Element) => el.textContent?.trim(),
       )
       .catch(() => null);
 
@@ -228,10 +240,10 @@ export async function scrapeTransfersForPlayer(
       const multiplier = totalFeeRaw.includes("m")
         ? 1_000_000
         : totalFeeRaw.includes("k")
-        ? 1_000
-        : 1;
+          ? 1_000
+          : 1;
       const number = parseFloat(
-        totalFeeRaw.replace("\u20ac", "").replace("m", "").replace("k", "")
+        totalFeeRaw.replace("\u20ac", "").replace("m", "").replace("k", ""),
       );
       if (!isNaN(number)) totalFee = Math.round(number * multiplier);
     }
@@ -244,12 +256,12 @@ export async function scrapeTransfersForPlayer(
         SET active = 0,
             retired_since = COALESCE(retired_since, ?)
         WHERE id = ?
-        `
+        `,
       ).run(retiredDateFromHistory, playerId);
     }
-    console.log(`✅ Transfers für ${playerName} gespeichert.`);
+    console.log(`Transfers saved for ${playerName}.`);
   } catch (err) {
-    console.error(`❌ Fehler bei ${playerName}:`, err);
+    logError(`Transfer scrape failed for ${playerName}`, err);
   }
 }
 

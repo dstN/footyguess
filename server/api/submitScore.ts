@@ -1,6 +1,17 @@
 import { defineEventHandler, readBody, createError, sendError } from "h3";
-import db from "../db/connection";
-import { enforceRateLimit } from "../utils/rate-limit";
+import db from "../db/connection.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
+import { parseSchema } from "../utils/validate.ts";
+import { logError } from "../utils/logger.ts";
+import {
+  object,
+  optional,
+  string,
+  picklist,
+  maxLength,
+  minLength,
+  pipe,
+} from "valibot";
 
 type SubmitType = "round" | "total" | "streak";
 
@@ -12,14 +23,33 @@ export default defineEventHandler(async (event) => {
       type?: SubmitType;
     }>(event);
 
-    const sessionId = body?.sessionId?.trim();
-    const nickname = body?.nickname?.trim();
-    const type = body?.type;
+    const parsed = parseSchema(
+      object({
+        sessionId: pipe(string(), minLength(1), maxLength(128)),
+        nickname: optional(pipe(string(), maxLength(32))),
+        type: picklist(["round", "total", "streak"]),
+      }),
+      body,
+    );
+
+    if (!parsed.ok) {
+      return sendError(
+        event,
+        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
+      );
+    }
+
+    const sessionId = parsed.data.sessionId.trim();
+    const nickname = parsed.data.nickname?.trim();
+    const type = parsed.data.type as SubmitType;
 
     if (!sessionId || !type) {
       return sendError(
         event,
-        createError({ statusCode: 400, statusMessage: "Missing sessionId or type" }),
+        createError({
+          statusCode: 400,
+          statusMessage: "Missing sessionId or type",
+        }),
       );
     }
 
@@ -30,13 +60,6 @@ export default defineEventHandler(async (event) => {
       sessionId,
     });
     if (rateError) return sendError(event, rateError);
-
-    if (!["round", "total", "streak"].includes(type)) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Invalid submission type" }),
-      );
-    }
 
     const session = db
       .prepare(
@@ -59,15 +82,11 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    if (nickname && nickname.length > 32) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Nickname too long" }),
-      );
-    }
-
     if (nickname) {
-      db.prepare(`UPDATE sessions SET nickname = ? WHERE id = ?`).run(nickname, sessionId);
+      db.prepare(`UPDATE sessions SET nickname = ? WHERE id = ?`).run(
+        nickname,
+        sessionId,
+      );
     }
 
     let value = 0;
@@ -86,11 +105,21 @@ export default defineEventHandler(async (event) => {
           LIMIT 1
         `,
         )
-        .get(sessionId) as { score: number; base_score: number; time_score: number; streak: number } | undefined;
+        .get(sessionId) as
+        | {
+            score: number;
+            base_score: number;
+            time_score: number;
+            streak: number;
+          }
+        | undefined;
       if (!last) {
         return sendError(
           event,
-          createError({ statusCode: 400, statusMessage: "No round score available" }),
+          createError({
+            statusCode: 400,
+            statusMessage: "No round score available",
+          }),
         );
       }
       value = last.time_score ?? session?.last_round_time_score ?? 0;
@@ -100,7 +129,9 @@ export default defineEventHandler(async (event) => {
     } else if (type === "total") {
       if (session?.total_score === null || session?.total_score === undefined) {
         const row = db
-          .prepare(`SELECT IFNULL(SUM(score),0) AS totalScore FROM scores WHERE session_id = ?`)
+          .prepare(
+            `SELECT IFNULL(SUM(score),0) AS totalScore FROM scores WHERE session_id = ?`,
+          )
           .get(sessionId) as { totalScore: number };
         value = row.totalScore ?? 0;
       } else {
@@ -116,35 +147,43 @@ export default defineEventHandler(async (event) => {
 
     const existingEntry = db
       .prepare(
-        `SELECT id, value FROM leaderboard_entries WHERE session_id = ? AND type = ? ORDER BY id DESC LIMIT 1`,
+        `SELECT id, value FROM leaderboard_entries WHERE session_id = ? AND type = ?`,
       )
       .get(sessionId, type) as { id: number; value: number } | undefined;
 
-    if (existingEntry && value <= existingEntry.value) {
-      return {
-        ok: true,
-        type,
-        value: existingEntry.value,
-        nickname: nickname ?? null,
-        skipped: true,
-      };
-    }
+    const stmt = db.prepare(
+      `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))
+       ON CONFLICT(session_id, type) DO UPDATE SET
+         value = excluded.value,
+         base_score = excluded.base_score,
+         final_score = excluded.final_score,
+         streak = excluded.streak,
+         nickname = excluded.nickname,
+         created_at = excluded.created_at
+       WHERE excluded.value > leaderboard_entries.value`,
+    );
 
-    if (existingEntry) {
-      db.prepare(
-        `UPDATE leaderboard_entries
-         SET value = ?, base_score = ?, final_score = ?, streak = ?, nickname = (SELECT nickname FROM sessions WHERE id = ?), created_at = strftime('%s','now')
-         WHERE id = ?`,
-      ).run(value, baseScore, finalScore, streak, sessionId, existingEntry.id);
-    } else {
-      db.prepare(
-        `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, created_at) VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))`,
-      ).run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
-    }
+    stmt.run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
 
-    return { ok: true, type, value, nickname: nickname ?? null };
+    const finalEntry = db
+      .prepare(
+        `SELECT value FROM leaderboard_entries WHERE session_id = ? AND type = ?`,
+      )
+      .get(sessionId, type) as { value: number } | undefined;
+
+    const finalValue = finalEntry?.value ?? value;
+    const skipped = existingEntry ? value <= existingEntry.value : false;
+
+    return {
+      ok: true,
+      type,
+      value: finalValue,
+      nickname: nickname ?? null,
+      skipped,
+    };
   } catch (error) {
-    console.error("submitScore error", error);
+    logError("submitScore error", error);
     return sendError(
       event,
       createError({ statusCode: 500, statusMessage: "Failed to submit score" }),

@@ -1,24 +1,11 @@
 import fs from "fs";
-import { spawn } from "child_process";
-import { initSchema } from "../db/schema";
+import { initSchema } from "../db/schema.ts";
+import { logInfo } from "../utils/logger.ts";
+import { enqueueScrapeJob } from "./queue.ts";
 
 const ERROR_LOG = "error.txt";
 const MANUAL_LOG = "manual.txt";
 const BATCH_SIZE = Number(process.env.RESCRAPE_ERROR_BATCH ?? 100);
-
-function runScrape(items: string[]) {
-  return new Promise<number>((resolve) => {
-    const proc = spawn("tsx", ["server/scraper/scrape-players.ts"], {
-      stdio: "inherit",
-      shell: true,
-      env: {
-        ...process.env,
-        REQUESTED_URLS: JSON.stringify(items),
-      },
-    });
-    proc.on("close", (code) => resolve(code ?? 1));
-  });
-}
 
 function extractName(line: string) {
   const match = line.match(/\]\s*(?:[a-z-]+\s+)?([^:]+):/i);
@@ -69,10 +56,10 @@ function extractName(line: string) {
     return;
   }
 
-  console.log(`Re-scraping ${batch.length} players from error.txt...`);
-  const code = await runScrape(batch);
-  if (code !== 0) {
-    console.error(`Re-scrape failed with code ${code}.`);
-    process.exitCode = code;
-  }
+  batch.forEach((target) => {
+    enqueueScrapeJob({ type: "error", target, priority: 5 });
+  });
+  logInfo(`Enqueued ${batch.length} error scrape jobs`, {
+    count: batch.length,
+  });
 })();

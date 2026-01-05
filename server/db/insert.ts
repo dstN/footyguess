@@ -1,4 +1,4 @@
-import db from "./connection";
+import db from "./connection.ts";
 
 function normalizeSearch(value?: string | null) {
   if (!value) return null;
@@ -146,6 +146,15 @@ export function insertTransfer(data: {
   transfer_type?: string | null;
   upcoming?: boolean | null;
 }) {
+  const transferKey = [
+    data.season ?? "",
+    data.transfer_date ?? "",
+    data.from_club_id ?? "",
+    data.to_club_id ?? "",
+    data.fee ?? "",
+    data.transfer_type ?? "",
+  ].join("|");
+
   const stmt = db.prepare(`
     INSERT INTO transfers (
       player_id,
@@ -155,8 +164,9 @@ export function insertTransfer(data: {
       to_club_id,
       fee,
       transfer_type,
-      upcoming
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+      upcoming,
+      transfer_key
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
   `);
 
   stmt.run(
@@ -167,7 +177,8 @@ export function insertTransfer(data: {
     data.to_club_id ?? null,
     data.fee ?? null,
     data.transfer_type ?? null,
-    data.upcoming === undefined ? null : Number(data.upcoming)
+    data.upcoming === undefined ? null : Number(data.upcoming),
+    transferKey,
   );
 }
 
@@ -248,17 +259,16 @@ export function upsertPlayerStats(data: PlayerStatsInsert) {
     data.red_cards ?? null,
     data.penalties ?? null,
     data.minutes_played ?? null,
-    data.average_minutes_per_match ?? null
+    data.average_minutes_per_match ?? null,
   );
 }
 
 export function updateTotalStatsForPlayer(
   playerId: number,
-  totalStatsJson: string
+  totalStatsJson: string,
 ) {
   const stmt = db.prepare(`
     UPDATE players SET total_stats = ? WHERE id = ?
   `);
   stmt.run(totalStatsJson, playerId);
 }
-

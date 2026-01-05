@@ -1,7 +1,11 @@
 import { defineEventHandler, readBody, createError, sendError } from "h3";
 import { spawn } from "child_process";
-import db from "../db/connection";
-import { enforceRateLimit } from "../utils/rate-limit";
+import db from "../db/connection.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
+import { parseSchema } from "../utils/validate.ts";
+import { logError } from "../utils/logger.ts";
+import { object, string, minLength, maxLength, pipe } from "valibot";
+import { enqueueScrapeJob } from "../scraper/queue.ts";
 
 function normalizeUrl(url: string) {
   try {
@@ -24,7 +28,7 @@ let isProcessing = false;
 function kickProcessor() {
   if (isProcessing) return;
   isProcessing = true;
-  const proc = spawn("tsx", ["server/scraper/process-requested.ts"], {
+  const proc = spawn("tsx", ["server/scraper/queue-worker.ts"], {
     stdio: "inherit",
     shell: true,
   });
@@ -36,7 +40,20 @@ function kickProcessor() {
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody<{ url?: string }>(event);
-    const rawUrl = body?.url?.trim();
+    const parsed = parseSchema(
+      object({
+        url: pipe(string(), minLength(1), maxLength(1024)),
+      }),
+      body,
+    );
+    if (!parsed.ok) {
+      return sendError(
+        event,
+        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
+      );
+    }
+
+    const rawUrl = parsed.data.url.trim();
     if (!rawUrl) {
       return sendError(
         event,
@@ -48,7 +65,10 @@ export default defineEventHandler(async (event) => {
     if (!url) {
       return sendError(
         event,
-        createError({ statusCode: 400, statusMessage: "Invalid Transfermarkt URL" }),
+        createError({
+          statusCode: 400,
+          statusMessage: "Invalid Transfermarkt URL",
+        }),
       );
     }
 
@@ -66,7 +86,9 @@ export default defineEventHandler(async (event) => {
     if (tmId) {
       const existingPlayer = db
         .prepare(`SELECT id, last_scraped_at FROM players WHERE tm_id = ?`)
-        .get(tmId) as { id: number; last_scraped_at: number | null } | undefined;
+        .get(tmId) as
+        | { id: number; last_scraped_at: number | null }
+        | undefined;
       if (
         existingPlayer?.last_scraped_at &&
         existingPlayer.last_scraped_at >= staleCutoff
@@ -80,9 +102,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const existingRequest = db
-      .prepare(
-        `SELECT id, status FROM requested_players WHERE url = ?`,
-      )
+      .prepare(`SELECT id, status FROM requested_players WHERE url = ?`)
       .get(url) as { id: number; status: string } | undefined;
 
     if (existingRequest) {
@@ -101,7 +121,14 @@ export default defineEventHandler(async (event) => {
       .prepare(
         `SELECT id, status, player_id, error FROM requested_players WHERE url = ?`,
       )
-      .get(url) as { id: number; status: string; player_id: number | null; error: string | null };
+      .get(url) as {
+      id: number;
+      status: string;
+      player_id: number | null;
+      error: string | null;
+    };
+
+    enqueueScrapeJob({ type: "requested", target: url, priority: 10 });
 
     if (process.env.NODE_ENV !== "production") {
       kickProcessor();
@@ -115,10 +142,13 @@ export default defineEventHandler(async (event) => {
       url,
     };
   } catch (error) {
-    console.error("requestPlayer error", error);
+    logError("requestPlayer error", error);
     return sendError(
       event,
-      createError({ statusCode: 500, statusMessage: "Failed to request player" }),
+      createError({
+        statusCode: 500,
+        statusMessage: "Failed to request player",
+      }),
     );
   }
 });

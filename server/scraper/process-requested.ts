@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
-import db from "../db/connection";
-import { initSchema } from "../db/schema";
+import db from "../db/connection.ts";
+import { initSchema } from "../db/schema.ts";
+import { logError } from "../utils/logger.ts";
 
 function runScrape(url: string) {
   return new Promise<number>((resolve) => {
@@ -44,9 +45,9 @@ function getTmId(url: string) {
     if (code === 0) {
       const tmId = getTmId(req.url);
       const playerRow = tmId
-        ? (db
-            .prepare(`SELECT id FROM players WHERE tm_id = ?`)
-            .get(tmId) as { id: number } | undefined)
+        ? (db.prepare(`SELECT id FROM players WHERE tm_id = ?`).get(tmId) as
+            | { id: number }
+            | undefined)
         : undefined;
       db.prepare(
         `UPDATE requested_players SET status = 'done', player_id = ?, updated_at = strftime('%s','now') WHERE id = ?`,
@@ -55,6 +56,14 @@ function getTmId(url: string) {
       db.prepare(
         `UPDATE requested_players SET status = 'failed', error = ?, updated_at = strftime('%s','now') WHERE id = ?`,
       ).run(`scrape exited with code ${code}`, req.id);
+      logError(
+        "Requested player scrape failed",
+        new Error(`Exit code ${code}`),
+        {
+          requestId: req.id,
+          url: req.url,
+        },
+      );
     }
   }
 })();

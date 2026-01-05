@@ -1,7 +1,11 @@
 // 📁 server/db/connection.ts
 import Database from "better-sqlite3";
 
-const db = new Database("./server/db/file/footyguess.db");
+const dbPath =
+  process.env.FOOTYGUESS_DB_PATH || "./server/db/file/footyguess.db";
+const db = new Database(dbPath);
+
+db.pragma("foreign_keys = ON");
 
 db.function("regexp", (pattern: string, value: unknown) => {
   try {

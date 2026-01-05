@@ -1,23 +1,10 @@
-import { spawn } from "child_process";
-import db from "../db/connection";
-import { initSchema } from "../db/schema";
+import db from "../db/connection.ts";
+import { initSchema } from "../db/schema.ts";
+import { logInfo } from "../utils/logger.ts";
+import { enqueueScrapeJob } from "./queue.ts";
 
 const BATCH_SIZE = Number(process.env.RESCRAPE_BATCH ?? 100);
 const STALE_WEEKS = Number(process.env.RESCRAPE_WEEKS ?? 8);
-
-function runScrape(items: string[]) {
-  return new Promise<number>((resolve) => {
-    const proc = spawn("tsx", ["server/scraper/scrape-players.ts"], {
-      stdio: "inherit",
-      shell: true,
-      env: {
-        ...process.env,
-        REQUESTED_URLS: JSON.stringify(items),
-      },
-    });
-    proc.on("close", (code) => resolve(code ?? 1));
-  });
-}
 
 (async () => {
   initSchema();
@@ -46,11 +33,16 @@ function runScrape(items: string[]) {
   }
 
   const items = rows.map((row) => row.tm_url || row.name).filter(Boolean);
-  console.log(`Re-scraping ${items.length} players...`);
-
-  const code = await runScrape(items);
-  if (code !== 0) {
-    console.error(`Re-scrape failed with code ${code}.`);
-    process.exitCode = code;
+  if (!items.length) {
+    console.log("No stale players to enqueue.");
+    return;
   }
+
+  items.forEach((target) => {
+    enqueueScrapeJob({ type: "stale", target, priority: 1 });
+  });
+
+  logInfo(`Enqueued ${items.length} stale scrape jobs`, {
+    count: items.length,
+  });
 })();

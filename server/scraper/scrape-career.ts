@@ -1,11 +1,11 @@
-// 📁 server/scraper/scrape-career-stats.ts
 import puppeteer, { Page } from "puppeteer";
-import db from "../db/connection";
+import db from "../db/connection.ts";
 import {
   upsertCompetition,
   upsertPlayerStats,
   updateTotalStatsForPlayer,
-} from "../db/insert";
+} from "../db/insert.ts";
+import { logError } from "../utils/logger.ts";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -17,17 +17,20 @@ interface PlayerRow {
 export async function scrapeCareerStatsForPlayer(
   page: Page,
   playerId: number,
-  playerName: string
+  playerName: string,
+  opts: { skipNavigation?: boolean } = {},
 ) {
   try {
-    const currentUrl = page.url();
-    const parts = currentUrl.split("/");
-    const slug = parts[3];
-    const id = parts.at(-1);
-    const statsUrl = `https://www.transfermarkt.com/${slug}/leistungsdaten/spieler/${id}/saison/ges/plus/1`;
+    if (!opts.skipNavigation) {
+      const currentUrl = page.url();
+      const parts = currentUrl.split("/");
+      const slug = parts[3];
+      const id = parts.at(-1);
+      const statsUrl = `https://www.transfermarkt.com/${slug}/leistungsdaten/spieler/${id}/saison/ges/plus/1`;
 
-    await page.goto(statsUrl, { waitUntil: "networkidle2", timeout: 0 });
-    console.log(`➡️  Stats werden geladen für ${playerName}: ${statsUrl}`);
+      await page.goto(statsUrl, { waitUntil: "networkidle2", timeout: 0 });
+      console.log(`Stats loading for ${playerName}: ${statsUrl}`);
+    }
 
     const rows = await page.$$(".responsive-table .items tbody > tr");
     for (const row of rows) {
@@ -56,7 +59,9 @@ export async function scrapeCareerStatsForPlayer(
       });
 
       const text = await Promise.all(
-        cells.map((cell) => cell.evaluate((el) => el.textContent?.trim() || ""))
+        cells.map((cell) =>
+          cell.evaluate((el) => el.textContent?.trim() || ""),
+        ),
       );
 
       const appearances = parseInt(text[2]) || 0;
@@ -95,7 +100,7 @@ export async function scrapeCareerStatsForPlayer(
 
     const totalCells = await page.$$eval(
       ".responsive-table .items tfoot td",
-      (cells) => cells.map((td) => td.textContent?.trim() || "")
+      (cells) => cells.map((td) => td.textContent?.trim() || ""),
     );
 
     if (totalCells.length >= 14) {
@@ -138,7 +143,7 @@ export async function scrapeCareerStatsForPlayer(
       updateTotalStatsForPlayer(playerId, JSON.stringify(totalStats));
     }
   } catch (err) {
-    console.error(`❌ Fehler beim Laden der Stats für ${playerName}:`, err);
+    logError(`Stats scrape failed for ${playerName}`, err);
   }
 }
 

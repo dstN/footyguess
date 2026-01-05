@@ -23,14 +23,56 @@ const samplePlayer = {
       to_club: "Real Madrid",
     },
   ],
+  difficulty: {
+    basis: "international",
+    totalAppearances: 100,
+    tier: "easy",
+    multiplier: 1,
+    basePoints: 100,
+    cluePenalty: 10,
+  },
+  round: {
+    id: "round-1",
+    token: "token",
+    sessionId: "session-1",
+    expiresAt: Date.now() + 600_000,
+    cluesUsed: 0,
+  },
+};
+
+const guessBreakdown = {
+  base: 100,
+  multiplier: 1,
+  timeMultiplier: 1,
+  cluesUsed: 0,
+  cluePenalty: 10,
+  preStreak: 100,
+  timeScore: 100,
+  streakBonus: 0,
+  finalScore: 100,
 };
 
 describe("usePlayGame", () => {
   const fetchMock = vi.fn();
+  let guessResponse: any;
 
   beforeEach(() => {
     fetchMock.mockReset();
-    fetchMock.mockResolvedValue(samplePlayer);
+    guessResponse = {
+      correct: true,
+      score: 100,
+      breakdown: guessBreakdown,
+      streak: 1,
+      bestStreak: 1,
+      playerName: samplePlayer.name,
+      difficulty: samplePlayer.difficulty,
+    };
+    fetchMock.mockImplementation((url: any) => {
+      if (typeof url === "string" && url.startsWith("/api/guess")) {
+        return Promise.resolve(guessResponse);
+      }
+      return Promise.resolve(samplePlayer);
+    });
     vi.stubGlobal("$fetch", fetchMock);
   });
 
@@ -43,7 +85,7 @@ describe("usePlayGame", () => {
     await loadPlayer();
 
     formState.guess = samplePlayer.name;
-    onSubmit({
+    await onSubmit({
       preventDefault: () => {},
       data: { guess: samplePlayer.name },
     } as any);
@@ -57,8 +99,18 @@ describe("usePlayGame", () => {
     const { loadPlayer, formState, onSubmit, isError } = usePlayGame();
     await loadPlayer();
 
+    guessResponse = {
+      correct: false,
+      score: 0,
+      breakdown: guessBreakdown,
+      streak: 0,
+      bestStreak: 1,
+      playerName: samplePlayer.name,
+      difficulty: samplePlayer.difficulty,
+    };
+
     formState.guess = "Wrong Name";
-    onSubmit({
+    await onSubmit({
       preventDefault: () => {},
       data: { guess: "Wrong Name" },
     } as any);
@@ -74,12 +126,22 @@ describe("usePlayGame", () => {
     await loadPlayer();
 
     formState.guess = samplePlayer.name;
-    onSubmit({ preventDefault: () => {}, data: { guess: samplePlayer.name } } as any);
+    await onSubmit({ preventDefault: () => {}, data: { guess: samplePlayer.name } } as any);
     expect(streak.value).toBe(1);
     expect(bestStreak.value).toBe(1);
 
+    guessResponse = {
+      correct: false,
+      score: 0,
+      breakdown: guessBreakdown,
+      streak: 0,
+      bestStreak: 1,
+      playerName: samplePlayer.name,
+      difficulty: samplePlayer.difficulty,
+    };
+
     formState.guess = "Wrong Name";
-    onSubmit({ preventDefault: () => {}, data: { guess: "Wrong Name" } } as any);
+    await onSubmit({ preventDefault: () => {}, data: { guess: "Wrong Name" } } as any);
     expect(streak.value).toBe(0);
     expect(bestStreak.value).toBe(1);
   });

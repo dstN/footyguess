@@ -1,4 +1,4 @@
-import db from "./connection";
+import db from "./connection.ts";
 import fs from "fs";
 
 type DupRow = {
@@ -43,7 +43,9 @@ for (const dup of duplicates) {
     )
     .all(dup.tm_id) as PlayerRow[];
   for (const player of players) {
-    console.log(`  - ${player.id}: ${player.name} (${player.tm_url ?? "no url"})`);
+    console.log(
+      `  - ${player.id}: ${player.name} (${player.tm_url ?? "no url"})`,
+    );
   }
 }
 

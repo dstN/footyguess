@@ -1,6 +1,11 @@
 import { createHmac, randomUUID } from "node:crypto";
 
-const SECRET = process.env.SCORING_SECRET || "dev-secret-change-me";
+const envSecret = process.env.SCORING_SECRET;
+if (!envSecret && process.env.NODE_ENV === "production") {
+  throw new Error("SCORING_SECRET must be set in production.");
+}
+
+const SECRET = envSecret || "dev-secret-change-me";
 
 interface RoundPayload {
   roundId: string;

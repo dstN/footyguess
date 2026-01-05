@@ -1,12 +1,12 @@
-// 📁 server/scraper/index.ts
-import { initSchema } from "../db/schema";
+import { initSchema } from "../db/schema.ts";
 import { spawn } from "child_process";
+import { logError } from "../utils/logger.ts";
 
 async function runScraper() {
-  console.log("\n📦 Initialisiere Schema...");
+  console.log("\nInitializing schema...");
   initSchema();
 
-  console.log("🚀 Starte Scraper...");
+  console.log("Starting scraper...");
   const proc = spawn("tsx", ["server/scraper/scrape-players.ts"], {
     stdio: "inherit",
     shell: true,
@@ -14,9 +14,9 @@ async function runScraper() {
 
   proc.on("close", (code) => {
     if (code !== 0) {
-      console.error("❌ Scraper fehlgeschlagen mit Code:", code);
+      logError("Scraper failed", new Error(`Exit code ${code}`));
     } else {
-      console.log("✅ Scraper erfolgreich abgeschlossen.");
+      console.log("Scraper finished.");
     }
   });
 }

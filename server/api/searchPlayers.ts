@@ -1,5 +1,8 @@
 import { createError, defineEventHandler, getQuery } from "h3";
-import db from "../db/connection";
+import db from "../db/connection.ts";
+import { parseSchema } from "../utils/validate.ts";
+import { logError } from "../utils/logger.ts";
+import { object, optional, string, minLength, maxLength, pipe } from "valibot";
 
 function normalizeSearch(value: string) {
   return value
@@ -12,8 +15,21 @@ function normalizeSearch(value: string) {
 }
 
 export default defineEventHandler((event) => {
-  const { q, limit } = getQuery(event);
-  if (!q || typeof q !== "string" || q.trim().length < 2) {
+  const query = getQuery(event);
+  const parsed = parseSchema(
+    object({
+      q: optional(pipe(string(), minLength(2), maxLength(64))),
+      limit: optional(string()),
+    }),
+    query,
+  );
+  if (!parsed.ok) {
+    return [];
+  }
+
+  const q = parsed.data.q;
+  const limit = parsed.data.limit;
+  if (!q || q.trim().length < 2) {
     return [];
   }
 
@@ -59,11 +75,12 @@ export default defineEventHandler((event) => {
         patternHyphen,
         safeLimit,
       ) as {
-        name: string;
-      }[];
+      name: string;
+    }[];
 
     return rows.map((row) => row.name);
   } catch (error) {
+    logError("searchPlayers error", error);
     throw createError({
       statusCode: 500,
       statusMessage: "Search failed",

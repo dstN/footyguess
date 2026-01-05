@@ -49,9 +49,9 @@ describe("useTransferTimeline", () => {
 
     expect(items).toHaveLength(3);
     expect(items[1]?.to).toBe("Free agent"); // unknown mid-career -> Free agent
-    expect(items[0]?.from).toBe("Unknown club"); // first item had no from_club
+    expect(items[0]?.from).toBe("Free agent"); // carried from prior free-agent period
     expect(items[2]?.from).toBe("Juventus");
-    expect(items[0]?.description).toBe("free transfer");
+    expect(items[0]?.description).toBe("");
     expect(items[2]?.description).toMatch(/17[.,]000[.,]000/); // formatted fee on earliest move (locale-aware)
   });
 

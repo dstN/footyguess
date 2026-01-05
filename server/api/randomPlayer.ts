@@ -1,18 +1,44 @@
 import { createError, defineEventHandler, getQuery, sendError } from "h3";
 import { randomUUID } from "node:crypto";
-import db from "../db/connection";
+import db from "../db/connection.ts";
 import type { Player } from "~/types/player";
-import { computeDifficulty } from "../utils/difficulty";
+import {
+  computeDifficulty,
+  INTL_WEIGHTS,
+  INTL_HARD_THRESHOLD,
+  TOP5_HARD_THRESHOLD,
+  TOP5_LEAGUES,
+} from "../utils/difficulty";
 import { createRoundToken, generateSessionId } from "../utils/tokens";
+import { parseSchema } from "../utils/validate";
+import { object, optional, picklist, string, maxLength } from "valibot";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const hardMode = query.mode === "hard";
-  const sessionFromQuery =
-    typeof query.sessionId === "string" && query.sessionId.length > 0
-      ? query.sessionId
-      : null;
+  const parsed = parseSchema(
+    object({
+      mode: optional(picklist(["hard", "normal"])),
+      sessionId: optional(pipe(string(), maxLength(128))),
+    }),
+    query,
+  );
+  if (!parsed.ok) {
+    return sendError(
+      event,
+      createError({ statusCode: 400, statusMessage: "Invalid query" }),
+    );
+  }
+
+  const hardMode = parsed.data.mode === "hard";
+  const sessionFromQuery = parsed.data.sessionId ?? null;
   const sessionId = sessionFromQuery || generateSessionId();
+
+  const intlCases = Object.entries(INTL_WEIGHTS)
+    .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
+    .join(" ");
+  const intlSum = `SUM(CASE c.id ${intlCases} ELSE 0 END)`;
+  const top5Ids = TOP5_LEAGUES.map((id) => `'${id}'`).join(", ");
+  const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
 
   const filterClause = hardMode
     ? ""
@@ -21,24 +47,21 @@ export default defineEventHandler(async (event) => {
         SELECT ps.player_id
         FROM player_stats ps
         JOIN competitions c ON ps.competition_id = c.id
-        WHERE
-          c.name LIKE '%Champions League%'
-          OR c.name LIKE '%Europa League%'
-          OR c.name LIKE '%UEFA Cup%'
-          OR c.id IN ('CL', 'EL', 'UEL', 'UEFA')
         GROUP BY ps.player_id
-        HAVING SUM(ps.appearances) >= 25
+        HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
+          OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
       )
     `;
 
-  let base: Player | undefined;
-  let transfers: any[] = [];
-  let stats: Array<{ competition_id: string; appearances: number }> = [];
-  let difficulty;
-  let attempts = 0;
+  function getRandomPlayer() {
+    const countRow = db
+      .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
+      .get() as { count: number } | undefined;
+    const count = countRow?.count ?? 0;
+    if (count <= 0) return undefined;
+    const offset = Math.floor(Math.random() * count);
 
-  while (attempts < 5) {
-    base = db
+    return db
       .prepare(
         `
         SELECT
@@ -47,11 +70,20 @@ export default defineEventHandler(async (event) => {
         FROM players p
         LEFT JOIN clubs c ON p.current_club_id = c.id
         ${filterClause}
-        ORDER BY RANDOM()
-        LIMIT 1
+        LIMIT 1 OFFSET ?
       `,
       )
-      .get() as Player | undefined;
+      .get(offset) as Player | undefined;
+  }
+
+  let base: Player | undefined;
+  let transfers: any[] = [];
+  let stats: Array<{ competition_id: string; appearances: number }> = [];
+  let difficulty;
+  let attempts = 0;
+
+  while (attempts < 5) {
+    base = getRandomPlayer();
 
     if (!base) break;
 
@@ -139,15 +171,19 @@ export default defineEventHandler(async (event) => {
     );
   }
 
-  db.prepare(
-    `INSERT OR IGNORE INTO sessions (id) VALUES (?)`,
-  ).run(sessionId);
+  db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
 
   const roundId = randomUUID();
   const expiresAt = Date.now() + 1000 * 60 * 30; // 30 minutes
   db.prepare(
     `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at) VALUES (?, ?, ?, 0, ?, ?)`,
-  ).run(roundId, base.id, sessionId, Math.floor(Date.now() / 1000), Math.floor(expiresAt / 1000));
+  ).run(
+    roundId,
+    base.id,
+    sessionId,
+    Math.floor(Date.now() / 1000),
+    Math.floor(expiresAt / 1000),
+  );
 
   const token = createRoundToken({
     roundId,

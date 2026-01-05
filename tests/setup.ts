@@ -1,6 +1,10 @@
 import { vi, beforeEach } from "vitest";
 import { ref, reactive, computed, watch } from "vue";
 
+process.env.FOOTYGUESS_DB_PATH = ":memory:";
+process.env.SCORING_SECRET = "test-secret";
+process.env.NODE_ENV = "test";
+
 export const routerPushMock = vi.fn();
 export const toastAddMock = vi.fn();
 

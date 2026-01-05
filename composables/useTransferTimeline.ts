@@ -15,7 +15,25 @@ export function useTransferTimeline(player: Ref<Player | null>) {
     if (!player.value?.transfers?.length) return [];
     const isRetired = player.value?.active === 0;
 
-    const ordered = [...player.value.transfers];
+    const ordered = [...player.value.transfers].sort((a: any, b: any) => {
+      const toTime = (transfer: any) => {
+        if (transfer.transfer_date) {
+          const parsed = new Date(transfer.transfer_date).getTime();
+          return Number.isNaN(parsed) ? 0 : parsed;
+        }
+        if (transfer.season) {
+          const yearPart = String(transfer.season).split("/")[0];
+          const yearNum = Number.parseInt(yearPart, 10);
+          if (Number.isFinite(yearNum)) {
+            const year = yearNum < 100 ? 2000 + yearNum : yearNum;
+            return new Date(`${year}-07-01`).getTime();
+          }
+        }
+        return 0;
+      };
+
+      return toTime(b) - toTime(a);
+    });
 
     return ordered.map((transfer: any, index: number, arr: any[]) => {
       const isLatest = index === 0;

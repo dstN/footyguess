@@ -1,4 +1,4 @@
-import db from "./connection";
+import db from "./connection.ts";
 
 export function initSchema() {
   db.exec(`
@@ -45,10 +45,12 @@ export function initSchema() {
       fee TEXT,
       transfer_type TEXT,
       upcoming INTEGER,
+      transfer_key TEXT,
       FOREIGN KEY (player_id) REFERENCES players(id),
       FOREIGN KEY (from_club_id) REFERENCES clubs(id),
       FOREIGN KEY (to_club_id) REFERENCES clubs(id),
-      UNIQUE (player_id, transfer_date)
+      UNIQUE (player_id, transfer_date),
+      UNIQUE (player_id, transfer_key)
     );
 
     CREATE TABLE IF NOT EXISTS competitions (
@@ -136,6 +138,25 @@ export function initSchema() {
       created_at INTEGER DEFAULT (strftime('%s','now')),
       updated_at INTEGER DEFAULT (strftime('%s','now'))
     );
+
+    CREATE TABLE IF NOT EXISTS scrape_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      target TEXT NOT NULL,
+      priority INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      attempts INTEGER NOT NULL DEFAULT 0,
+      next_run_at INTEGER DEFAULT (strftime('%s','now')),
+      last_error TEXT,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      updated_at INTEGER DEFAULT (strftime('%s','now')),
+      UNIQUE (type, target)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search);
+    CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search);
+    CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search);
+    CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at);
   `);
 
   // lightweight migrations for added columns
@@ -158,7 +179,9 @@ export function initSchema() {
     db.prepare(`ALTER TABLE players ADD COLUMN tm_short_name TEXT`).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_short_name_search TEXT`).run();
+    db.prepare(
+      `ALTER TABLE players ADD COLUMN tm_short_name_search TEXT`,
+    ).run();
   } catch {}
   try {
     db.prepare(`ALTER TABLE players ADD COLUMN tm_full_name TEXT`).run();
@@ -170,22 +193,69 @@ export function initSchema() {
     db.prepare(`ALTER TABLE players ADD COLUMN last_scraped_at INTEGER`).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE sessions ADD COLUMN total_score INTEGER DEFAULT 0`).run();
+    db.prepare(`ALTER TABLE transfers ADD COLUMN transfer_key TEXT`).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE sessions ADD COLUMN total_rounds INTEGER DEFAULT 0`).run();
+    db.prepare(
+      `ALTER TABLE sessions ADD COLUMN total_score INTEGER DEFAULT 0`,
+    ).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_score INTEGER`).run();
+    db.prepare(
+      `ALTER TABLE sessions ADD COLUMN total_rounds INTEGER DEFAULT 0`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `ALTER TABLE sessions ADD COLUMN last_round_score INTEGER`,
+    ).run();
   } catch {}
   try {
     db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_base INTEGER`).run();
   } catch {}
   try {
-    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`).run();
+    db.prepare(
+      `ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`,
+    ).run();
   } catch {}
   try {
-    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`).run();
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_session_type ON leaderboard_entries(session_id, type)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_round_id ON scores(round_id)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_transfers_player_key ON transfers(player_id, transfer_key)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at)`,
+    ).run();
   } catch {}
 }
-

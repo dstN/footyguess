@@ -1,6 +1,6 @@
-const TOP5_LEAGUES = ["GB1", "IT1", "L1", "FR1", "ES1"];
-const INTL_COMPS = ["CL", "EL", "UEFA", "EPL", "EPP", "UCOL", "UI"];
-const INTL_WEIGHTS: Record<string, number> = {
+export const TOP5_LEAGUES = ["GB1", "IT1", "L1", "FR1", "ES1"];
+export const INTL_COMPS = ["CL", "EL", "UEFA", "EPL", "EPP", "UCOL", "UI"];
+export const INTL_WEIGHTS: Record<string, number> = {
   CL: 1.25,
   EL: 1.25,
   UEFA: 0.75,
@@ -11,6 +11,8 @@ const INTL_WEIGHTS: Record<string, number> = {
 };
 export const BASE_POINTS = 100;
 export const CLUE_PENALTY = 10;
+export const INTL_HARD_THRESHOLD = 45;
+export const TOP5_HARD_THRESHOLD = 100;
 
 export type DifficultyBasis = "international" | "top5";
 export type DifficultyTier = "easy" | "medium" | "hard" | "ultra";
@@ -49,14 +51,18 @@ function getTier(
   if (basis === "international") {
     if (totalApps > 80) return { tier: "easy", multiplier: 1 };
     if (totalApps >= 60) return { tier: "medium", multiplier: 1.25 };
-    if (totalApps >= 45) return { tier: "hard", multiplier: 1.5 };
+    if (totalApps >= INTL_HARD_THRESHOLD) {
+      return { tier: "hard", multiplier: 1.5 };
+    }
     return { tier: "ultra", multiplier: 2 };
   }
 
   // top 5 leagues
   if (totalApps > 400) return { tier: "easy", multiplier: 1 };
   if (totalApps >= 200) return { tier: "medium", multiplier: 1.25 };
-  if (totalApps >= 100) return { tier: "hard", multiplier: 1.5 };
+  if (totalApps >= TOP5_HARD_THRESHOLD) {
+    return { tier: "hard", multiplier: 1.5 };
+  }
   return { tier: "ultra", multiplier: 2 };
 }
 
