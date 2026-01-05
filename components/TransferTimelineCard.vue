@@ -11,20 +11,10 @@
             </p>
             <p class="text-lg font-semibold text-white">Career history</p>
           </div>
-          <UTooltip
-            v-if="difficulty"
-            :text="`Difficulty: ${difficultyLabel} — Base max ${maxPoints} pts; with current streak bonus (${streakBonusPct}%): up to ${potentialWithStreak} pts.`"
-            :popper="{ placement: 'bottom' }"
-          >
-            <UBadge
-              :color="difficultyBadge.color"
-              variant="soft"
-              class="text-xs"
-              :class="difficultyBadge.class"
-            >
-              {{ difficultyLabel }}
-            </UBadge>
-          </UTooltip>
+          <DifficultyBadge
+            :difficulty="difficulty"
+            :current-streak="currentStreak"
+          />
         </div>
         <UBadge
           v-if="showBadge"
@@ -37,179 +27,16 @@
       </div>
     </template>
 
-    <div class="space-y-4">
-      <div
-        v-if="isLoading"
-        class="space-y-4"
-      >
-        <USkeleton
-          v-for="n in 4"
-          :key="n"
-          class="h-16 rounded-xl bg-white/5"
-        />
-      </div>
-
-      <div v-else-if="items.length">
-        <div
-          v-if="useTwoColumn"
-          class="border-primary-700/40 relative space-y-5 border-l pl-4 sm:hidden"
-        >
-          <div
-            v-for="entry in itemsWithIndex"
-            :key="entry.item.id"
-            class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
-            :class="getCardClass(entry.index)"
-          >
-            <span
-              class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-              :class="getDotClass(entry.index)"
-            />
-            <p
-              class="text-xs tracking-[0.14em] uppercase"
-              :class="getMetaClass(entry.index)"
-            >
-              {{ entry.item.date }}
-            </p>
-            <div class="flex items-center gap-3 text-sm text-slate-200">
-              <span class="font-semibold text-white">{{
-                entry.item.from
-              }}</span>
-              <UIcon
-                name="i-lucide-arrow-right"
-                :class="getArrowClass(entry.index)"
-              />
-              <span class="font-semibold text-white">{{ entry.item.to }}</span>
-            </div>
-            <p class="min-h-[1.25rem] text-sm text-slate-300">
-              {{ entry.item.description }}
-            </p>
-          </div>
-        </div>
-
-        <div
-          v-if="useTwoColumn"
-          class="hidden gap-6 sm:grid sm:grid-cols-2"
-        >
-          <div class="border-primary-700/40 relative space-y-5 border-l pl-4">
-            <div
-              v-for="entry in leftItems"
-              :key="entry.item.id"
-              class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
-              :class="getCardClass(entry.index)"
-            >
-              <span
-                class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-                :class="getDotClass(entry.index)"
-              />
-              <p
-                class="text-xs tracking-[0.14em] uppercase"
-                :class="getMetaClass(entry.index)"
-              >
-                {{ entry.item.date }}
-              </p>
-              <div class="flex items-center gap-3 text-sm text-slate-200">
-                <span class="font-semibold text-white">{{
-                  entry.item.from
-                }}</span>
-                <UIcon
-                  name="i-lucide-arrow-right"
-                  :class="getArrowClass(entry.index)"
-                />
-                <span class="font-semibold text-white">{{
-                  entry.item.to
-                }}</span>
-              </div>
-              <p class="min-h-[1.25rem] text-sm text-slate-300">
-                {{ entry.item.description }}
-              </p>
-            </div>
-          </div>
-          <div class="border-primary-700/40 relative space-y-5 border-l pl-4">
-            <div
-              v-for="entry in rightItems"
-              :key="entry.item.id"
-              class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
-              :class="getCardClass(entry.index)"
-            >
-              <span
-                class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-                :class="getDotClass(entry.index)"
-              />
-              <p
-                class="text-xs tracking-[0.14em] uppercase"
-                :class="getMetaClass(entry.index)"
-              >
-                {{ entry.item.date }}
-              </p>
-              <div class="flex items-center gap-3 text-sm text-slate-200">
-                <span class="font-semibold text-white">{{
-                  entry.item.from
-                }}</span>
-                <UIcon
-                  name="i-lucide-arrow-right"
-                  :class="getArrowClass(entry.index)"
-                />
-                <span class="font-semibold text-white">{{
-                  entry.item.to
-                }}</span>
-              </div>
-              <p class="min-h-[1.25rem] text-sm text-slate-300">
-                {{ entry.item.description }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-else
-          class="border-primary-700/40 relative space-y-5 border-l pl-4"
-        >
-          <div
-            v-for="entry in itemsWithIndex"
-            :key="entry.item.id"
-            class="relative rounded-xl border px-4 py-3 shadow-sm backdrop-blur-sm"
-            :class="getCardClass(entry.index)"
-          >
-            <span
-              class="absolute top-4 -left-2 block h-3 w-3 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-              :class="getDotClass(entry.index)"
-            />
-            <p
-              class="text-xs tracking-[0.14em] uppercase"
-              :class="getMetaClass(entry.index)"
-            >
-              {{ entry.item.date }}
-            </p>
-            <div class="flex items-center gap-3 text-sm text-slate-200">
-              <span class="font-semibold text-white">{{
-                entry.item.from
-              }}</span>
-              <UIcon
-                name="i-lucide-arrow-right"
-                :class="getArrowClass(entry.index)"
-              />
-              <span class="font-semibold text-white">{{ entry.item.to }}</span>
-            </div>
-            <p class="min-h-[1.25rem] text-sm text-slate-300">
-              {{ entry.item.description }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <UEmpty
-        v-else
-        icon="i-lucide-compass"
-        title="No timeline data"
-        description="We couldn't find transfers for this player."
-        class="bg-white/5"
-      />
-    </div>
+    <TransferTimelineView
+      :items="items"
+      :is-loading="isLoading"
+    />
   </UCard>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import DifficultyBadge from "~/components/DifficultyBadge.vue";
+import TransferTimelineView from "~/components/TransferTimelineView.vue";
 
 interface TimelineItem {
   id: string;
@@ -219,7 +46,7 @@ interface TimelineItem {
   description?: string | null;
 }
 
-const props = defineProps<{
+defineProps<{
   items: TimelineItem[];
   isLoading: boolean;
   showBadge?: boolean;
@@ -230,82 +57,4 @@ const props = defineProps<{
     basePoints: number;
   } | null;
 }>();
-
-const difficultyLabel = computed(() => {
-  if (props.difficulty?.tier === "easy") return "Easy";
-  if (props.difficulty?.tier === "medium") return "Medium";
-  if (props.difficulty?.tier === "hard") return "Hard";
-  if (props.difficulty?.tier === "ultra") return "Ultra";
-  return "";
-});
-
-const maxPoints = computed(() =>
-  props.difficulty
-    ? Math.round(props.difficulty.basePoints * props.difficulty.multiplier)
-    : 0,
-);
-
-function getStreakBonusMultiplier(streak: number) {
-  if (streak >= 100) return 0.3;
-  if (streak >= 60) return 0.2;
-  if (streak >= 30) return 0.15;
-  if (streak >= 15) return 0.1;
-  if (streak >= 5) return 0.05;
-  return 0;
-}
-
-const streakBonusPct = computed(() =>
-  Number((getStreakBonusMultiplier(props.currentStreak ?? 0) * 100).toFixed(0)),
-);
-
-const potentialWithStreak = computed(() =>
-  props.difficulty
-    ? Math.round(
-        props.difficulty.basePoints *
-          props.difficulty.multiplier *
-          (1 + getStreakBonusMultiplier(props.currentStreak ?? 0)),
-      )
-    : 0,
-);
-
-const difficultyBadge = computed<{
-  color: "success" | "warning" | "error" | "neutral";
-  class: string;
-}>(() => {
-  if (!props.difficulty) return { color: "neutral", class: "" };
-  if (props.difficulty.tier === "easy") {
-    return { color: "success", class: "bg-green-500/10 text-green-100" };
-  }
-  if (props.difficulty.tier === "medium") {
-    return { color: "warning", class: "bg-yellow-500/10 text-yellow-100" };
-  }
-  if (props.difficulty.tier === "hard") {
-    return { color: "warning", class: "bg-orange-500/10 text-orange-100" };
-  }
-  if (props.difficulty.tier === "ultra") {
-    return { color: "error", class: "bg-red-500/10 text-red-100" };
-  }
-  return { color: "neutral", class: "" };
-});
-
-const useTwoColumn = computed(() => props.items.length >= 8);
-const itemsWithIndex = computed(() =>
-  props.items.map((item, index) => ({ item, index })),
-);
-const splitIndex = computed(() => Math.ceil(itemsWithIndex.value.length / 2));
-const leftItems = computed(() =>
-  itemsWithIndex.value.slice(0, splitIndex.value),
-);
-const rightItems = computed(() => itemsWithIndex.value.slice(splitIndex.value));
-
-const getCardClass = (index: number) =>
-  index % 2 === 0
-    ? "border-primary-900/40 bg-primary/10"
-    : "border-secondary-900/40 bg-secondary/10";
-const getDotClass = (index: number) =>
-  index % 2 === 0 ? "bg-primary-400" : "bg-secondary";
-const getMetaClass = (index: number) =>
-  index % 2 === 0 ? "text-primary-200" : "text-secondary";
-const getArrowClass = (index: number) =>
-  index % 2 === 0 ? "text-primary-200" : "text-secondary";
 </script>
