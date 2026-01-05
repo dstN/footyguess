@@ -5,10 +5,7 @@ import type { Player } from "~/types/player";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
-import {
-  calculateScore,
-  getStreakBonusMultiplier,
-} from "~/server/utils/scoring";
+import type { ScoreBreakdown } from "~/server/utils/scoring";
 import { sanitizeText } from "~/utils/sanitize";
 
 interface RoundState {
@@ -70,9 +67,6 @@ export function usePlayGame() {
     difficulty.value
       ? Math.round(difficulty.value.basePoints * difficulty.value.multiplier)
       : 0,
-  );
-  const streakBonusPct = computed(() =>
-    Number((getStreakBonusMultiplier(streak.value) * 100).toFixed(0)),
   );
 
   function ensureSessionId() {
@@ -244,7 +238,7 @@ export function usePlayGame() {
       const res = await $fetch<{
         correct: boolean;
         score: number;
-        breakdown: ReturnType<typeof calculateScore>;
+        breakdown: ScoreBreakdown;
         streak: number;
         bestStreak: number;
         playerName: string;
@@ -321,7 +315,6 @@ export function usePlayGame() {
     bestStreak,
     difficulty,
     maxBasePoints,
-    streakBonusPct,
     confirmResetOpen,
     loadPlayer,
     requestNewPlayer,
