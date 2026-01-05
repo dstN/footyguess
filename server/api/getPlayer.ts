@@ -5,6 +5,7 @@ import type { Player } from "~/types/player";
 import { computeDifficulty } from "../utils/difficulty.ts";
 import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
 import { parseSchema } from "../utils/validate.ts";
+import { parsePlayerData } from "../utils/player-parser.ts";
 import { logError } from "../utils/logger.ts";
 import { object, string, minLength, maxLength, optional, pipe } from "valibot";
 
@@ -50,17 +51,9 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-      if (typeof player.secondary_positions === "string") {
-        player.secondary_positions = JSON.parse(player.secondary_positions);
-      }
-      if (typeof player.nationalities === "string") {
-        player.nationalities = JSON.parse(player.nationalities);
-      }
-      if (typeof player.total_stats === "string") {
-        player.total_stats = JSON.parse(player.total_stats);
-      }
+      parsePlayerData(player as any);
     } catch {
-      // ignore JSON parse error
+      // Silently continue if JSON parsing fails
     }
 
     const transfers = db

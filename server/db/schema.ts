@@ -158,6 +158,12 @@ export function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search);
     CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at);
     CREATE INDEX IF NOT EXISTS idx_transfers_player_date ON transfers(player_id, transfer_date DESC);
+    
+    -- Performance optimization indexes (Issue #42)
+    CREATE INDEX IF NOT EXISTS idx_player_stats_player_id ON player_stats(player_id);
+    CREATE INDEX IF NOT EXISTS idx_rounds_session_id ON rounds(session_id);
+    CREATE INDEX IF NOT EXISTS idx_scores_session_id ON scores(session_id);
+    CREATE INDEX IF NOT EXISTS idx_rounds_player_id ON rounds(player_id);
   `);
 
   // lightweight migrations for added columns
@@ -262,6 +268,28 @@ export function initSchema() {
   try {
     db.prepare(
       `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
+    ).run();
+  } catch {}
+  
+  // Issue #42: Add missing performance indexes
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_player_stats_player_id ON player_stats(player_id)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_rounds_session_id ON rounds(session_id)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_scores_session_id ON scores(session_id)`,
+    ).run();
+  } catch {}
+  try {
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_rounds_player_id ON rounds(player_id)`,
     ).run();
   } catch {}
 }

@@ -213,7 +213,8 @@ export function usePlayGame() {
       }
       errorMessage.value = ""; // Clear error on success
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to reveal clue";
+      const message =
+        err instanceof Error ? err.message : "Failed to reveal clue";
       errorMessage.value = message;
       if (import.meta.dev) console.error("Failed to record clue", err);
       toast.add({
@@ -268,7 +269,8 @@ export function usePlayGame() {
         router.push("/won");
       } else {
         isError.value = true;
-        errorMessage.value = "Incorrect guess - follow the clues more carefully";
+        errorMessage.value =
+          "Incorrect guess - follow the clues more carefully";
         toast.add({
           title: "Wrong player",
           description: "Try again - follow the clues.",
@@ -278,7 +280,8 @@ export function usePlayGame() {
         triggerShake?.();
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to submit guess";
+      const message =
+        err instanceof Error ? err.message : "Failed to submit guess";
       errorMessage.value = message;
       isError.value = true;
       if (import.meta.dev) console.error("Failed to submit guess", err);

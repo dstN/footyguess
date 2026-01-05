@@ -11,6 +11,8 @@ import {
 } from "../utils/difficulty";
 import { createRoundToken, generateSessionId } from "../utils/tokens";
 import { parseSchema } from "../utils/validate";
+import { parsePlayerData } from "../utils/player-parser";
+import { logError } from "../utils/logger";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -90,15 +92,7 @@ export default defineEventHandler(async (event) => {
     if (!base) break;
 
     try {
-      if (typeof base.secondary_positions === "string") {
-        base.secondary_positions = JSON.parse(base.secondary_positions);
-      }
-      if (typeof base.nationalities === "string") {
-        base.nationalities = JSON.parse(base.nationalities);
-      }
-      if (typeof base.total_stats === "string") {
-        base.total_stats = JSON.parse(base.total_stats);
-      }
+      base = parsePlayerData(base);
     } catch (error) {
       logError(`Invalid JSON for player ${base.id}`, error);
       attempts += 1;
