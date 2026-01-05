@@ -21,9 +21,7 @@ describe("CSS Effects Utilities", () => {
 
   it("should have slide-up transition classes", () => {
     expect(transitionClasses.slideUp).toBeDefined();
-    expect(transitionClasses.slideUp.enterActive).toBe(
-      "slide-up-enter-active",
-    );
+    expect(transitionClasses.slideUp.enterActive).toBe("slide-up-enter-active");
   });
 
   it("should define transition durations", () => {

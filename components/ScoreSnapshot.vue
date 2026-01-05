@@ -19,8 +19,8 @@
         class="text-xs text-slate-400"
       >
         Time bonus:
-        {{ Math.round((lastScore.timeMultiplier - 1) * 100) }}% · Streak
-        bonus: {{ Math.round(lastScore.streakBonus * 100) }}%
+        {{ Math.round((lastScore.timeMultiplier - 1) * 100) }}% · Streak bonus:
+        {{ Math.round(lastScore.streakBonus * 100) }}%
       </p>
       <p class="text-sm">
         <span class="font-semibold">Total score:</span>

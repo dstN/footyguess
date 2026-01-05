@@ -52,7 +52,8 @@ export function calculateBackoffDelay(
   attempt: number,
   config: RetryConfig,
 ): number {
-  const baseDelay = config.initialDelayMs * Math.pow(config.backoffFactor, attempt - 1);
+  const baseDelay =
+    config.initialDelayMs * Math.pow(config.backoffFactor, attempt - 1);
   const delay = Math.min(baseDelay, config.maxDelayMs);
   // Add jitter (±10%) to prevent thundering herd
   const jitter = delay * 0.1 * (Math.random() * 2 - 1);

@@ -22,10 +22,7 @@ export function loadPlayers(): string[] {
   }
 
   try {
-    const content = fs.readFileSync(
-      path.resolve("all_players.json"),
-      "utf8",
-    );
+    const content = fs.readFileSync(path.resolve("all_players.json"), "utf8");
     const players = JSON.parse(content) as Array<{ name: string }>;
     return players.map((p) => p.name);
   } catch (err) {

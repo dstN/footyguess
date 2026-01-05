@@ -27,7 +27,12 @@
         role="listitem"
         :aria-label="`${clue.label}${clue.value ? ': ' + clue.value : ''}`"
       >
-        {{ clue.label }}<span v-if="clue.value" aria-hidden="false">: {{ clue.value }}</span>
+        {{ clue.label
+        }}<span
+          v-if="clue.value"
+          aria-hidden="false"
+          >: {{ clue.value }}</span
+        >
       </UBadge>
     </TransitionGroup>
     <div

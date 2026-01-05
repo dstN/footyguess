@@ -87,10 +87,7 @@ function cleanup(now: number) {
  * // Different limits for different actions
  * // guess: 10/10s, clue: 5/10s, submitScore: 3/60s
  */
-export function enforceRateLimit(
-  event: H3Event,
-  options: RateLimitOptions,
-) {
+export function enforceRateLimit(event: H3Event, options: RateLimitOptions) {
   const now = Date.now();
   cleanup(now);
 

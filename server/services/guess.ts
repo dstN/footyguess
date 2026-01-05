@@ -4,23 +4,19 @@
  */
 
 import db from "../db/connection.ts";
+import type { Difficulty } from "../utils/difficulty.ts";
 import { computeDifficulty } from "../utils/difficulty.ts";
+import type { ScoreBreakdown } from "../utils/scoring.ts";
 import { calculateScore } from "../utils/scoring.ts";
 
 export interface GuessResult {
   correct: boolean;
   score: number;
-  breakdown: {
-    baseScore: number;
-    streakMultiplier: number;
-    preStreak: number;
-    timeScore: number;
-    finalScore: number;
-  };
+  breakdown: ScoreBreakdown;
   streak: number;
   bestStreak: number;
   playerName: string;
-  difficulty: string;
+  difficulty: Difficulty;
 }
 
 /**
@@ -34,7 +30,7 @@ export function isCorrectGuess(guess: string, playerName: string): boolean {
 /**
  * Calculate difficulty based on player stats
  */
-export function getDifficulty(playerId: number): string {
+export function getDifficulty(playerId: number) {
   const stats = db
     .prepare(
       `
@@ -59,9 +55,7 @@ export function getOrCreateSession(sessionId: string): {
   best_streak: number;
 } {
   const insertAndRead = db.transaction(() => {
-    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(
-      sessionId,
-    );
+    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
     return db
       .prepare(`SELECT streak, best_streak FROM sessions WHERE id = ?`)
       .get(sessionId) as { streak: number; best_streak: number };

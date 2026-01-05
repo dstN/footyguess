@@ -1,5 +1,8 @@
 <template>
-  <header class="flex flex-col gap-4" role="banner">
+  <header
+    class="flex flex-col gap-4"
+    role="banner"
+  >
     <div
       class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
     >
@@ -49,7 +52,7 @@
               color="neutral"
               variant="ghost"
               :disabled="isLoading"
-              @click="requestNewPlayer()"
+              @click="$emit('request-new-player')"
             >
               New mystery
             </UButton>
@@ -62,7 +65,7 @@
                 color="neutral"
                 @click="
                   () => {
-                    cancelNewPlayer();
+                    $emit('cancel-new-player');
                     close();
                   }
                 "
@@ -73,7 +76,7 @@
                 color="primary"
                 @click="
                   () => {
-                    confirmNewPlayer();
+                    $emit('confirm-new-player');
                     close();
                   }
                 "
@@ -88,7 +91,7 @@
           color="primary"
           variant="solid"
           :disabled="tipButtonDisabled"
-          @click="revealNextClue"
+          @click="$emit('reveal-clue')"
         >
           Get a tip
         </UButton>

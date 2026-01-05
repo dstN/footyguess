@@ -28,11 +28,17 @@
           Submit URL
         </UButton>
       </div>
-      <p v-if="status" class="text-sm text-slate-200">
+      <p
+        v-if="status"
+        class="text-sm text-slate-200"
+      >
         Status: {{ status }}
         <span v-if="playerId"> (Player ID: {{ playerId }})</span>
       </p>
-      <p v-if="error" class="text-sm text-red-400">
+      <p
+        v-if="error"
+        class="text-sm text-red-400"
+      >
         {{ error }}
       </p>
     </div>

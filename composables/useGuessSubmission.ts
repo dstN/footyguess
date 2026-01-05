@@ -28,7 +28,13 @@ export function useGuessSubmission(
   streak: Ref<number>,
   bestStreak: Ref<number>,
   onStreakUpdate: (streak: number, bestStreak: number) => void,
-  onCorrectGuess: (playerName: string, difficulty: Player["difficulty"], breakdown: ScoreBreakdown, score: number, newStreak: number) => void,
+  onCorrectGuess: (
+    playerName: string,
+    difficulty: Player["difficulty"],
+    breakdown: ScoreBreakdown,
+    score: number,
+    newStreak: number,
+  ) => void,
   onIncorrectGuess: () => void,
   onError: (message: string) => void,
 ) {
@@ -80,7 +86,13 @@ export function useGuessSubmission(
       onStreakUpdate(res.streak, res.bestStreak);
 
       if (res.correct) {
-        onCorrectGuess(res.playerName, res.difficulty, res.breakdown, res.score, res.streak);
+        onCorrectGuess(
+          res.playerName,
+          res.difficulty,
+          res.breakdown,
+          res.score,
+          res.streak,
+        );
       } else {
         onIncorrectGuess();
       }

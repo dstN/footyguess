@@ -3,7 +3,13 @@
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { logDebug, logInfo, logWarn, logError, LogLevel } from "~/server/utils/logger";
+import {
+  logDebug,
+  logInfo,
+  logWarn,
+  logError,
+  LogLevel,
+} from "~/server/utils/logger";
 
 // Mock console methods
 vi.mock("fs");
@@ -62,7 +68,8 @@ describe("Structured Logger", () => {
     const consoleSpy = vi.spyOn(console, "log");
     logInfo("test", "api");
     const calls = consoleSpy.mock.calls[0];
-    expect(calls[0]).toContain("api");
+    expect(calls).toBeDefined();
+    expect(calls?.[0]).toContain("api");
     consoleSpy.mockRestore();
   });
 });

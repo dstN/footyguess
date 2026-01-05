@@ -7,8 +7,8 @@
  * Circuit breaker states
  */
 export enum CircuitState {
-  CLOSED = "closed",      // Normal operation
-  OPEN = "open",          // Failing, reject requests
+  CLOSED = "closed", // Normal operation
+  OPEN = "open", // Failing, reject requests
   HALF_OPEN = "half-open", // Testing if service recovered
 }
 
@@ -16,9 +16,9 @@ export enum CircuitState {
  * Circuit breaker configuration
  */
 export interface CircuitBreakerConfig {
-  failureThreshold: number;  // Failures before opening
-  resetTimeoutMs: number;    // Time before trying half-open
-  halfOpenRequests: number;  // Requests to try in half-open state
+  failureThreshold: number; // Failures before opening
+  resetTimeoutMs: number; // Time before trying half-open
+  halfOpenRequests: number; // Requests to try in half-open state
 }
 
 /**

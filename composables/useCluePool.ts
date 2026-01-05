@@ -33,7 +33,7 @@ export interface Clue {
 
 /**
  * Composable for managing the pool of clues about a player.
- * 
+ *
  * Key features:
  * - Generates 12 available clues from player data
  * - Tracks which clues have been revealed (max 10 due to capping)
@@ -52,7 +52,7 @@ export interface Clue {
  * @returns Object with clue state and functions
  *
  * @example
- * const { revealedClues, hiddenClueLabels, selectRandomClues, revealNextClue } 
+ * const { revealedClues, hiddenClueLabels, selectRandomClues, revealNextClue }
  *   = useCluePool(playerRef, { isLoading: loadingRef });
  *
  * // Initial clues selected deterministically by player ID
@@ -74,7 +74,7 @@ export function useCluePool(
 
   /**
    * Compute all available clues for the current player.
-   * 
+   *
    * Generates a full pool of 12 clues from player data fields.
    * Handles missing/null data gracefully (clue.value = null).
    * Computed automatically when player changes.

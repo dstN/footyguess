@@ -88,12 +88,12 @@ export function incrementCluesUsed(roundId: string): {
   const updated = db
     .prepare(`SELECT clues_used, max_clues_allowed FROM rounds WHERE id = ?`)
     .get(roundId) as {
-    cluesUsed: number;
-    cluesRemaining: number;
+    clues_used: number;
+    max_clues_allowed: number;
   };
 
   return {
-    cluesUsed: updated.cluesUsed,
-    cluesRemaining: updated.max_clues_allowed - updated.cluesUsed,
+    cluesUsed: updated.clues_used,
+    cluesRemaining: updated.max_clues_allowed - updated.clues_used,
   };
 }

@@ -4,7 +4,10 @@
     role="region"
     aria-label="Current and best streak information"
   >
-    <p class="text-xs uppercase tracking-[0.18em] text-primary-200" id="streak-label">
+    <p
+      class="text-primary-200 text-xs tracking-[0.18em] uppercase"
+      id="streak-label"
+    >
       Streaks
     </p>
     <UBadge
@@ -14,7 +17,7 @@
       role="status"
       :aria-label="`Current streak: ${streak}`"
     >
-      Current <span class="font-bold text-primary-300">{{ streak }}</span>
+      Current <span class="text-primary-300 font-bold">{{ streak }}</span>
     </UBadge>
     <UBadge
       color="neutral"

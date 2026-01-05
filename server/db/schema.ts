@@ -270,7 +270,7 @@ export function initSchema() {
       `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
     ).run();
   } catch {}
-  
+
   // Issue #42: Add missing performance indexes
   try {
     db.prepare(

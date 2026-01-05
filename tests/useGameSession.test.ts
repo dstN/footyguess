@@ -41,7 +41,8 @@ describe("useGameSession", () => {
     const { ensureSessionId } = useGameSession();
 
     const id = ensureSessionId();
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     expect(uuidPattern.test(id)).toBe(true);
   });

@@ -1,5 +1,5 @@
 import { createError, H3Event } from "h3";
-import type { Parse, BaseSchema } from "valibot";
+import type { BaseSchema } from "valibot";
 import { parse } from "valibot";
 
 /**
@@ -44,7 +44,7 @@ export interface ApiSuccessResponse<T = any> {
 
 /**
  * Validate request data against a Valibot schema.
- * 
+ *
  * Provides centralized validation with consistent error handling.
  * Returns validation error or parsed data.
  *
@@ -65,10 +65,10 @@ export interface ApiSuccessResponse<T = any> {
  *
  * const { name, age } = result.data;
  */
-export function validateRequest<TSchema extends BaseSchema>(
+export function validateRequest<TSchema extends BaseSchema<any, any, any>>(
   schema: TSchema,
   data: unknown,
-): { ok: true; data: Parse<TSchema> } | { ok: false; error: ReturnType<typeof createError> } {
+): { ok: true; data: any } | { ok: false; error: ReturnType<typeof createError> } {
   try {
     const parsed = parse(schema, data);
     return { ok: true, data: parsed };

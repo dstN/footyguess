@@ -1,5 +1,9 @@
 <template>
-  <main class="flex flex-1 flex-col gap-6 text-slate-100" role="main" aria-label="Game play area">
+  <main
+    class="flex flex-1 flex-col gap-6 text-slate-100"
+    role="main"
+    aria-label="Game play area"
+  >
     <PlayHeader
       :streak="streak"
       :best-streak="bestStreak"
@@ -143,13 +147,14 @@ async function submitDevUrl() {
   if (!devUrl.value.trim()) return;
   devSubmitting.value = true;
   try {
-    const res = await $fetch<{ id: number; status: string; playerId: number | null }>(
-      "/api/requestPlayer",
-      {
-        method: "POST",
-        body: { url: devUrl.value.trim() },
-      },
-    );
+    const res = await $fetch<{
+      id: number;
+      status: string;
+      playerId: number | null;
+    }>("/api/requestPlayer", {
+      method: "POST",
+      body: { url: devUrl.value.trim() },
+    });
     devRequestId.value = res.id;
     devStatus.value = res.status;
     devPlayerId.value = res.playerId ?? null;

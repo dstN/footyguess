@@ -11,7 +11,7 @@ export const transitionClasses = {
     enterFrom: "fade-enter-from",
     leaveTo: "fade-leave-to",
   },
-  
+
   // Slide transition classes
   slideUp: {
     enterActive: "slide-up-enter-active",

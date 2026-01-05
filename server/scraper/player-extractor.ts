@@ -26,7 +26,9 @@ export interface PlayerPageData {
 /**
  * Extract player data from TransferMarkt page
  */
-export async function extractPlayerPageData(page: Page): Promise<PlayerPageData> {
+export async function extractPlayerPageData(
+  page: Page,
+): Promise<PlayerPageData> {
   const profileUrl = page.url();
   const urlMatch = profileUrl.match(
     /transfermarkt\.com\/([^\/]+)\/profil\/spieler\/(\d+)/i,
@@ -74,9 +76,7 @@ export async function extractPlayerPageData(page: Page): Promise<PlayerPageData>
     if (!value) return null;
     const match = value.match(/(\d+,\d{2})/);
     if (!match) return null;
-    return Math.round(
-      Number.parseFloat(match[1].replace(",", ".")) * 100,
-    );
+    return Math.round(Number.parseFloat(match[1].replace(",", ".")) * 100);
   });
 
   const active: boolean = await page.evaluate(() => {
@@ -85,10 +85,7 @@ export async function extractPlayerPageData(page: Page): Promise<PlayerPageData>
     const club = box
       .querySelector("span.data-header__club")
       ?.textContent?.trim();
-    const alt = box
-      .querySelector("img[alt]")
-      ?.getAttribute("alt")
-      ?.trim();
+    const alt = box.querySelector("img[alt]")?.getAttribute("alt")?.trim();
     return !(club === "Retired" || alt === "Retired");
   });
 
@@ -163,8 +160,9 @@ export async function extractPlayerPageData(page: Page): Promise<PlayerPageData>
     const label = Array.from(
       document.querySelectorAll("span.info-table__content--regular"),
     ).find((el) => el.textContent?.trim() === "Date of birth:");
-    return (label?.nextElementSibling as HTMLAnchorElement)
-      ?.getAttribute("href");
+    return (label?.nextElementSibling as HTMLAnchorElement)?.getAttribute(
+      "href",
+    );
   });
   if (birthHref) {
     birthdate = birthHref.split("/").pop() ?? null;

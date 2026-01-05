@@ -29,7 +29,8 @@
 
 /* Pulse effect - highlights new content */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -58,7 +59,8 @@
 
 /* Bounce effect */
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -72,7 +74,8 @@
 
 /* Glow effect - highlights important elements */
 @keyframes glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
   }
   50% {

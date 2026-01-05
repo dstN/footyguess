@@ -38,8 +38,13 @@ export function usePlayGame() {
     loadPlayer: loadPlayerSession,
   } = useGameSession();
 
-  const { streak, bestStreak, loadStreakFromStorage, resetStreak, updateStreak } =
-    useGameStreak();
+  const {
+    streak,
+    bestStreak,
+    loadStreakFromStorage,
+    resetStreak,
+    updateStreak,
+  } = useGameStreak();
 
   // Form and UI state
   const schema = GuessFormSchema;
@@ -153,8 +158,7 @@ export function usePlayGame() {
    */
   function handleIncorrectGuess() {
     isError.value = true;
-    errorMessage.value =
-      "Incorrect guess - follow the clues more carefully";
+    errorMessage.value = "Incorrect guess - follow the clues more carefully";
     toast.add({
       title: "Wrong player",
       description: "Try again - follow the clues.",
@@ -252,4 +256,3 @@ export function usePlayGame() {
     clearGuess,
   };
 }
-

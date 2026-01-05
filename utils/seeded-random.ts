@@ -1,25 +1,25 @@
 /**
  * Seeded random number generator using multiplicative congruential algorithm.
  * Produces deterministic but statistically uniform random numbers.
- * 
+ *
  * Key properties:
  * - Same seed always produces same sequence of numbers
  * - Useful for reproducible randomness (e.g., selecting same clues for same player)
  * - Based on Park-Miller algorithm (efficient for 32-bit integers)
- * 
+ *
  * Algorithm details:
  * - Multiplier (a): 16807 (prime factor of 2^31 - 1)
  * - Modulus (m): 2147483647 (2^31 - 1, Mersenne prime)
  * - Formula: next_seed = (seed * 16807) % 2147483647
- * 
+ *
  * @example
  * // Same seed produces same numbers
  * const rng1 = new SeededRandom(42);
  * const rng2 = new SeededRandom(42);
- * 
+ *
  * console.log(rng1.next()); // 0.0000078234...
  * console.log(rng2.next()); // 0.0000078234... (identical)
- * 
+ *
  * @example
  * // Deterministic clue selection per player
  * const rng = new SeededRandom(playerId);
@@ -30,7 +30,7 @@ export class SeededRandom {
 
   /**
    * Create a new seeded random number generator.
-   * 
+   *
    * @param seed - Initial seed value. Should be a positive integer.
    *              Values are normalized to ensure valid state.
    *
@@ -85,7 +85,7 @@ export class SeededRandom {
 /**
  * Hash a string into a numeric seed for SeededRandom.
  * Uses simple additive hash to convert any string to a deterministic seed.
- * 
+ *
  * Algorithm:
  * 1. Iterate through each character
  * 2. Shift current hash left 5 bits: hash << 5
@@ -116,4 +116,3 @@ export function seedFromString(str: string): number {
   }
   return Math.abs(hash);
 }
-

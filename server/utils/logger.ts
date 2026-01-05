@@ -152,19 +152,22 @@ export function logError(
   if (errorOrContext instanceof Error) {
     error = errorOrContext;
     context = typeof contextOrMeta === "string" ? contextOrMeta : undefined;
-    metadata =
-      typeof contextOrMeta === "object" ? contextOrMeta : meta;
+    metadata = typeof contextOrMeta === "object" ? contextOrMeta : meta;
   } else if (typeof errorOrContext === "string") {
     context = errorOrContext;
-    metadata =
-      typeof contextOrMeta === "object" ? contextOrMeta : meta;
+    metadata = typeof contextOrMeta === "object" ? contextOrMeta : meta;
   } else {
     error = errorOrContext instanceof Error ? errorOrContext : undefined;
-    metadata =
-      typeof contextOrMeta === "object" ? contextOrMeta : meta;
+    metadata = typeof contextOrMeta === "object" ? contextOrMeta : meta;
   }
 
-  const entry = createLogEntry(LogLevel.ERROR, message, context, metadata, error);
+  const entry = createLogEntry(
+    LogLevel.ERROR,
+    message,
+    context,
+    metadata,
+    error,
+  );
   console.error(`[${context || "app"}]`, message, error ?? "", metadata ?? "");
   writeLine("server.log", entry);
 }

@@ -75,7 +75,7 @@ function sumWeightedInternational(stats: StatRow[]) {
 /**
  * Determine difficulty tier and point multiplier based on appearance count.
  * Tier is determined by competition basis:
- * 
+ *
  * International basis thresholds:
  * - >80 apps: Easy (1.0x)
  * - 60-80 apps: Medium (1.25x)
@@ -120,7 +120,7 @@ function getTier(
 
 /**
  * Compute the difficulty tier for a player based on their competition appearances.
- * 
+ *
  * Algorithm:
  * 1. Calculate weighted international appearances (applies INTL_WEIGHTS multipliers)
  * 2. Calculate total Top 5 league appearances
