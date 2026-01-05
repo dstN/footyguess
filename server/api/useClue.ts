@@ -83,6 +83,9 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error) {
     logError("useClue error", error);
-    throw createError({ statusCode: 500, statusMessage: "Failed to record clue" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to record clue",
+    });
   }
 });

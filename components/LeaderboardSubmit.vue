@@ -1,46 +1,63 @@
 <template>
-  <UCard class="border-primary-900/40 border bg-slate-950/60">
+  <UCard class="border-primary-900/50 border bg-slate-950/60">
     <template #header>
-      <p class="text-primary-200 text-xs tracking-[0.18em] uppercase">
+      <p class="text-primary-200/80 text-xs tracking-[0.18em] uppercase">
         Submit to leaderboard
       </p>
     </template>
-    <div class="space-y-3">
+    <div class="space-y-4">
       <UInput
         :model-value="nickname"
         placeholder="Nickname"
         size="lg"
+        class="w-full"
         :ui="{
-          base: 'bg-white/5 border border-primary-900/50 text-slate-100 placeholder:text-slate-400/70 backdrop-blur-sm',
+          base: 'w-full bg-white/5 border border-primary-900/50 text-slate-100 placeholder:text-slate-400/70 backdrop-blur-sm',
         }"
         @update:model-value="$emit('update:nickname', $event)"
       />
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-3">
         <UButton
           block
           color="primary"
+          size="lg"
           :disabled="!canSubmit || !lastScore"
           @click="$emit('submit', 'round')"
         >
-          Submit last round score ({{ lastBaseWithTime }})
+          <span class="flex items-center justify-center gap-2">
+            <span>Submit last round score</span>
+            <span class="font-mono opacity-80">({{ lastBaseWithTime }})</span>
+          </span>
         </UButton>
         <UButton
           block
           color="neutral"
+          variant="soft"
+          size="lg"
           :disabled="!canSubmit"
           @click="$emit('submit', 'total')"
         >
-          Submit total score ({{ totalScore }})
+          <span class="flex items-center justify-center gap-2">
+            <span>Submit total score</span>
+            <span class="font-mono opacity-80">({{ totalScore }})</span>
+          </span>
         </UButton>
         <UButton
           block
           color="secondary"
+          size="lg"
           :disabled="!canSubmit"
           @click="$emit('submit', 'streak')"
         >
-          Submit best streak ({{ bestStreak }})
+          <span class="flex items-center justify-center gap-2">
+            <span>Submit best streak</span>
+            <span class="font-mono opacity-80">({{ bestStreak }})</span>
+          </span>
         </UButton>
       </div>
+      <p class="text-center text-xs text-slate-500">
+        Enter a nickname to submit your scores
+      </p>
     </div>
   </UCard>
 </template>

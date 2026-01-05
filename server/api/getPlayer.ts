@@ -145,6 +145,9 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error) {
     logError("getPlayer error", error);
-    throw createError({ statusCode: 500, statusMessage: "Failed to load player" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to load player",
+    });
   }
 });

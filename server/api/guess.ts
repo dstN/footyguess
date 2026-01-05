@@ -113,6 +113,9 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error) {
     logError("guess error", error);
-    throw createError({ statusCode: 500, statusMessage: "Failed to submit guess" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to submit guess",
+    });
   }
 });
