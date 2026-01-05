@@ -37,7 +37,6 @@
       </div>
 
       <div class="flex flex-wrap justify-end gap-2">
-        <HighscoreModal />
         <UModal
           :model-value="confirmResetOpen"
           @update:model-value="$emit('update:confirmResetOpen', $event)"
@@ -105,7 +104,6 @@
 <script setup lang="ts">
 import { watch, inject } from "vue";
 import StreakBar from "./StreakBar.vue";
-import HighscoreModal from "./HighscoreModal.vue";
 
 const setModalOpen = inject<(open: boolean) => void>("setModalOpen");
 

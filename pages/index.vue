@@ -20,7 +20,6 @@
               >
                 Footyguess
               </UBadge>
-              <HighscoreModal />
             </div>
             <h1 class="text-3xl font-bold text-white sm:text-4xl">
               Guess the player from their transfer trail.
@@ -185,6 +184,16 @@
           </div>
         </div>
       </UCard>
+
+      <!-- Footer with actions -->
+      <div class="flex items-center justify-center gap-3">
+        <HighscoreModal />
+        <HelpModal
+          button-label="How to Play"
+          button-variant="ghost"
+          button-color="neutral"
+        />
+      </div>
     </main>
   </ErrorBoundary>
 </template>
