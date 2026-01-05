@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery, sendError } from "h3";
 import { randomUUID } from "node:crypto";
 import db from "../db/connection.ts";
-import type { Player } from "~/types/player";
+import type { Player, Transfer, PlayerStats } from "~/types/player";
 import {
   computeDifficulty,
   INTL_WEIGHTS,
@@ -79,8 +79,8 @@ export default defineEventHandler(async (event) => {
   }
 
   let base: Player | undefined;
-  let transfers: any[] = [];
-  let stats: Array<{ competition_id: string; appearances: number }> = [];
+  let transfers: Transfer[] = [];
+  let stats: PlayerStats[] = [];
   let difficulty;
   let attempts = 0;
 
@@ -130,7 +130,7 @@ export default defineEventHandler(async (event) => {
       ORDER BY t.transfer_date DESC
     `,
       )
-      .all(base.id);
+      .all(base.id) as Transfer[];
 
     stats = db
       .prepare(
@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
         ORDER BY ps.appearances DESC
       `,
       )
-      .all(base.id) as Array<{ competition_id: string; appearances: number }>;
+      .all(base.id) as PlayerStats[];
 
     difficulty = computeDifficulty(stats, { forceUltra: hardMode });
 

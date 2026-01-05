@@ -1,3 +1,32 @@
+export interface Transfer {
+  season?: string;
+  transfer_date?: string;
+  fee?: string;
+  transfer_type?: string;
+  upcoming?: number;
+  from_club_id?: number;
+  from_club?: string;
+  to_club_id?: number;
+  to_club?: string;
+}
+
+export interface PlayerStats {
+  competition_id: string;
+  competition?: string;
+  appearances: number;
+  goals?: number;
+  assists?: number;
+  own_goals?: number;
+  subbed_on?: number;
+  subbed_off?: number;
+  yellow_cards?: number;
+  yellow_red_cards?: number;
+  red_cards?: number;
+  penalties?: number;
+  minutes_played?: number;
+  average_minutes_per_match?: number;
+}
+
 export interface Player {
   id: number;
   name: string;
@@ -18,8 +47,8 @@ export interface Player {
   total_stats: Record<string, number | string> | null;
   current_club_id: number | null;
   currentClub: string | null;
-  transfers: any[]; // kannst du später noch genauer typisieren
-  stats: any[]; // kannst du später noch genauer typisieren
+  transfers: Transfer[];
+  stats: PlayerStats[];
   difficulty?: {
     basis: "international" | "top5";
     totalAppearances: number;
