@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./animations.css";
 @config "../../tailwind.config.ts";
 
 @theme static {
