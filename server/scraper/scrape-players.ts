@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { performance } from "perf_hooks";
 import puppeteer from "puppeteer";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import type { Page } from "puppeteer";
 import db from "../db/connection.ts";
 import { upsertClub, upsertPlayer } from "../db/insert.ts";
@@ -9,6 +10,9 @@ import { initSchema } from "../db/schema.ts";
 import { scrapeCareerStatsForPlayer } from "./scrape-career.ts";
 import { scrapeTransfersForPlayer } from "./scrape-transfers.ts";
 import { logError, rotateTextLog } from "../utils/logger.ts";
+
+// Apply stealth plugin to hide automation signals
+puppeteer.use(StealthPlugin());
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 const SCRAPER_WORKERS = Math.max(

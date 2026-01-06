@@ -20,6 +20,8 @@
     "better-sqlite3": "^11.9.1",
     "nuxt": "^4.2.2",
     "puppeteer": "^24.5.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "valibot": "^1.0.0"
   },
   "devDependencies": {
