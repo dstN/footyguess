@@ -125,7 +125,7 @@ const devError = ref<string | null>(null);
 const devSubmitting = ref(false);
 const devRequestId = ref<number | null>(null);
 const devPlayerId = ref<number | null>(null);
-let devPollTimer: ReturnType<typeof setInterval> | null = null;
+const devPollTimer = ref<ReturnType<typeof setInterval> | null>(null);
 
 async function pollDevStatus() {
   if (!devRequestId.value) return;
@@ -138,9 +138,9 @@ async function pollDevStatus() {
     devStatus.value = res.status;
     devPlayerId.value = res.playerId ?? null;
     if (res.error) devError.value = res.error;
-    if (["done", "failed"].includes(res.status) && devPollTimer) {
-      clearInterval(devPollTimer);
-      devPollTimer = null;
+    if (["done", "failed"].includes(res.status) && devPollTimer.value) {
+      clearInterval(devPollTimer.value);
+      devPollTimer.value = null;
     }
   } catch (err) {
     devError.value = "Failed to fetch request status.";
@@ -165,8 +165,8 @@ async function submitDevUrl() {
     devRequestId.value = res.id;
     devStatus.value = res.status;
     devPlayerId.value = res.playerId ?? null;
-    if (!devPollTimer) {
-      devPollTimer = setInterval(pollDevStatus, 5000);
+    if (!devPollTimer.value) {
+      devPollTimer.value = setInterval(pollDevStatus, 5000);
     }
   } catch (err) {
     devError.value = "Failed to submit URL.";
@@ -175,7 +175,18 @@ async function submitDevUrl() {
   }
 }
 
+function clearDevPollTimer() {
+  if (devPollTimer.value) {
+    clearInterval(devPollTimer.value);
+    devPollTimer.value = null;
+  }
+}
+
 onBeforeUnmount(() => {
-  if (devPollTimer) clearInterval(devPollTimer);
+  clearDevPollTimer();
+});
+
+onBeforeRouteLeave(() => {
+  clearDevPollTimer();
 });
 </script>
