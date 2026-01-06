@@ -48,21 +48,14 @@ import { ref, onMounted, computed } from "vue";
 import VictoryCard from "~/components/VictoryCard.vue";
 import ScoreSnapshot from "~/components/ScoreSnapshot.vue";
 import LeaderboardSubmit from "~/components/LeaderboardSubmit.vue";
+import type { RoundScoreInfo } from "~/types/player";
 
 const streak = ref(0);
 const bestStreak = ref(0);
 const lastPlayer = ref<string | null>(null);
 const lastPlayerId = ref<number | null>(null);
 const totalScore = ref(0);
-const lastScore = ref<{
-  score: number;
-  baseScore: number;
-  streak: number;
-  streakBonus: number;
-  timeMultiplier: number;
-  malicePenalty: number;
-  playerName: string | null;
-} | null>(null);
+const lastScore = ref<RoundScoreInfo | null>(null);
 const nickname = ref("");
 const sessionId = ref<string | null>(null);
 const submittedTypes = ref<string[]>([]);

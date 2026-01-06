@@ -7,6 +7,8 @@
   </UApp>
 </template>
 
-<script setup>
-const toaster = { position: "top-right", expand: false };
+<script setup lang="ts">
+import type { ToasterProps } from "@nuxt/ui";
+
+const toaster: ToasterProps = { position: "top-right", expand: false };
 </script>

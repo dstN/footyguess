@@ -54,12 +54,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-
-interface DifficultyInfo {
-  tier: "easy" | "medium" | "hard" | "ultra";
-  multiplier: number;
-  basePoints: number;
-}
+import { getStreakBonusMultiplier } from "~/server/utils/scoring";
+import type { DifficultyInfo } from "~/types/player";
 
 const props = defineProps<{
   difficulty: DifficultyInfo | null;
@@ -92,18 +88,6 @@ const maxPoints = computed(() =>
     ? Math.round(props.difficulty.basePoints * props.difficulty.multiplier)
     : 0,
 );
-
-/**
- * Get streak bonus multiplier based on streak count
- */
-function getStreakBonusMultiplier(streak: number) {
-  if (streak >= 100) return 0.3;
-  if (streak >= 60) return 0.2;
-  if (streak >= 30) return 0.15;
-  if (streak >= 15) return 0.1;
-  if (streak >= 5) return 0.05;
-  return 0;
-}
 
 /**
  * Calculate streak bonus as percentage

@@ -37,6 +37,13 @@
 </template>
 
 <script setup lang="ts">
+import type { InjectionKey, Ref } from "vue";
+
+export const triggerShakeKey: InjectionKey<() => void> = Symbol("triggerShake");
+export const setModalOpenKey: InjectionKey<(open: boolean) => void> =
+  Symbol("setModalOpen");
+export const isModalOpenKey: InjectionKey<Ref<boolean>> = Symbol("isModalOpen");
+
 const shouldShake = ref(false);
 const isModalOpen = ref(false);
 
@@ -48,9 +55,9 @@ function setModalOpen(open: boolean) {
   isModalOpen.value = open;
 }
 
-provide("triggerShake", triggerShake);
-provide("setModalOpen", setModalOpen);
-provide("isModalOpen", isModalOpen);
+provide(triggerShakeKey, triggerShake);
+provide(setModalOpenKey, setModalOpen);
+provide(isModalOpenKey, isModalOpen);
 </script>
 
 <style scoped>

@@ -22,8 +22,18 @@ export function hasReachedClueLimit(
 
 /**
  * Record clue usage and return updated status
+ * @throws Error if round does not exist
  */
 export function useClue(roundId: string): ClueStatus {
+  // First check if round exists
+  const round = db
+    .prepare(`SELECT id FROM rounds WHERE id = ?`)
+    .get(roundId) as { id: string } | undefined;
+
+  if (!round) {
+    throw new Error(`Round ${roundId} not found`);
+  }
+
   db.prepare(`UPDATE rounds SET clues_used = clues_used + 1 WHERE id = ?`).run(
     roundId,
   );

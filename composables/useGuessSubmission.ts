@@ -45,10 +45,11 @@ export function useGuessSubmission(
    * @param {unknown} raw - Raw input value from form
    * @returns {string} Sanitized guess value or empty string
    */
-  function getGuessValue(raw: unknown) {
+  function getGuessValue(raw: unknown): string {
     if (typeof raw === "string") return raw.trim();
     if (raw && typeof raw === "object") {
-      const maybeValue = (raw as any).value ?? (raw as any).label;
+      const obj = raw as Record<string, unknown>;
+      const maybeValue = obj.value ?? obj.label;
       if (typeof maybeValue === "string") return maybeValue.trim();
     }
     return "";

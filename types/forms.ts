@@ -26,3 +26,8 @@ export const GuessFormSchema = v.object({
  */
 export type GuessFormInput = v.InferInput<typeof GuessFormSchema>;
 export type GuessFormOutput = v.InferOutput<typeof GuessFormSchema>;
+
+/**
+ * Type for the schema itself (for prop typing)
+ */
+export type GuessFormSchema = typeof GuessFormSchema;

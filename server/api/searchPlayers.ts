@@ -5,14 +5,20 @@ import { logError } from "../utils/logger.ts";
 import { paginatedResponse, errorResponse } from "../utils/response.ts";
 import { object, optional, string, minLength, maxLength, pipe } from "valibot";
 
+function escapeLikeWildcards(value: string): string {
+  return value.replace(/[%_\\]/g, "\\$&");
+}
+
 function normalizeSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/['’]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return escapeLikeWildcards(
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/['']/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 export default defineEventHandler((event) => {
@@ -51,15 +57,15 @@ export default defineEventHandler((event) => {
         SELECT name
         FROM players
         WHERE
-          name_search LIKE ?
-          OR name_search LIKE ?
-          OR name_search LIKE ?
-          OR tm_short_name_search LIKE ?
-          OR tm_short_name_search LIKE ?
-          OR tm_short_name_search LIKE ?
-          OR tm_full_name_search LIKE ?
-          OR tm_full_name_search LIKE ?
-          OR tm_full_name_search LIKE ?
+          name_search LIKE ? ESCAPE '\\'
+          OR name_search LIKE ? ESCAPE '\\'
+          OR name_search LIKE ? ESCAPE '\\'
+          OR tm_short_name_search LIKE ? ESCAPE '\\'
+          OR tm_short_name_search LIKE ? ESCAPE '\\'
+          OR tm_short_name_search LIKE ? ESCAPE '\\'
+          OR tm_full_name_search LIKE ? ESCAPE '\\'
+          OR tm_full_name_search LIKE ? ESCAPE '\\'
+          OR tm_full_name_search LIKE ? ESCAPE '\\'
         ORDER BY name ASC
         LIMIT ?
       `,

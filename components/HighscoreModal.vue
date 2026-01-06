@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, inject } from "vue";
+import { ref, watch, inject, onBeforeUnmount } from "vue";
 
 interface LeaderboardEntry {
   id: number;
@@ -340,4 +340,11 @@ function formatValue(value: number, type: string): string {
   }
   return value.toLocaleString();
 }
+
+onBeforeUnmount(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+});
 </script>

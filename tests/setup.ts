@@ -16,17 +16,38 @@ vi.mock("#imports", () => ({
   useHead: () => {},
 }));
 
-// Also expose globals so auto-imported composables (without explicit imports) work in tests.
-(globalThis as any).useRouter = () => ({ push: routerPushMock });
-(globalThis as any).useToast = () => ({ add: toastAddMock });
-(globalThis as any).inject = () => undefined;
-(globalThis as any).onMounted = () => {};
-(globalThis as any).useHead = () => {};
-(globalThis as any).ref = ref;
-(globalThis as any).reactive = reactive;
-(globalThis as any).computed = computed;
-(globalThis as any).watch = watch;
-(globalThis as any).localStorage = {
+// Define a type for the test globals
+interface TestGlobals {
+  useRouter: () => { push: typeof routerPushMock };
+  useToast: () => { add: typeof toastAddMock };
+  inject: () => undefined;
+  onMounted: () => void;
+  useHead: () => void;
+  ref: typeof ref;
+  reactive: typeof reactive;
+  computed: typeof computed;
+  watch: typeof watch;
+  localStorage: {
+    store: Record<string, string>;
+    getItem(key: string): string | null;
+    setItem(key: string, value: string): void;
+    removeItem(key: string): void;
+    clear(): void;
+  };
+}
+
+// Expose globals so auto-imported composables (without explicit imports) work in tests.
+const testGlobals = globalThis as typeof globalThis & TestGlobals;
+testGlobals.useRouter = () => ({ push: routerPushMock });
+testGlobals.useToast = () => ({ add: toastAddMock });
+testGlobals.inject = () => undefined;
+testGlobals.onMounted = () => {};
+testGlobals.useHead = () => {};
+testGlobals.ref = ref;
+testGlobals.reactive = reactive;
+testGlobals.computed = computed;
+testGlobals.watch = watch;
+testGlobals.localStorage = {
   store: {} as Record<string, string>,
   getItem(key: string) {
     return this.store[key] ?? null;

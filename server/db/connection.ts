@@ -3,15 +3,24 @@ import Database from "better-sqlite3";
 
 const dbPath =
   process.env.FOOTYGUESS_DB_PATH || "./server/db/file/footyguess.db";
-const db = new Database(dbPath);
 
-db.pragma("foreign_keys = ON");
+let db: Database.Database;
+try {
+  db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
+} catch (error) {
+  console.error("[db] Failed to initialize database:", error);
+  throw new Error(
+    `Database initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+  );
+}
 
 db.function("regexp", (pattern: string, value: unknown) => {
   try {
-    if (typeof value !== "string") return false;
+    if (typeof value !== "string") return 0;
     const regex = new RegExp(pattern, "i");
-    return regex.test(value) ? 1 : 0; // 🚨 SQLite erwartet 0 oder 1, KEIN JS-boolean
+    return regex.test(value) ? 1 : 0;
   } catch (error) {
     console.error("REGEXP error", { pattern, value, error });
     return 0;

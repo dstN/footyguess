@@ -45,16 +45,25 @@ export function useGameSession() {
   function ensureSessionId() {
     if (sessionId.value) return sessionId.value;
     if (import.meta.client) {
-      const stored = localStorage.getItem("footyguess_session_id");
-      if (stored) {
-        sessionId.value = stored;
-        return stored;
+      try {
+        const stored = localStorage.getItem("footyguess_session_id");
+        if (stored) {
+          sessionId.value = stored;
+          return stored;
+        }
+      } catch (error) {
+        // localStorage may be blocked (private browsing, security settings)
+        console.warn("[useGameSession] localStorage read failed:", error);
       }
     }
     const generated = crypto.randomUUID();
     sessionId.value = generated;
     if (import.meta.client) {
-      localStorage.setItem("footyguess_session_id", generated);
+      try {
+        localStorage.setItem("footyguess_session_id", generated);
+      } catch (error) {
+        console.warn("[useGameSession] localStorage write failed:", error);
+      }
     }
     return generated;
   }
@@ -85,7 +94,14 @@ export function useGameSession() {
       round.value = response.round;
       sessionId.value = response.round.sessionId;
       if (import.meta.client) {
-        localStorage.setItem("footyguess_session_id", response.round.sessionId);
+        try {
+          localStorage.setItem(
+            "footyguess_session_id",
+            response.round.sessionId,
+          );
+        } catch (error) {
+          console.warn("[useGameSession] localStorage write failed:", error);
+        }
       }
       if (import.meta.dev) {
         console.log("[footyguess] Loaded player:", response);

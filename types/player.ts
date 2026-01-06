@@ -1,3 +1,18 @@
+/**
+ * Difficulty tier levels
+ */
+export type DifficultyTier = "easy" | "medium" | "hard" | "ultra";
+
+/**
+ * Difficulty information for a player
+ */
+export interface DifficultyInfo {
+  tier: DifficultyTier;
+  multiplier: number;
+  basePoints: number;
+  cluePenalty?: number;
+}
+
 export interface Transfer {
   season?: string;
   transfer_date?: string;
@@ -49,12 +64,22 @@ export interface Player {
   currentClub: string | null;
   transfers: Transfer[];
   stats: PlayerStats[];
-  difficulty?: {
+  difficulty?: DifficultyInfo & {
     basis: "international" | "top5";
     totalAppearances: number;
-    tier: "easy" | "medium" | "hard" | "ultra";
-    multiplier: number;
-    basePoints: number;
-    cluePenalty: number;
   };
+}
+
+/**
+ * Score breakdown from a single round
+ * Used for display in won.vue and score components
+ */
+export interface RoundScoreInfo {
+  score: number;
+  baseScore: number;
+  streak: number;
+  streakBonus: number;
+  timeMultiplier: number;
+  malicePenalty: number;
+  playerName: string | null;
 }

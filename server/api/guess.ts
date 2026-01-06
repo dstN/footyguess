@@ -37,20 +37,29 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Enforce rate limit BEFORE token verification to prevent DoS attacks
+    // Use IP-based rate limiting for initial protection
+    const ipRateError = enforceRateLimit(event, {
+      key: "guess-ip",
+      windowMs: 10_000,
+      max: 20,
+    });
+    if (ipRateError) return sendError(event, ipRateError);
+
     // Verify token and validate round
     const { sessionId } = verifyAndValidateRound(
       parsed.data.token,
       parsed.data.roundId,
     );
 
-    // Enforce rate limit
-    const rateError = enforceRateLimit(event, {
+    // Enforce stricter session-based rate limit
+    const sessionRateError = enforceRateLimit(event, {
       key: "guess",
       windowMs: 10_000,
       max: 10,
       sessionId,
     });
-    if (rateError) return sendError(event, rateError);
+    if (sessionRateError) return sendError(event, sessionRateError);
 
     // Get round data
     const round = getRound(parsed.data.roundId);

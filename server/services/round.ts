@@ -16,6 +16,13 @@ export interface RoundData {
   started_at?: number | null;
 }
 
+interface RoundPayload {
+  roundId: string;
+  playerId: number;
+  sessionId: string;
+  exp: number;
+}
+
 /**
  * Verify round token and validate round ownership
  * @throws Error if token is invalid or round mismatch
@@ -23,7 +30,7 @@ export interface RoundData {
 export function verifyAndValidateRound(
   token: string,
   roundId: string,
-): { sessionId: string; payload: any } {
+): { sessionId: string; payload: RoundPayload } {
   const payload = verifyRoundToken(token);
   if (payload.roundId !== roundId) {
     throw new Error("Round mismatch");
@@ -72,28 +79,4 @@ export function getRoundWithPlayer(roundId: string) {
     .get(round.player_id) as { id: number; name: string } | undefined;
 
   return { round, player };
-}
-
-/**
- * Update clues used for a round
- */
-export function incrementCluesUsed(roundId: string): {
-  cluesUsed: number;
-  cluesRemaining: number;
-} {
-  db.prepare(`UPDATE rounds SET clues_used = clues_used + 1 WHERE id = ?`).run(
-    roundId,
-  );
-
-  const updated = db
-    .prepare(`SELECT clues_used, max_clues_allowed FROM rounds WHERE id = ?`)
-    .get(roundId) as {
-    clues_used: number;
-    max_clues_allowed: number;
-  };
-
-  return {
-    cluesUsed: updated.clues_used,
-    cluesRemaining: updated.max_clues_allowed - updated.clues_used,
-  };
 }

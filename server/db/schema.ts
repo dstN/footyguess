@@ -1,5 +1,28 @@
 import db from "./connection.ts";
 
+/**
+ * Run a migration that may fail if already applied.
+ * Logs debug info instead of silently swallowing errors.
+ */
+function runMigration(sql: string, description?: string): void {
+  try {
+    db.prepare(sql).run();
+  } catch (error) {
+    // Check if it's an expected "already exists" error
+    const msg = error instanceof Error ? error.message : String(error);
+    const isExpected =
+      msg.includes("duplicate column name") ||
+      msg.includes("already exists") ||
+      msg.includes("no such index");
+
+    if (!isExpected) {
+      console.warn(
+        `[schema] Migration failed${description ? ` (${description})` : ""}: ${msg}`,
+      );
+    }
+  }
+}
+
 export function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS players (
@@ -173,155 +196,157 @@ export function initSchema() {
   `);
 
   // lightweight migrations for added columns
-  try {
-    db.prepare(`ALTER TABLE scores ADD COLUMN base_score INTEGER`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE scores ADD COLUMN time_score INTEGER`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE scores ADD COLUMN malice_penalty REAL`).run();
-  } catch {}
+  runMigration(
+    `ALTER TABLE scores ADD COLUMN base_score INTEGER`,
+    "scores.base_score",
+  );
+  runMigration(
+    `ALTER TABLE scores ADD COLUMN time_score INTEGER`,
+    "scores.time_score",
+  );
+  runMigration(
+    `ALTER TABLE scores ADD COLUMN malice_penalty REAL`,
+    "scores.malice_penalty",
+  );
 
   // Drop the UNIQUE index if it exists (no longer needed)
-  try {
-    db.prepare(`DROP INDEX IF EXISTS idx_scores_round_id_unique`).run();
-  } catch {}
+  runMigration(
+    `DROP INDEX IF EXISTS idx_scores_round_id_unique`,
+    "drop idx_scores_round_id_unique",
+  );
 
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_id INTEGER`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN name_search TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_url TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_short_name TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE players ADD COLUMN tm_short_name_search TEXT`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_full_name TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN tm_full_name_search TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE players ADD COLUMN last_scraped_at INTEGER`).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE transfers ADD COLUMN transfer_key TEXT`).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE sessions ADD COLUMN total_score INTEGER DEFAULT 0`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE sessions ADD COLUMN total_rounds INTEGER DEFAULT 0`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE sessions ADD COLUMN last_round_score INTEGER`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(`ALTER TABLE sessions ADD COLUMN last_round_base INTEGER`).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search)`,
-    ).run();
-  } catch {}
+  runMigration(`ALTER TABLE players ADD COLUMN tm_id INTEGER`, "players.tm_id");
+  runMigration(
+    `ALTER TABLE players ADD COLUMN name_search TEXT`,
+    "players.name_search",
+  );
+  runMigration(`ALTER TABLE players ADD COLUMN tm_url TEXT`, "players.tm_url");
+  runMigration(
+    `ALTER TABLE players ADD COLUMN tm_short_name TEXT`,
+    "players.tm_short_name",
+  );
+  runMigration(
+    `ALTER TABLE players ADD COLUMN tm_short_name_search TEXT`,
+    "players.tm_short_name_search",
+  );
+  runMigration(
+    `ALTER TABLE players ADD COLUMN tm_full_name TEXT`,
+    "players.tm_full_name",
+  );
+  runMigration(
+    `ALTER TABLE players ADD COLUMN tm_full_name_search TEXT`,
+    "players.tm_full_name_search",
+  );
+  runMigration(
+    `ALTER TABLE players ADD COLUMN last_scraped_at INTEGER`,
+    "players.last_scraped_at",
+  );
+  runMigration(
+    `ALTER TABLE transfers ADD COLUMN transfer_key TEXT`,
+    "transfers.transfer_key",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN total_score INTEGER DEFAULT 0`,
+    "sessions.total_score",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN total_rounds INTEGER DEFAULT 0`,
+    "sessions.total_rounds",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN last_round_score INTEGER`,
+    "sessions.last_round_score",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN last_round_base INTEGER`,
+    "sessions.last_round_base",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`,
+    "sessions.last_round_time_score",
+  );
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`,
+    "idx_players_tm_id",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search)`,
+    "idx_players_name_search",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search)`,
+    "idx_players_tm_short_name_search",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search)`,
+    "idx_players_tm_full_name_search",
+  );
+
   // Drop old unique index that conflicts with player-specific round scores
-  try {
-    db.prepare(`DROP INDEX IF EXISTS idx_leaderboard_session_type`).run();
-  } catch {}
+  runMigration(
+    `DROP INDEX IF EXISTS idx_leaderboard_session_type`,
+    "drop idx_leaderboard_session_type",
+  );
+
   // Create unique index for total/streak entries (non-player-specific)
-  try {
-    db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_session_type_non_round ON leaderboard_entries(session_id, type) WHERE type != 'round'`,
-    ).run();
-  } catch {}
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_session_type_non_round ON leaderboard_entries(session_id, type) WHERE type != 'round'`,
+    "idx_leaderboard_session_type_non_round",
+  );
+
   // Add player_id column for player-specific round scores
-  try {
-    db.prepare(
-      `ALTER TABLE leaderboard_entries ADD COLUMN player_id INTEGER`,
-    ).run();
-  } catch {}
+  runMigration(
+    `ALTER TABLE leaderboard_entries ADD COLUMN player_id INTEGER`,
+    "leaderboard_entries.player_id",
+  );
+
   // Create index for player-specific round lookups
-  try {
-    db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_player_round ON leaderboard_entries(session_id, type, player_id) WHERE type = 'round' AND player_id IS NOT NULL`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_round_id ON scores(round_id)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_transfers_player_key ON transfers(player_id, transfer_key)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
-    ).run();
-  } catch {}
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_leaderboard_player_round ON leaderboard_entries(session_id, type, player_id) WHERE type = 'round' AND player_id IS NOT NULL`,
+    "idx_leaderboard_player_round",
+  );
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_round_id ON scores(round_id)`,
+    "idx_scores_round_id",
+  );
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_transfers_player_key ON transfers(player_id, transfer_key)`,
+    "idx_transfers_player_key",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at)`,
+    "idx_scrape_jobs_status_next",
+  );
+  runMigration(
+    `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
+    "rounds.max_clues_allowed",
+  );
 
   // Issue #42: Add missing performance indexes
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_player_stats_player_id ON player_stats(player_id)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_rounds_session_id ON rounds(session_id)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_scores_session_id ON scores(session_id)`,
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      `CREATE INDEX IF NOT EXISTS idx_rounds_player_id ON rounds(player_id)`,
-    ).run();
-  } catch {}
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_player_stats_player_id ON player_stats(player_id)`,
+    "idx_player_stats_player_id",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_rounds_session_id ON rounds(session_id)`,
+    "idx_rounds_session_id",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_scores_session_id ON scores(session_id)`,
+    "idx_scores_session_id",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_rounds_player_id ON rounds(player_id)`,
+    "idx_rounds_player_id",
+  );
+
+  // Issue #89: Add leaderboard performance indexes
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_leaderboard_type_value ON leaderboard_entries(type, value DESC)`,
+    "idx_leaderboard_type_value",
+  );
+  runMigration(
+    `CREATE INDEX IF NOT EXISTS idx_leaderboard_player_id ON leaderboard_entries(player_id)`,
+    "idx_leaderboard_player_id",
+  );
 }

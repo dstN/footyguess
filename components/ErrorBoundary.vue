@@ -66,7 +66,7 @@ const goHome = () => {
   });
 };
 
-onErrorCaptured((err: any) => {
+onErrorCaptured((err: unknown) => {
   hasError.value = true;
 
   // Extract message safely

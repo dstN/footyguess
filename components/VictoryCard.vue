@@ -27,7 +27,7 @@
         v-if="lastPlayer"
         class="text-sm text-slate-400"
       >
-        Last win: {{ sanitizeText(lastPlayer) }}
+        Last win: {{ lastPlayer }}
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <UButton
@@ -52,8 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import { sanitizeText } from "~/utils/sanitize";
-
 defineProps<{
   streak: number;
   bestStreak: number;

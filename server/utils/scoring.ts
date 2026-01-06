@@ -83,24 +83,18 @@ export function getTimeBonus(elapsedSeconds?: number): number {
   if (elapsedSeconds <= 1) return 1.2;
 
   // From 1s to 120s: linear drop from +120% to 0%
-  // At 1s = +1.2 (120% bonus), at 120s = 0 (no bonus)
   if (elapsedSeconds <= 120) {
-    // Linear interpolation: 1.2 at 1s, 0 at 120s
-    const progress = (elapsedSeconds - 1) / (120 - 1); // 0 at 1s, 1 at 120s
+    const progress = (elapsedSeconds - 1) / (120 - 1);
     return 1.2 * (1 - progress);
   }
 
   // From 120s to 300s (5 min): no bonus, no penalty
-  if (elapsedSeconds <= 300) {
-    return 0;
-  }
+  if (elapsedSeconds <= 300) return 0;
 
-  // After 5 min: start penalty
-  // Drop 0.1 every 30s after 5 min, capped at -0.5 (50% penalty)
+  // After 5 min: start penalty, capped at -0.5 (50% penalty)
   const secondsAfter5min = elapsedSeconds - 300;
   const penaltySteps = Math.floor(secondsAfter5min / 30) + 1;
-  const penalty = -0.1 * penaltySteps;
-  return Math.max(-0.5, penalty);
+  return Math.max(-0.5, -0.1 * penaltySteps);
 }
 
 function clampTimeBonus(bonus: number): number {

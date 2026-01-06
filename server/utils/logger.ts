@@ -4,6 +4,7 @@ import path from "path";
 /**
  * Structured Logging
  * Centralized logging with different levels and formats
+ * Uses buffered writes for better performance
  */
 
 export enum LogLevel {
@@ -25,6 +26,33 @@ interface LogEntry {
 const LOG_DIR = process.env.LOG_DIR || path.resolve("server", "logs");
 const MAX_LOG_BYTES = Number(process.env.LOG_MAX_BYTES ?? 5 * 1024 * 1024);
 const MIN_LOG_LEVEL = (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO;
+const FLUSH_INTERVAL = 1000; // Flush every second
+
+// Write buffer for batching log writes
+const writeBuffer: Map<string, string[]> = new Map();
+let flushTimer: ReturnType<typeof setInterval> | null = null;
+
+function ensureFlushTimer() {
+  if (flushTimer) return;
+  flushTimer = setInterval(flushBuffers, FLUSH_INTERVAL);
+  // Don't block process exit
+  if (flushTimer.unref) flushTimer.unref();
+}
+
+function flushBuffers() {
+  for (const [fileName, lines] of writeBuffer) {
+    if (lines.length === 0) continue;
+    try {
+      ensureDir();
+      const filePath = path.join(LOG_DIR, fileName);
+      rotateLog(filePath);
+      fs.appendFileSync(filePath, lines.join(""), "utf8");
+    } catch {
+      // ignore write errors
+    }
+    writeBuffer.set(fileName, []);
+  }
+}
 
 function ensureDir() {
   if (!fs.existsSync(LOG_DIR)) {
@@ -48,10 +76,15 @@ function rotateLog(filePath: string, maxBytes = MAX_LOG_BYTES) {
 }
 
 function writeLine(fileName: string, payload: LogEntry) {
-  ensureDir();
-  const filePath = path.join(LOG_DIR, fileName);
-  rotateLog(filePath);
-  fs.appendFileSync(filePath, `${JSON.stringify(payload)}\n`, "utf8");
+  ensureFlushTimer();
+  const lines = writeBuffer.get(fileName) || [];
+  lines.push(`${JSON.stringify(payload)}\n`);
+  writeBuffer.set(fileName, lines);
+
+  // Immediate flush for errors to avoid losing critical logs
+  if (payload.level === LogLevel.ERROR) {
+    flushBuffers();
+  }
 }
 
 function formatError(err: unknown) {

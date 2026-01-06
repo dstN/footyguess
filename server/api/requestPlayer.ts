@@ -28,13 +28,28 @@ let isProcessing = false;
 function kickProcessor() {
   if (isProcessing) return;
   isProcessing = true;
-  const proc = spawn("tsx", ["server/scraper/queue-worker.ts"], {
-    stdio: "inherit",
-    shell: true,
-  });
-  proc.on("close", () => {
+  try {
+    const proc = spawn("tsx", ["server/scraper/queue-worker.ts"], {
+      stdio: "inherit",
+      shell: true,
+    });
+    proc.on("error", (err) => {
+      console.error(
+        "[kickProcessor] Failed to spawn queue-worker:",
+        err.message,
+      );
+      isProcessing = false;
+    });
+    proc.on("close", (code) => {
+      if (code !== 0 && code !== null) {
+        console.warn(`[kickProcessor] queue-worker exited with code ${code}`);
+      }
+      isProcessing = false;
+    });
+  } catch (err) {
+    console.error("[kickProcessor] Error spawning process:", err);
     isProcessing = false;
-  });
+  }
 }
 
 export default defineEventHandler(async (event) => {

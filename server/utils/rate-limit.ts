@@ -17,6 +17,8 @@ type Bucket = { count: number; resetAt: number };
 
 const buckets = new Map<string, Bucket>();
 const MAX_BUCKETS = 10000;
+const CLEANUP_INTERVAL = 60_000; // Clean up every minute
+let lastCleanup = Date.now();
 
 /**
  * Extract client IP address from request.
@@ -39,18 +41,23 @@ function getClientIp(event: H3Event) {
 }
 
 /**
- * Clean up expired rate limit buckets when map exceeds MAX_BUCKETS.
- * Uses lazy cleanup to avoid excessive memory usage.
- *
- * Algorithm:
- * 1. Check if bucket count exceeds MAX_BUCKETS
- * 2. Iterate through all buckets
- * 3. Delete any buckets where resetAt <= current time
+ * Clean up expired rate limit buckets periodically.
+ * Uses time-based cleanup to avoid O(n) iteration on every request.
  *
  * @param now - Current timestamp in milliseconds
+ * @param force - Force cleanup regardless of timing
  */
-function cleanup(now: number) {
-  if (buckets.size <= MAX_BUCKETS) return;
+function cleanup(now: number, force = false) {
+  // Only cleanup if enough time has passed or bucket limit exceeded
+  if (
+    !force &&
+    buckets.size <= MAX_BUCKETS &&
+    now - lastCleanup < CLEANUP_INTERVAL
+  ) {
+    return;
+  }
+
+  lastCleanup = now;
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
   }

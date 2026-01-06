@@ -9,7 +9,6 @@ import { useGameStreak } from "~/composables/useGameStreak";
 import { useCluePool } from "~/composables/useCluePool";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
-import { sanitizeText } from "~/utils/sanitize";
 
 /**
  * Main game composable that orchestrates all game logic
@@ -98,7 +97,7 @@ export function usePlayGame() {
    */
   function persistLastPlayer(name: string) {
     if (import.meta.client) {
-      localStorage.setItem("footyguess_last_player", sanitizeText(name));
+      localStorage.setItem("footyguess_last_player", name);
     }
   }
 

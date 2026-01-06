@@ -1,3 +1,7 @@
+import { defineEventHandler, getQuery, createError } from "h3";
+import { parseSchema } from "../utils/validate";
+import { logError } from "../utils/logger";
+import { object, optional, string, maxLength, pipe, picklist } from "valibot";
 import db from "../db/connection";
 
 interface LeaderboardEntry {
@@ -16,98 +20,127 @@ interface PlayerSearchResult {
 }
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const type = (query.type as string) || "all";
-  const limit = Math.min(Number(query.limit) || 10, 50);
-  const playerId = query.playerId ? Number(query.playerId) : undefined;
-  const searchPlayer = (query.searchPlayer as string) || undefined;
+  try {
+    const query = getQuery(event);
+    const parsed = parseSchema(
+      object({
+        type: optional(picklist(["all", "round", "total", "streak"])),
+        limit: optional(pipe(string(), maxLength(3))),
+        playerId: optional(pipe(string(), maxLength(20))),
+        searchPlayer: optional(pipe(string(), maxLength(64))),
+      }),
+      query,
+    );
 
-  // If searching for players by name
-  if (searchPlayer) {
-    const players = db
-      .prepare(
-        `SELECT id, name FROM players 
-         WHERE name LIKE ? 
+    if (!parsed.ok) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid query parameters",
+      });
+    }
+
+    const type = parsed.data.type || "all";
+    const limit = Math.min(Number(parsed.data.limit) || 10, 50);
+    const playerId = parsed.data.playerId
+      ? Number(parsed.data.playerId)
+      : undefined;
+    const searchPlayer = parsed.data.searchPlayer;
+
+    // If searching for players by name
+    if (searchPlayer) {
+      // Escape LIKE wildcards to prevent injection
+      const escapedSearch = searchPlayer.replace(/[%_\\]/g, "\\$&");
+      const players = db
+        .prepare(
+          `SELECT id, name FROM players 
+         WHERE name LIKE ? ESCAPE '\\'
          ORDER BY name 
          LIMIT 10`,
-      )
-      .all(`%${searchPlayer}%`) as PlayerSearchResult[];
+        )
+        .all(`%${escapedSearch}%`) as PlayerSearchResult[];
 
-    return { players };
-  }
+      return { players };
+    }
 
-  // If requesting round scores for a specific player
-  if (type === "round" && playerId) {
-    const entries = db
-      .prepare(
-        `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
+    // If requesting round scores for a specific player
+    if (type === "round" && playerId) {
+      const entries = db
+        .prepare(
+          `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
          FROM leaderboard_entries le
          LEFT JOIN players p ON p.id = le.player_id
          WHERE le.type = 'round' AND le.player_id = ? AND le.nickname IS NOT NULL
          ORDER BY le.value DESC 
          LIMIT ?`,
-      )
-      .all(playerId, limit) as LeaderboardEntry[];
+        )
+        .all(playerId, limit) as LeaderboardEntry[];
 
-    // Get player name
-    const player = db
-      .prepare(`SELECT name FROM players WHERE id = ?`)
-      .get(playerId) as { name: string } | undefined;
+      // Get player name
+      const player = db
+        .prepare(`SELECT name FROM players WHERE id = ?`)
+        .get(playerId) as { name: string } | undefined;
 
-    return { round: entries, playerName: player?.name ?? null };
-  }
+      return { round: entries, playerName: player?.name ?? null };
+    }
 
-  if (type === "all") {
-    // Get top round entries with player names
-    const roundEntries = db
-      .prepare(
-        `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
+    if (type === "all") {
+      // Get top round entries with player names
+      const roundEntries = db
+        .prepare(
+          `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
          FROM leaderboard_entries le
          LEFT JOIN players p ON p.id = le.player_id
          WHERE le.type = 'round' AND le.nickname IS NOT NULL
          ORDER BY le.value DESC 
          LIMIT ?`,
-      )
-      .all(limit) as LeaderboardEntry[];
+        )
+        .all(limit) as LeaderboardEntry[];
 
-    const totalEntries = db
-      .prepare(
-        `SELECT id, nickname, value, type, created_at 
+      const totalEntries = db
+        .prepare(
+          `SELECT id, nickname, value, type, created_at 
          FROM leaderboard_entries 
          WHERE type = 'total' AND nickname IS NOT NULL
          ORDER BY value DESC 
          LIMIT ?`,
-      )
-      .all(limit) as LeaderboardEntry[];
+        )
+        .all(limit) as LeaderboardEntry[];
 
-    const streakEntries = db
-      .prepare(
-        `SELECT id, nickname, value, type, created_at 
+      const streakEntries = db
+        .prepare(
+          `SELECT id, nickname, value, type, created_at 
          FROM leaderboard_entries 
          WHERE type = 'streak' AND nickname IS NOT NULL
          ORDER BY value DESC 
          LIMIT ?`,
-      )
-      .all(limit) as LeaderboardEntry[];
+        )
+        .all(limit) as LeaderboardEntry[];
 
-    return {
-      round: roundEntries,
-      total: totalEntries,
-      streak: streakEntries,
-    };
-  }
+      return {
+        round: roundEntries,
+        total: totalEntries,
+        streak: streakEntries,
+      };
+    }
 
-  // Get entries for specific type
-  const entries = db
-    .prepare(
-      `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
+    // Get entries for specific type
+    const entries = db
+      .prepare(
+        `SELECT le.id, le.nickname, le.value, le.type, le.created_at, le.player_id, p.name as player_name
        FROM leaderboard_entries le
        LEFT JOIN players p ON p.id = le.player_id
        WHERE le.type = ? AND le.nickname IS NOT NULL
        ORDER BY le.value DESC 
        LIMIT ?`,
-    )
-    .all(type, limit) as LeaderboardEntry[];
+      )
+      .all(type, limit) as LeaderboardEntry[];
 
-  return { [type]: entries };
+    return { [type]: entries };
+  } catch (error) {
+    logError("leaderboard error", error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to fetch leaderboard",
+    });
+  }
 });

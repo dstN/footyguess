@@ -1,4 +1,5 @@
 import { computed, ref, type Ref } from "vue";
+import type { useClueData } from "./useClueData";
 import type { Clue } from "./useClueData";
 
 /**
@@ -61,5 +62,3 @@ export function useClueInteraction(
     revealNextClue,
   };
 }
-
-import type { useClueData } from "./useClueData";

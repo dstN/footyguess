@@ -130,13 +130,4 @@ const hasAutoUpdate = computed(
     props.submittedTypes.includes("total") ||
     props.submittedTypes.includes("streak"),
 );
-
-const lastBaseWithTime = computed(() =>
-  props.lastScore
-    ? Math.round(
-        (props.lastScore.baseScore ?? 0) *
-          (props.lastScore.timeMultiplier ?? 1),
-      )
-    : 0,
-);
 </script>

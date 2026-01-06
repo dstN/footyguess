@@ -17,34 +17,35 @@ import { successResponse, errorResponse } from "../utils/response";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const parsed = parseSchema(
-    object({
-      mode: optional(picklist(["hard", "normal"])),
-      sessionId: optional(pipe(string(), maxLength(128))),
-    }),
-    query,
-  );
-  if (!parsed.ok) {
-    return errorResponse(400, "Invalid query parameters", event, {
-      received: query,
-    });
-  }
+  try {
+    const query = getQuery(event);
+    const parsed = parseSchema(
+      object({
+        mode: optional(picklist(["hard", "normal"])),
+        sessionId: optional(pipe(string(), maxLength(128))),
+      }),
+      query,
+    );
+    if (!parsed.ok) {
+      return errorResponse(400, "Invalid query parameters", event, {
+        received: query,
+      });
+    }
 
-  const hardMode = parsed.data.mode === "hard";
-  const sessionFromQuery = parsed.data.sessionId ?? null;
-  const sessionId = sessionFromQuery || generateSessionId();
+    const hardMode = parsed.data.mode === "hard";
+    const sessionFromQuery = parsed.data.sessionId ?? null;
+    const sessionId = sessionFromQuery || generateSessionId();
 
-  const intlCases = Object.entries(INTL_WEIGHTS)
-    .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
-    .join(" ");
-  const intlSum = `SUM(CASE c.id ${intlCases} ELSE 0 END)`;
-  const top5Ids = TOP5_LEAGUES.map((id) => `'${id}'`).join(", ");
-  const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
+    const intlCases = Object.entries(INTL_WEIGHTS)
+      .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
+      .join(" ");
+    const intlSum = `SUM(CASE c.id ${intlCases} ELSE 0 END)`;
+    const top5Ids = TOP5_LEAGUES.map((id) => `'${id}'`).join(", ");
+    const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
 
-  const filterClause = hardMode
-    ? ""
-    : `
+    const filterClause = hardMode
+      ? ""
+      : `
       WHERE p.id IN (
         SELECT ps.player_id
         FROM player_stats ps
@@ -55,19 +56,19 @@ export default defineEventHandler(async (event) => {
       )
     `;
 
-  // Get count once outside loop
-  const countRow = db
-    .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
-    .get() as { count: number } | undefined;
-  const totalCount = countRow?.count ?? 0;
+    // Get count once outside loop
+    const countRow = db
+      .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
+      .get() as { count: number } | undefined;
+    const totalCount = countRow?.count ?? 0;
 
-  function getRandomPlayer() {
-    if (totalCount <= 0) return undefined;
-    const offset = Math.floor(Math.random() * totalCount);
+    function getRandomPlayer() {
+      if (totalCount <= 0) return undefined;
+      const offset = Math.floor(Math.random() * totalCount);
 
-    return db
-      .prepare(
-        `
+      return db
+        .prepare(
+          `
         SELECT
           p.*,
           c.name AS currentClub
@@ -76,32 +77,32 @@ export default defineEventHandler(async (event) => {
         ${filterClause}
         LIMIT 1 OFFSET ?
       `,
-      )
-      .get(offset) as Player | undefined;
-  }
-
-  let base: Player | undefined;
-  let transfers: Transfer[] = [];
-  let stats: PlayerStats[] = [];
-  let difficulty;
-  let attempts = 0;
-
-  while (attempts < 5) {
-    base = getRandomPlayer();
-
-    if (!base) break;
-
-    try {
-      base = parsePlayerData(base);
-    } catch (error) {
-      logError(`Invalid JSON for player ${base.id}`, error);
-      attempts += 1;
-      continue;
+        )
+        .get(offset) as Player | undefined;
     }
 
-    transfers = db
-      .prepare(
-        `
+    let base: Player | undefined;
+    let transfers: Transfer[] = [];
+    let stats: PlayerStats[] = [];
+    let difficulty;
+    let attempts = 0;
+
+    while (attempts < 5) {
+      base = getRandomPlayer();
+
+      if (!base) break;
+
+      try {
+        base = parsePlayerData(base);
+      } catch (error) {
+        logError(`Invalid JSON for player ${base.id}`, error);
+        attempts += 1;
+        continue;
+      }
+
+      transfers = db
+        .prepare(
+          `
       SELECT
         t.season,
         t.transfer_date,
@@ -125,12 +126,12 @@ export default defineEventHandler(async (event) => {
         )
       ORDER BY t.transfer_date DESC
     `,
-      )
-      .all(base.id) as Transfer[];
+        )
+        .all(base.id) as Transfer[];
 
-    stats = db
-      .prepare(
-        `
+      stats = db
+        .prepare(
+          `
         SELECT
           ps.appearances,
           ps.goals,
@@ -151,57 +152,64 @@ export default defineEventHandler(async (event) => {
         WHERE ps.player_id = ?
         ORDER BY ps.appearances DESC
       `,
-      )
-      .all(base.id) as PlayerStats[];
+        )
+        .all(base.id) as PlayerStats[];
 
-    difficulty = computeDifficulty(stats, { forceUltra: hardMode });
+      difficulty = computeDifficulty(stats, { forceUltra: hardMode });
 
-    if (hardMode || difficulty.tier !== "ultra") {
-      break;
+      if (hardMode || difficulty.tier !== "ultra") {
+        break;
+      }
+      attempts += 1;
     }
-    attempts += 1;
-  }
 
-  if (!base || (!hardMode && difficulty?.tier === "ultra")) {
-    return errorResponse(
-      404,
-      "No matching player found for selected difficulty",
-      event,
-    );
-  }
+    if (!base || (!hardMode && difficulty?.tier === "ultra")) {
+      return errorResponse(
+        404,
+        "No matching player found for selected difficulty",
+        event,
+      );
+    }
 
-  db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
+    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
 
-  const roundId = randomUUID();
-  const expiresAt = Date.now() + 1000 * 60 * 30; // 30 minutes
-  db.prepare(
-    `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed) VALUES (?, ?, ?, 0, ?, ?, 10)`,
-  ).run(
-    roundId,
-    base.id,
-    sessionId,
-    Math.floor(Date.now() / 1000),
-    Math.floor(expiresAt / 1000),
-  );
-
-  const token = createRoundToken({
-    roundId,
-    playerId: base.id,
-    sessionId,
-    exp: expiresAt,
-  });
-
-  return {
-    ...base,
-    transfers,
-    stats,
-    difficulty,
-    round: {
-      id: roundId,
-      token,
+    const roundId = randomUUID();
+    const expiresAt = Date.now() + 1000 * 60 * 30; // 30 minutes
+    db.prepare(
+      `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed) VALUES (?, ?, ?, 0, ?, ?, 10)`,
+    ).run(
+      roundId,
+      base.id,
       sessionId,
-      expiresAt,
-      cluesUsed: 0,
-    },
-  };
+      Math.floor(Date.now() / 1000),
+      Math.floor(expiresAt / 1000),
+    );
+
+    const token = createRoundToken({
+      roundId,
+      playerId: base.id,
+      sessionId,
+      exp: expiresAt,
+    });
+
+    return {
+      ...base,
+      transfers,
+      stats,
+      difficulty,
+      round: {
+        id: roundId,
+        token,
+        sessionId,
+        expiresAt,
+        cluesUsed: 0,
+      },
+    };
+  } catch (error) {
+    logError("randomPlayer error", error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to get random player",
+    });
+  }
 });

@@ -4,7 +4,9 @@
     data-testid="transfer-timeline"
   >
     <template #header>
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <div class="hidden sm:block">
             <p class="text-primary-200/80 text-xs tracking-[0.26em] uppercase">
@@ -23,7 +25,9 @@
             </p>
           </div>
         </div>
-        <div class="flex flex-row items-center justify-between w-full md:w-auto gap-3">
+        <div
+          class="flex w-full flex-row items-center justify-between gap-3 md:w-auto"
+        >
           <div class="flex items-center gap-1">
             <DifficultyBadge
               :difficulty="difficulty"
@@ -72,15 +76,13 @@ interface TimelineItem {
   description?: string | null;
 }
 
+import type { DifficultyInfo } from "~/types/player";
+
 defineProps<{
   items: TimelineItem[];
   isLoading: boolean;
   showBadge?: boolean;
   currentStreak?: number;
-  difficulty?: {
-    tier: "easy" | "medium" | "hard" | "ultra";
-    multiplier: number;
-    basePoints: number;
-  } | null;
+  difficulty?: DifficultyInfo | null;
 }>();
 </script>

@@ -1,11 +1,20 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { createHmac, randomUUID, randomBytes } from "node:crypto";
 
 const envSecret = process.env.SCORING_SECRET;
 if (!envSecret && process.env.NODE_ENV === "production") {
   throw new Error("SCORING_SECRET must be set in production.");
 }
 
-const SECRET = envSecret || "dev-secret-change-me";
+// Generate a random secret for development to avoid using a known value
+const devSecret = randomBytes(32).toString("hex");
+const SECRET = envSecret || devSecret;
+
+if (!envSecret && process.env.NODE_ENV !== "test") {
+  console.warn(
+    "[tokens] SCORING_SECRET not set, using randomly generated secret. " +
+      "Sessions will not persist across server restarts.",
+  );
+}
 
 interface RoundPayload {
   roundId: string;
@@ -45,8 +54,15 @@ export function verifyRoundToken(token: string): RoundPayload {
   if (expected !== signature) {
     throw new Error("Invalid token signature");
   }
-  const decoded = JSON.parse(Buffer.from(body, "base64").toString("utf8")) as RoundPayload;
-  if (!decoded.roundId || !decoded.playerId || !decoded.sessionId || !decoded.exp) {
+  const decoded = JSON.parse(
+    Buffer.from(body, "base64").toString("utf8"),
+  ) as RoundPayload;
+  if (
+    !decoded.roundId ||
+    !decoded.playerId ||
+    !decoded.sessionId ||
+    !decoded.exp
+  ) {
     throw new Error("Invalid token payload");
   }
   if (decoded.exp < Date.now()) {

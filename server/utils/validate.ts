@@ -1,12 +1,12 @@
-import { safeParse, type BaseSchema } from "valibot";
+import { safeParse, type BaseSchema, type BaseIssue } from "valibot";
 
-export function parseSchema<TSchema extends BaseSchema>(
-  schema: TSchema,
+export function parseSchema<TInput, TOutput, TIssue extends BaseIssue<unknown>>(
+  schema: BaseSchema<TInput, TOutput, TIssue>,
   input: unknown,
-) {
+): { ok: true; data: TOutput } | { ok: false; issues: TIssue[] } {
   const result = safeParse(schema, input);
   if (!result.success) {
-    return { ok: false as const, issues: result.issues };
+    return { ok: false, issues: result.issues as TIssue[] };
   }
-  return { ok: true as const, data: result.output };
+  return { ok: true, data: result.output };
 }

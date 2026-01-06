@@ -6,8 +6,42 @@ export default defineNuxtConfig({
   modules: ["@nuxt/ui"],
   ui: {
     theme: {
-      colors: ["primary", "secondary", "success", "info", "warning", "error", "neutral"],
+      colors: [
+        "primary",
+        "secondary",
+        "success",
+        "info",
+        "warning",
+        "error",
+        "neutral",
+      ],
     },
   },
   css: ["~/assets/css/main.css"],
+
+  // Production optimizations
+  vite: {
+    build: {
+      // Enable minification in production
+      minify: "esbuild",
+      // Chunk splitting for better caching
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["vue", "vue-router"],
+          },
+        },
+      },
+    },
+  },
+
+  // Build-time optimizations
+  experimental: {
+    payloadExtraction: false,
+  },
+
+  // TypeScript strict mode
+  typescript: {
+    strict: true,
+  },
 });
