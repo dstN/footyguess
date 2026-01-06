@@ -90,7 +90,7 @@ function logScrapeError(context: string, name: string, err: unknown) {
   }
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
