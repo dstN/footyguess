@@ -11,8 +11,16 @@ import { scrapeTransfersForPlayer } from "./scrape-transfers.ts";
 import { logError, rotateTextLog } from "../utils/logger.ts";
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-const SCRAPER_WORKERS = Math.max(1, Number(process.env.SCRAPER_WORKERS ?? 1));
+const SCRAPER_WORKERS = Math.max(
+  1,
+  Number(process.env.SCRAPER_WORKERS ?? 1)
+);
 const SCRAPER_DELAY_MS = Number(process.env.SCRAPER_DELAY_MS ?? 500);
+
+// Random delay between min and max to avoid detection
+function getRandomDelay(min: number = 1000, max: number = 3000): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function titleizeSlug(slug: string) {
   return slug
@@ -92,10 +100,23 @@ function logScrapeError(context: string, name: string, err: unknown) {
 
   async function runWorker(workerId: number) {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 2000 });    // Set realistic user-agent to avoid blocking
+    await page.setViewport({ width: 1080, height: 2000 });
+    // Set realistic user-agent to avoid blocking
     await page.setUserAgent(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    );    while (true) {
+    );
+    // Set realistic headers to look like a real browser
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept":
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Referer": "https://www.google.com/",
+      "DNT": "1",
+      "Connection": "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+    });
+
+    while (true) {
       const currentIndex = nextIndex++;
       if (currentIndex >= players.length) break;
 
@@ -433,7 +454,10 @@ function logScrapeError(context: string, name: string, err: unknown) {
         logScrapeError("player-scrape", nameForDb, err);
       }
 
-      await sleep(SCRAPER_DELAY_MS);
+      // Use randomized delay to avoid detection (1-3 seconds)
+      const randomDelay = getRandomDelay(1000, 3000);
+      console.log(`${label} Waiting ${randomDelay}ms before next request...`);
+      await sleep(randomDelay);
     }
     await page.close();
   }
