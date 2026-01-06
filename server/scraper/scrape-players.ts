@@ -104,6 +104,8 @@ function logScrapeError(context: string, name: string, err: unknown) {
 
   async function runWorker(workerId: number) {
     const page = await browser.newPage();
+    // Disable JavaScript to test if content is server-rendered or JS-rendered
+    await page.setJavaScriptEnabled(false);
     await page.setViewport({ width: 1080, height: 2000 });
     // Set realistic user-agent to avoid blocking
     await page.setUserAgent(
