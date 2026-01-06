@@ -58,11 +58,6 @@ export default defineEventHandler(async (event) => {
       return errorResponse(404, "Round not found", event);
     }
 
-    // Check if already scored
-    if (hasBeenScored(round.id)) {
-      return errorResponse(409, "Round already scored", event);
-    }
-
     // Validate round ownership
     if (!validateRoundOwnership(round, sessionId)) {
       return errorResponse(

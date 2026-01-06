@@ -37,7 +37,8 @@ export function useTransferTimeline(player: Ref<Player | null>) {
 
     return ordered.map((transfer: any, index: number, arr: any[]) => {
       const isLatest = index === 0;
-      const isToUnknown = !transfer.to_club || transfer.to_club === "Unknown club";
+      const isToUnknown =
+        !transfer.to_club || transfer.to_club === "Unknown club";
       const toLabel =
         isRetired && isLatest
           ? "Retired"
@@ -81,11 +82,11 @@ export function useTransferTimeline(player: Ref<Player | null>) {
   return { careerTimeline };
 }
 
-function formatFee(fee?: string | null) {
-  if (!fee || fee === "-") return "free transfer";
+function formatFee(fee?: string | number | null) {
+  if (!fee || fee === "-" || fee === 0) return "Free transfer";
   if (fee === "?") return "Unknown fee";
   const numeric = Number(fee);
-  if (Number.isNaN(numeric)) return fee;
+  if (Number.isNaN(numeric) || numeric === 0) return "Free transfer";
   return new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 0,
   }).format(numeric);

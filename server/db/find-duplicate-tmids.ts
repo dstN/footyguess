@@ -61,7 +61,7 @@ const duplicateNames = duplicates.flatMap((dup) =>
     `,
     )
     .all(dup.tm_id)
-    .map((row: { name: string }) => row.name),
+    .map((row: any) => row.name),
 );
 
 if (duplicateNames.length) {

@@ -31,6 +31,8 @@
         <ClueBar
           :revealed-clues="revealedClues"
           :hidden-clue-labels="hiddenClueLabels"
+          :tip-button-disabled="tipButtonDisabled"
+          @reveal-clue="revealNextClue"
         />
 
         <TransferTimelineCard

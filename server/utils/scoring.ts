@@ -10,6 +10,7 @@ export interface ScoreBreakdown {
   timeScore: number;
   streakBonus: number;
   finalScore: number;
+  malicePenalty?: number;
 }
 
 export function getStreakBonusMultiplier(streak: number) {
@@ -25,7 +26,11 @@ export function calculateScore(
   difficulty: Difficulty,
   cluesUsed: number,
   streak: number,
-  opts: { elapsedSeconds?: number; floor?: number } = {},
+  opts: {
+    elapsedSeconds?: number;
+    floor?: number;
+    missedGuesses?: number;
+  } = {},
 ): ScoreBreakdown {
   const basePoints = difficulty.basePoints;
   const multiplier = difficulty.multiplier;
@@ -40,6 +45,10 @@ export function calculateScore(
   const streakBonus = getStreakBonusMultiplier(streak);
   const timeBonus = clampTimeBonus(getTimeBonus(opts.elapsedSeconds));
 
+  // Calculate malice penalty: -2% per missed guess, max -50%
+  const missedGuesses = opts.missedGuesses ?? 0;
+  const malicePenalty = Math.max(-0.5, -0.02 * missedGuesses);
+
   // Time bonus is additive: 0.2 = +20%, -0.5 = -50%
   // Apply time bonus to preStreak, minimum is 10% of preStreak or floor
   const timeAdjusted = Math.max(
@@ -48,7 +57,10 @@ export function calculateScore(
     floor,
   );
   const timeScore = Math.round(timeAdjusted);
-  const finalScore = Math.round(timeScore * (1 + streakBonus));
+
+  // Apply malice penalty to final score
+  const beforeMalice = Math.round(timeScore * (1 + streakBonus));
+  const finalScore = Math.round(beforeMalice * (1 + malicePenalty));
 
   return {
     base: basePoints,
@@ -60,6 +72,7 @@ export function calculateScore(
     timeScore,
     streakBonus,
     finalScore,
+    malicePenalty,
   };
 }
 

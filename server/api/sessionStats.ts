@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     const lastScore = db
       .prepare(
         `
-        SELECT s.score, s.base_score, s.time_score, s.streak, r.player_id
+        SELECT s.score, s.base_score, s.time_score, s.malice_penalty, s.streak, r.player_id
         FROM scores s
         JOIN rounds r ON r.id = s.round_id
         WHERE s.session_id = ?
@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
           score: number;
           base_score: number;
           time_score: number;
+          malice_penalty?: number;
           streak: number;
           player_id: number;
         }
@@ -95,6 +96,7 @@ export default defineEventHandler(async (event) => {
               streak: lastScore.streak,
               streakBonus,
               timeMultiplier,
+              malicePenalty: lastScore.malice_penalty ?? 0,
               playerName: lastPlayer?.name ?? null,
             };
           })()

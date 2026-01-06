@@ -170,6 +170,19 @@
                 </span>
                 <span class="text-red-400">-10 pts each</span>
               </div>
+
+              <div
+                class="flex items-center justify-between rounded-lg border border-slate-700/50 bg-white/5 px-3 py-2"
+              >
+                <span class="flex items-center gap-2 text-slate-300">
+                  <UIcon
+                    name="i-lucide-zap"
+                    class="h-4 w-4 text-red-400"
+                  />
+                  Malice Penalty
+                </span>
+                <span class="text-red-400">-2% per wrong guess (max -50%)</span>
+              </div>
             </div>
 
             <div class="pt-2">

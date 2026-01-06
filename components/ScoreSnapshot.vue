@@ -14,19 +14,23 @@
         <div class="space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-slate-400">Base points</span>
-            <span class="font-mono text-slate-200">{{ lastScore.baseScore }}</span>
+            <span class="font-mono text-slate-200">{{
+              lastScore.baseScore
+            }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-slate-400">
               Time bonus
               <span class="text-slate-500">({{ timeBonusPercent }}%)</span>
             </span>
-            <span class="font-mono text-emerald-400">+{{ timeBonus }}</span>
+            <span class="font-mono" :class="timeBonus >= 0 ? 'text-emerald-400' : 'text-red-400'">{{ timeBonus >= 0 ? '+' : '' }}{{ timeBonus }}</span>
           </div>
           <div class="mt-2 border-t border-slate-700/50 pt-2">
             <div class="flex justify-between">
               <span class="text-slate-300">Round points</span>
-              <span class="font-mono text-slate-200">{{ lastBaseWithTime }}</span>
+              <span class="font-mono text-slate-200">{{
+                lastBaseWithTime
+              }}</span>
             </div>
           </div>
           <div class="flex justify-between">
@@ -36,7 +40,21 @@
             </span>
             <span class="text-mew-500 font-mono">+{{ streakBonusPoints }}</span>
           </div>
-          <div class="mt-2 flex items-center justify-between border-t border-slate-700/50 pt-2">
+          <div
+            v-if="malicePenaltyPercent !== 0"
+            class="flex justify-between"
+          >
+            <span class="text-slate-400">
+              Malice penalty
+              <span class="text-slate-500">({{ malicePenaltyPercent }}%)</span>
+            </span>
+            <span class="font-mono text-red-400">{{
+              malicePenaltyPoints
+            }}</span>
+          </div>
+          <div
+            class="mt-2 flex items-center justify-between border-t border-slate-700/50 pt-2"
+          >
             <span class="font-semibold text-slate-200">Total</span>
             <span
               class="text-primary-400 font-mono text-lg font-bold"
@@ -82,6 +100,7 @@ const props = defineProps<{
     streak: number;
     streakBonus: number;
     timeMultiplier: number;
+    malicePenalty: number;
     playerName: string | null;
   } | null;
   totalScore: number;
@@ -113,7 +132,26 @@ const streakBonusPercent = computed(() =>
   props.lastScore ? Math.round(props.lastScore.streakBonus * 100) : 0,
 );
 
-const streakBonusPoints = computed(() =>
-  props.lastScore ? props.lastScore.score - lastBaseWithTime.value : 0,
+const streakBonusPoints = computed(() => {
+  if (!props.lastScore) return 0;
+  // Streak bonus is applied after time, so: baseWithTime * streakBonus
+  const streakBonus = Math.round(
+    lastBaseWithTime.value * props.lastScore.streakBonus,
+  );
+  return streakBonus;
+});
+
+const malicePenaltyPercent = computed(() =>
+  props.lastScore ? Math.round(props.lastScore.malicePenalty * 100) : 0,
 );
+
+const malicePenaltyPoints = computed(() => {
+  if (!props.lastScore || props.lastScore.malicePenalty === 0) return 0;
+  // Malice penalty is applied to (baseWithTime + streakBonus)
+  const beforePenalty = Math.round(
+    lastBaseWithTime.value * (1 + props.lastScore.streakBonus),
+  );
+  const malice = Math.round(beforePenalty * props.lastScore.malicePenalty);
+  return malice;
+});
 </script>

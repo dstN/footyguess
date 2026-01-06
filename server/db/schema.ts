@@ -31,8 +31,12 @@ export function initSchema() {
 
     CREATE TABLE IF NOT EXISTS clubs (
       id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL,
-      logo_path TEXT
+      name TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS nationalities (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS transfers (
@@ -42,7 +46,7 @@ export function initSchema() {
       transfer_date TEXT,
       from_club_id INTEGER,
       to_club_id INTEGER,
-      fee TEXT,
+      fee INTEGER,
       transfer_type TEXT,
       upcoming INTEGER,
       transfer_key TEXT,
@@ -55,8 +59,7 @@ export function initSchema() {
 
     CREATE TABLE IF NOT EXISTS competitions (
       id TEXT PRIMARY KEY UNIQUE,
-      name TEXT NOT NULL,
-      logo_path TEXT
+      name TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS player_stats (
@@ -111,6 +114,8 @@ export function initSchema() {
       correct INTEGER,
       streak INTEGER,
       time_score INTEGER,
+      base_score INTEGER,
+      malice_penalty REAL,
       created_at INTEGER DEFAULT (strftime('%s','now')),
       FOREIGN KEY (session_id) REFERENCES sessions(id),
       FOREIGN KEY (round_id) REFERENCES rounds(id)
@@ -163,6 +168,7 @@ export function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_player_stats_player_id ON player_stats(player_id);
     CREATE INDEX IF NOT EXISTS idx_rounds_session_id ON rounds(session_id);
     CREATE INDEX IF NOT EXISTS idx_scores_session_id ON scores(session_id);
+    CREATE INDEX IF NOT EXISTS idx_scores_round_id ON scores(round_id);
     CREATE INDEX IF NOT EXISTS idx_rounds_player_id ON rounds(player_id);
   `);
 
@@ -173,6 +179,15 @@ export function initSchema() {
   try {
     db.prepare(`ALTER TABLE scores ADD COLUMN time_score INTEGER`).run();
   } catch {}
+  try {
+    db.prepare(`ALTER TABLE scores ADD COLUMN malice_penalty REAL`).run();
+  } catch {}
+
+  // Drop the UNIQUE index if it exists (no longer needed)
+  try {
+    db.prepare(`DROP INDEX IF EXISTS idx_scores_round_id_unique`).run();
+  } catch {}
+
   try {
     db.prepare(`ALTER TABLE players ADD COLUMN tm_id INTEGER`).run();
   } catch {}

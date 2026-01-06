@@ -34,7 +34,7 @@
             :aria-invalid="isError"
             :aria-describedby="isError ? 'error-message' : undefined"
             @update:search-term="(val) => emit('update:searchTerm', val)"
-            @keydown.enter.prevent="emit('enter', modelValue)"
+            @keydown.enter="handleEnter"
             :content="{
               position: 'popper',
               align: 'start',
@@ -71,7 +71,7 @@
               variant="ghost"
               color="neutral"
               size="lg"
-              class="cursor-pointer hidden sm:flex"
+              class="hidden cursor-pointer sm:flex"
               :disabled="isLoading"
               aria-label="Clear guess input"
               @click="emit('clear')"
@@ -126,4 +126,20 @@ const searchTermModel = computed({
   get: () => props.searchTerm,
   set: (val: string) => emit("update:searchTerm", val),
 });
+
+function handleEnter(event: KeyboardEvent) {
+  // If there's an active suggestion match, let the menu handle selection (don't prevent default)
+  const isExactMatch = props.suggestions.some(
+    (s) => s.toLowerCase() === props.modelValue.toLowerCase(),
+  );
+
+  if (isExactMatch) {
+    // This is a selection from the dropdown, let it proceed naturally
+    return;
+  }
+
+  // Otherwise, treat it as a guess submission
+  event.preventDefault();
+  emit("enter", props.modelValue);
+}
 </script>

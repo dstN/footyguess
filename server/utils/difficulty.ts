@@ -13,6 +13,8 @@ export const BASE_POINTS = 100;
 export const CLUE_PENALTY = 10;
 export const INTL_HARD_THRESHOLD = 45;
 export const TOP5_HARD_THRESHOLD = 100;
+export const TOP5_EASY_MIN = 100;
+export const TOP5_MEDIUM_MIN = 50;
 
 export type DifficultyBasis = "international" | "top5";
 export type DifficultyTier = "easy" | "medium" | "hard" | "ultra";
@@ -127,7 +129,13 @@ function getTier(
  * 3. Prefer international tier if it's not ultra; otherwise use Top 5 tier
  * 4. Special case: if basis is Top 5 and tier is easy but intl apps <50, downgrade to medium
  *    (to prevent obscure players from feeling too easy)
- * 5. Apply forceUltra override if specified (for hard mode)
+ * 5. Special case: if basis is Top 5 and tier is medium but intl apps <20, downgrade to hard
+ *    (to prevent domestic-only players in medium tier)
+ * 6. Special case: if basis is international and tier is easy but top5 apps <50, downgrade to medium
+ *    (to prevent players with tons of intl apps but few top5 league games from being too easy)
+ * 7. Special case: if basis is international and tier is medium but top5 apps <10, downgrade to hard
+ *    (to prevent players with moderate intl apps but minimal top5 league presence)
+ * 8. Apply forceUltra override if specified (for hard mode)
  *
  * @param stats - Array of player statistics with competition_id and appearances
  * @param opts - Options object
@@ -191,6 +199,39 @@ export function computeDifficulty(
     intlApps < 50
   ) {
     tier = { tier: "medium", multiplier: 1.25 };
+  }
+
+  // If a player is flagged medium by league apps but has minimal international experience,
+  // downgrade to hard to ensure domestic-only players aren't too easy.
+  if (
+    !opts.forceUltra &&
+    chosen.basis === "top5" &&
+    tier.tier === "medium" &&
+    intlApps < 35
+  ) {
+    tier = { tier: "hard", multiplier: 1.5 };
+  }
+
+  // If a player is flagged easy by international apps but has minimal top5 league experience,
+  // downgrade to medium to prevent players who only play in weaker leagues from being too easy.
+  if (
+    !opts.forceUltra &&
+    chosen.basis === "international" &&
+    tier.tier === "easy" &&
+    top5Apps < TOP5_EASY_MIN
+  ) {
+    tier = { tier: "medium", multiplier: 1.25 };
+  }
+
+  // If a player is flagged medium by international apps but has very minimal top5 league experience,
+  // downgrade to hard to prevent obscure players with moderate intl apps from being too easy.
+  if (
+    !opts.forceUltra &&
+    chosen.basis === "international" &&
+    tier.tier === "medium" &&
+    top5Apps < TOP5_MEDIUM_MIN
+  ) {
+    tier = { tier: "hard", multiplier: 1.5 };
   }
 
   // Allow ultra tier even in normal mode; forceUltra still overrides.

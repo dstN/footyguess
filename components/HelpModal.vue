@@ -5,7 +5,6 @@
     description="Learn how to play Footyguess"
   >
     <UButton
-      icon="i-lucide-help-circle"
       :color="buttonColor"
       :variant="buttonVariant"
       :size="buttonSize"
@@ -13,6 +12,12 @@
       @click="openModal"
     >
       <span v-if="showLabel">{{ buttonLabel }}</span>
+      <template #trailing>
+        <UIcon
+          name="i-lucide-help-circle"
+          :class="`${iconSize}`"
+        />
+      </template>
     </UButton>
 
     <template #body>
@@ -206,6 +211,52 @@
                 score. Use clues wisely!
               </p>
             </div>
+
+            <!-- Malice Penalty -->
+            <div class="rounded-lg border border-slate-700/50 bg-white/5 p-3">
+              <h4
+                class="mb-2 flex items-center gap-2 text-sm font-medium text-white"
+              >
+                <UIcon
+                  name="i-lucide-zap"
+                  class="h-4 w-4 text-red-400"
+                />
+                Malice Penalty
+              </h4>
+              <p class="mb-3 text-xs text-slate-400">
+                Each wrong guess incurs a penalty:
+              </p>
+              <div class="space-y-2 text-xs text-slate-300">
+                <div class="rounded bg-black/30 p-2">
+                  <p class="mb-1 font-medium text-slate-200">How it works:</p>
+                  <p class="text-slate-400">
+                    <span class="text-red-400">-2% penalty</span> per wrong
+                    guess, up to a maximum of
+                    <span class="text-red-400">-50%</span> after 25 wrong
+                    guesses.
+                  </p>
+                </div>
+                <div class="text-slate-400">
+                  <p class="mb-1">Examples:</p>
+                  <div class="ml-2 space-y-0.5 text-slate-500">
+                    <div>1st wrong guess: -2%</div>
+                    <div>5th wrong guess: -10%</div>
+                    <div>10th wrong guess: -20%</div>
+                    <div>25+ wrong guesses: -50% (capped)</div>
+                  </div>
+                </div>
+                <div class="border-t border-slate-700/50 pt-2 text-slate-400">
+                  <p class="mb-1">Important notes:</p>
+                  <ul class="ml-2 list-disc space-y-0.5">
+                    <li>
+                      You still earn points on wrong guesses (just reduced)
+                    </li>
+                    <li>Your streak resets to 0 on any wrong guess</li>
+                    <li>You can make multiple guesses per round</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -257,6 +308,7 @@ const props = withDefaults(
     buttonSize?: "xs" | "sm" | "md" | "lg" | "xl";
     buttonClass?: string;
     showLabel?: boolean;
+    iconSize?: string;
   }>(),
   {
     buttonLabel: "How to Play",
@@ -265,6 +317,7 @@ const props = withDefaults(
     buttonSize: "sm",
     buttonClass: "",
     showLabel: true,
+    iconSize: "h-3.5 w-3.5",
   },
 );
 

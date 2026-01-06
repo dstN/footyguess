@@ -15,7 +15,9 @@ export type ClueKey =
   | "minutesPerMatch"
   | "assistRate"
   | "discipline"
-  | "mostAppearances";
+  | "mostAppearances"
+  | "cleanSheets"
+  | "goalsConceded";
 
 /** A single clue that can be revealed to the player */
 export interface Clue {
@@ -110,6 +112,21 @@ export function useClueData(player: Ref<Player | null>) {
 
     const mostApps = getMostAppearancesCompetition(player.value.stats);
 
+    // Goalkeeper-specific stats (from totals)
+    const cleanSheets =
+      totals &&
+      totals.clean_sheets !== null &&
+      totals.clean_sheets !== undefined
+        ? `${totals.clean_sheets} clean sheets`
+        : null;
+
+    const goalsConceded =
+      totals &&
+      totals.goals_conceded !== null &&
+      totals.goals_conceded !== undefined
+        ? `${totals.goals_conceded} goals conceded`
+        : null;
+
     return [
       {
         key: "age",
@@ -195,6 +212,20 @@ export function useClueData(player: Ref<Player | null>) {
         icon: "i-lucide-trophy",
         accent: "primary",
       },
+      {
+        key: "cleanSheets",
+        label: "Clean sheets",
+        value: cleanSheets,
+        icon: "i-lucide-shield-check",
+        accent: "success",
+      },
+      {
+        key: "goalsConceded",
+        label: "Goals conceded",
+        value: goalsConceded,
+        icon: "i-lucide-alert-circle",
+        accent: "warning",
+      },
     ];
   });
 
@@ -215,11 +246,43 @@ export function useClueData(player: Ref<Player | null>) {
   );
 
   function selectRandomClues() {
-    const pool = cluePool.value.filter((clue) => Boolean(clue.value));
-    // Use seeded random based on player ID for deterministic clue selection
-    const rng = new SeededRandom(player.value?.id ?? 0);
-    const shuffled = shuffle(pool, rng);
-    availableClues.value = shuffled.slice(0, 5);
+    const isGoalkeeper =
+      player.value?.main_position?.toLowerCase().includes("goalkeeper") ||
+      player.value?.main_position?.toLowerCase().includes("gk") ||
+      false;
+
+    // Goalkeeper-only clues
+    const gkOnlyClues = ["cleanSheets", "goalsConceded"];
+
+    let pool = cluePool.value.filter((clue) => Boolean(clue.value));
+
+    if (isGoalkeeper) {
+      // For GK: separate GK clues from others
+      const gkClues = pool.filter((clue) => gkOnlyClues.includes(clue.key));
+      const otherClues = pool.filter((clue) => !gkOnlyClues.includes(clue.key));
+
+      // Use seeded random based on player ID for deterministic clue selection
+      const rng = new SeededRandom(player.value?.id ?? 0);
+
+      // Always include GK clues, then fill remaining slots with other clues
+      const selected = [...gkClues];
+      const remaining = 5 - selected.length;
+      if (remaining > 0 && otherClues.length > 0) {
+        const shuffledOther = shuffle(otherClues, rng);
+        selected.push(...shuffledOther.slice(0, remaining));
+      }
+
+      availableClues.value = selected;
+    } else {
+      // For non-GK: exclude GK clues
+      pool = pool.filter((clue) => !gkOnlyClues.includes(clue.key));
+
+      // Use seeded random based on player ID for deterministic clue selection
+      const rng = new SeededRandom(player.value?.id ?? 0);
+      const shuffled = shuffle(pool, rng);
+      availableClues.value = shuffled.slice(0, 5);
+    }
+
     revealedTips.value = [];
   }
 

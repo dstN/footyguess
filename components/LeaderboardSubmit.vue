@@ -39,7 +39,7 @@
                 ? "Round submitted"
                 : "Submit last round score"
             }}</span>
-            <span class="font-mono opacity-80">({{ lastBaseWithTime }})</span>
+            <span class="font-mono opacity-80">({{ lastScore?.score }})</span>
           </span>
         </UButton>
         <UButton
@@ -110,6 +110,7 @@ const props = defineProps<{
     streak: number;
     streakBonus: number;
     timeMultiplier: number;
+    malicePenalty: number;
     playerName: string | null;
   } | null;
   totalScore: number;

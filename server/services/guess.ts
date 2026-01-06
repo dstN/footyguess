@@ -23,8 +23,20 @@ export interface GuessResult {
  * Normalize and compare guess against player name
  */
 export function isCorrectGuess(guess: string, playerName: string): boolean {
-  const normalizedGuess = guess.trim().toLowerCase();
-  return normalizedGuess === playerName.trim().toLowerCase();
+  const normalize = (value: string) => {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/['']/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  };
+
+  const normalizedGuess = normalize(guess);
+  const normalizedName = normalize(playerName);
+
+  return normalizedGuess === normalizedName;
 }
 
 /**
@@ -80,19 +92,29 @@ export function processGuess(
   const difficulty = getDifficulty(playerId);
   const sessionRow = getOrCreateSession(sessionId);
 
+  // Get number of wrong guesses for this round so far
+  const guessHistory = db
+    .prepare(
+      `SELECT COUNT(*) as count FROM scores WHERE round_id = ? AND correct = 0`,
+    )
+    .get(roundId) as { count: number };
+  // Total wrong guesses: previous wrong + 1 if current is wrong, else just previous
+  const totalWrongGuesses = guessHistory.count + (correct ? 0 : 1);
+
   const breakdown = calculateScore(
     difficulty,
     cluesUsed,
     sessionRow?.streak ?? 0,
-    { elapsedSeconds },
+    { elapsedSeconds, missedGuesses: totalWrongGuesses },
   );
 
   const nextStreak = correct ? (sessionRow?.streak ?? 0) + 1 : 0;
   const nextBest = Math.max(sessionRow?.best_streak ?? 0, nextStreak);
 
-  const earnedScore = correct ? breakdown.finalScore : 0;
-  const earnedBase = correct ? breakdown.preStreak : 0;
-  const earnedTime = correct ? breakdown.timeScore : 0;
+  // Award points even on wrong guess, but with malice penalty applied
+  const earnedScore = breakdown.finalScore;
+  const earnedBase = breakdown.preStreak;
+  const earnedTime = breakdown.timeScore;
 
   // Update session and scores atomically
   const writeScore = db.transaction(() => {
@@ -117,15 +139,15 @@ export function processGuess(
     );
 
     db.prepare(
-      `INSERT INTO scores (session_id, round_id, score, base_score, time_score, correct, streak, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(round_id) DO NOTHING`,
+      `INSERT INTO scores (session_id, round_id, score, base_score, time_score, malice_penalty, correct, streak, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       sessionId,
       roundId,
       earnedScore,
       earnedBase,
       earnedTime,
+      breakdown.malicePenalty ?? 0,
       correct ? 1 : 0,
       nextStreak,
       Math.floor(Date.now() / 1000),
@@ -146,11 +168,11 @@ export function processGuess(
 }
 
 /**
- * Check if guess was already recorded for this round
+ * Check if round was already solved (correct guess recorded)
  */
 export function hasBeenScored(roundId: string): boolean {
   const existing = db
-    .prepare(`SELECT id FROM scores WHERE round_id = ?`)
+    .prepare(`SELECT id FROM scores WHERE round_id = ? AND correct = 1`)
     .get(roundId) as { id: number } | undefined;
   return !!existing;
 }

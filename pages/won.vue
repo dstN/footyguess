@@ -60,6 +60,7 @@ const lastScore = ref<{
   streak: number;
   streakBonus: number;
   timeMultiplier: number;
+  malicePenalty: number;
   playerName: string | null;
 } | null>(null);
 const nickname = ref("");

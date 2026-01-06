@@ -157,6 +157,8 @@ export function usePlayGame() {
    * Handle incorrect guess - trigger shake and error message
    */
   function handleIncorrectGuess() {
+    formState.guess = ""; // Clear input after guess submission
+    clearSearch();
     isError.value = true;
     errorMessage.value = "Incorrect guess - follow the clues more carefully";
     toast.add({

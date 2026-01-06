@@ -9,6 +9,7 @@ issues.md
 dist
 public/assets
 all_players.json
+unminified.js
 error.txt
 
 # Node dependencies

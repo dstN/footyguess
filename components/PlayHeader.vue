@@ -4,7 +4,7 @@
     role="banner"
   >
     <div
-      class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      class="flex items-center justify-between gap-2"
     >
       <div class="flex items-center gap-2">
         <UBadge
@@ -15,28 +15,13 @@
           Mystery player
         </UBadge>
       </div>
-      <StreakBar
-        :streak="streak"
-        :best-streak="bestStreak"
-        aria-label="Streak information"
-      />
-    </div>
-
-    <div
-      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div class="space-y-1">
-        <h1
-          class="text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white"
-        >
-          Footyguess: Transfer Trail
-        </h1>
-        <p class="text-sm text-slate-600 sm:text-base dark:text-slate-300">
-          Decode the career path, grab a random tip, and lock in your guess.
-        </p>
-      </div>
-
-      <div class="flex flex-wrap justify-end gap-2">
+      <div class="flex items-center gap-2">
+        <StreakBar
+          class="hidden sm:block"
+          :streak="streak"
+          :best-streak="bestStreak"
+          aria-label="Streak information"
+        />
         <UModal
           :model-value="confirmResetOpen"
           @update:model-value="$emit('update:confirmResetOpen', $event)"
@@ -52,11 +37,12 @@
               icon="i-lucide-shuffle"
               color="neutral"
               variant="ghost"
+              size="sm"
               class="cursor-pointer"
               :disabled="isLoading"
               @click="$emit('request-new-player')"
             >
-              New mystery
+              New game
             </UButton>
           </template>
 
@@ -90,6 +76,24 @@
             </div>
           </template>
         </UModal>
+      </div>
+    </div>
+
+    <div
+      class="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div class="space-y-1">
+        <h1
+          class="text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white"
+        >
+          Footyguess: Transfer Trail
+        </h1>
+        <p class="text-sm text-slate-600 sm:text-base dark:text-slate-300">
+          Decode the career path, grab a random tip, and lock in your guess.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap justify-end gap-2">
         <UButton
           icon="i-lucide-sparkles"
           color="primary"

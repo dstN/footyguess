@@ -97,9 +97,9 @@ const itemsWithIndex = computed(() =>
 );
 
 /**
- * Use two-column layout for 8+ items
+ * Use two-column layout for 6+ items
  */
-const useTwoColumn = computed(() => props.items.length >= 8);
+const useTwoColumn = computed(() => props.items.length >= 6);
 
 /**
  * Split point for two-column layout
