@@ -20,7 +20,7 @@
       </UBadge>
       <UIcon
         name="i-lucide-help-circle"
-        class="h-3.5 w-3.5 text-slate-500 transition-colors hover:text-slate-300"
+        class="h-4 w-4 text-slate-500 transition-colors hover:text-slate-300"
       />
     </div>
 

@@ -71,6 +71,27 @@
         @enter="submitGuessViaEnter"
         @clear="clearGuess"
       />
+
+      <div class="mt-6 flex items-center justify-center gap-3">
+        <HighscoreModal button-color="primary" />
+        <UButton
+          color="primary"
+          variant="ghost"
+          icon="i-lucide-heart"
+          class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
+          to="https://ko-fi.com/dstn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Buy me a coffee
+        </UButton>
+        <HelpModal
+          button-label="How to Play"
+          button-variant="ghost"
+          button-color="primary"
+          button-size="md"
+        />
+      </div>
     </main>
   </ErrorBoundary>
 </template>
@@ -79,6 +100,8 @@
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import ClueBar from "~/components/ClueBar.vue";
 import GuessFooter from "~/components/GuessFooter.vue";
+import HighscoreModal from "~/components/HighscoreModal.vue";
+import HelpModal from "~/components/HelpModal.vue";
 import TransferTimelineCard from "~/components/TransferTimelineCard.vue";
 import PlayHeader from "~/components/PlayHeader.vue";
 import DevPanel from "~/components/DevPanel.vue";

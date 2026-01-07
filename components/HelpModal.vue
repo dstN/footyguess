@@ -5,19 +5,14 @@
     description="Learn how to play Footyguess"
   >
     <UButton
+      icon="i-lucide-help-circle"
       :color="buttonColor"
       :variant="buttonVariant"
       :size="buttonSize"
-      :class="`cursor-pointer ${buttonClass}`"
+      :class="`cursor-pointer ${buttonClass} [&>span:first-child]:hidden [&>span:first-child]:md:inline-flex`"
       @click="openModal"
     >
       <span v-if="showLabel">{{ buttonLabel }}</span>
-      <template #trailing>
-        <UIcon
-          name="i-lucide-help-circle"
-          :class="`${iconSize}`"
-        />
-      </template>
     </UButton>
 
     <template #body>

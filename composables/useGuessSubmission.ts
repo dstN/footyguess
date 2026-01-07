@@ -110,12 +110,8 @@ export function useGuessSubmission(
   /**
    * Handles form submission event
    * @param {FormSubmitEvent<GuessFormOutput>} event - Form submission event
-   * @param {string} guess - Current guess value
    */
-  async function onSubmit(
-    event: FormSubmitEvent<GuessFormOutput>,
-    guess: string,
-  ) {
+  async function onSubmit(event: FormSubmitEvent<GuessFormOutput>) {
     event.preventDefault();
     if (!player.value || !round.value) return;
     const rawGuess = (event as any).data?.guess as unknown;
@@ -129,13 +125,10 @@ export function useGuessSubmission(
    * @param {string} guess - Current guess value
    */
   function submitGuessViaEnter(guess: string) {
-    onSubmit(
-      {
-        preventDefault: () => {},
-        data: { guess },
-      } as FormSubmitEvent<GuessFormOutput>,
-      guess,
-    );
+    onSubmit({
+      preventDefault: () => {},
+      data: { guess },
+    } as FormSubmitEvent<GuessFormOutput>);
   }
 
   return {

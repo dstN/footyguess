@@ -29,11 +29,24 @@
         <HighscoreModal
           :last-player-id="lastPlayerId"
           :last-player-name="lastPlayer"
+          button-color="primary"
         />
+        <UButton
+          color="primary"
+          variant="ghost"
+          icon="i-lucide-heart"
+          class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
+          to="https://ko-fi.com/dstn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Buy me a coffee
+        </UButton>
         <HelpModal
           button-label="How to Play"
           button-variant="ghost"
-          button-color="neutral"
+          button-color="primary"
+          button-size="md"
         />
       </div>
     </main>
@@ -97,6 +110,7 @@ async function fetchStats() {
         streak: number;
         streakBonus: number;
         timeMultiplier: number;
+        malicePenalty: number;
         playerName: string | null;
       } | null;
       nickname: string | null;

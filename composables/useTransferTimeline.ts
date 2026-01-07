@@ -22,7 +22,7 @@ export function useTransferTimeline(player: Ref<Player | null>) {
           return Number.isNaN(parsed) ? 0 : parsed;
         }
         if (transfer.season) {
-          const yearPart = String(transfer.season).split("/")[0];
+          const yearPart = String(transfer.season ?? "").split("/")[0] || "";
           const yearNum = Number.parseInt(yearPart, 10);
           if (Number.isFinite(yearNum)) {
             const year = yearNum < 100 ? 2000 + yearNum : yearNum;

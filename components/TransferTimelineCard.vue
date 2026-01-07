@@ -30,7 +30,7 @@
         >
           <div class="flex items-center gap-1">
             <DifficultyBadge
-              :difficulty="difficulty"
+              :difficulty="difficulty ?? null"
               :current-streak="currentStreak"
             />
           </div>
@@ -48,8 +48,8 @@
               button-size="xs"
               button-variant="ghost"
               button-color="neutral"
-              button-class="!p-0 h-3.5 w-3.5 text-slate-500 hover:text-slate-300 opacity-100"
-              icon-size="h-3.5 w-3.5"
+              button-class="!p-0 h-4 w-4 text-slate-500 hover:text-slate-300 opacity-100"
+              icon-size="h-4 w-4"
             />
           </div>
         </div>

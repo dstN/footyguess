@@ -14,7 +14,7 @@
     </div>
 
     <div
-      class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-8 md:py-12"
+      class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 pt-8 pb-28 md:px-0"
     >
       <div
         class="glass-panel border-primary-900/50 relative w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
@@ -37,7 +37,11 @@
 </template>
 
 <script setup lang="ts">
-import { triggerShakeKey, setModalOpenKey, isModalOpenKey } from "~/utils/injection-keys";
+import {
+  triggerShakeKey,
+  setModalOpenKey,
+  isModalOpenKey,
+} from "~/utils/injection-keys";
 
 const shouldShake = ref(false);
 const isModalOpen = ref(false);

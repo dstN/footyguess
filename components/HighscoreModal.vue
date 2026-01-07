@@ -6,9 +6,9 @@
   >
     <UButton
       icon="i-lucide-trophy"
-      color="neutral"
+      :color="buttonColor"
       variant="ghost"
-      class="cursor-pointer"
+      class="cursor-pointer [&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
       @click="openModal"
     >
       Highscores
@@ -189,10 +189,16 @@ interface PlayerSearchResult {
   name: string;
 }
 
-const props = defineProps<{
-  lastPlayerId?: number | null;
-  lastPlayerName?: string | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    lastPlayerId?: number | null;
+    lastPlayerName?: string | null;
+    buttonColor?: "primary" | "neutral" | "error" | "success" | "warning";
+  }>(),
+  {
+    buttonColor: "neutral",
+  },
+);
 
 const setModalOpen = inject<(open: boolean) => void>("setModalOpen");
 
