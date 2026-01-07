@@ -2,7 +2,6 @@
 .output
 .data
 .nuxt
-.llm
 issues.md
 .nitro
 .cache

@@ -1,451 +1,469 @@
-# Footyguess: Transfer Trail
+# FootyGuess
 
-A football guessing game where players decode the mystery of a footballer's career by examining their transfer history. Study the timeline, use strategic clues, and make your guess—all while racing against the clock for bonus points!
+A progressive-difficulty football player guessing game where you identify
+players based on career statistics, transfer history, and biographical clues.
 
-## 🎮 Game Overview
+## What This Is
 
-**Footyguess: Transfer Trail** is a web-based football riddle where:
+FootyGuess is a single-player web game that tests your knowledge of professional
+football players. Each round presents a mystery player from a database of real
+career data from public sources. You reveal clues incrementally—nationality,
+position, career stats, transfer timeline—and submit guesses until you identify
+the player correctly.
 
-- **You see**: A timeline of club transfers with dates, but the player name is hidden
-- **You analyze**: Transfer patterns, career length, and club movements
-- **You guess**: Type the player's name from a searchable database
-- **You score**: Earn points based on difficulty, speed, and streak bonuses
+The scoring system rewards speed, accuracy, and using fewer clues. A persistent
+streak system tracks consecutive correct guesses across sessions. All game state
+is validated server-side to prevent tampering.
 
-## 🌟 Features
+## Core Concepts
 
-### Core Gameplay
+### Game Loop
 
-- **Transfer Timeline**: Real transfer history data with club logos and dates
-- **Random Clues**: Reveal hints (nationality, position, stats, career achievements) for -10 points each
-- **Smart Search**: Autocomplete player search with 1,900+ international football players
-- **Difficulty Tiers**: Easy (1×) → Medium (1.25×) → Hard (1.5×) → Ultra (2×) multipliers
-- **Streak System**: Build consecutive wins for +5% to +30% score bonuses
+1. **Start Round**: Server generates a round ID, selects a random player, and
+   issues a signed token
+2. **Reveal Clues**: Client requests clues one at a time (nationality, height,
+   position, career stats, transfer timeline). Each clue costs points.
+3. **Submit Guess**: Client sends player name guess + round token to server
+4. **Validation**: Server verifies token, checks guess against player name,
+   calculates score
+5. **Victory or Continue**: Correct guess ends round and updates streak.
+   Incorrect guess allows retry with penalty.
 
 ### Scoring System
 
-- **Base Points**: 100 pts per round × difficulty multiplier
-- **Time Bonus**: 120% bonus for instant guesses, linear drop to 0% at 2 min, -10% penalties after 5 min
-- **Streak Bonus**: Up to +30% with 100+ streak
-- **Clue Penalty**: -10 pts per clue revealed
-- **Minimum Floor**: 10 pts guaranteed per correct guess
+Scores are calculated server-side using:
 
-### Leaderboards
+- **Base Points**: Always 100 points
+- **Difficulty Multiplier**: Applied to base points based on player tier (`easy`
+  1.0x, `medium` 1.25x, `hard` 1.5x, `ultra` 2.0x). Max score before clues:
+  100 (easy), 125 (medium), 150 (hard), 200 (ultra)
+- **Clue Penalty**: Each revealed clue subtracts 10 points
+- **Time Bonus**: Faster guesses earn bonuses up to +120% (within 1 second).
+  Slow guesses (>5 minutes) incur penalties up to -50%.
+- **Streak Bonus**: Consecutive correct guesses add up to +30% (at 100+ streak)
+- **Malice Penalty**: Incorrect guesses reduce score by 2% each, up to -50%
+  total
 
-- **Player-Specific Rounds**: Compete for best score on each footballer
-- **Session Total**: Cumulative score across all rounds in a session
-- **Best Streak**: Longest consecutive win streak
-- **Auto-Update**: Total/streak scores auto-update after initial submission
+Formula:
+`finalScore = round((basePoints × multiplier - clues × penalty) × (1 + timeBonus) × (1 + streakBonus) × (1 + malicePenalty))`
 
-### Help & Instructions
+See [server/utils/scoring.ts](server/utils/scoring.ts) for implementation.
 
-- **Interactive Tutorial**: Comprehensive "How to Play" guide
-- **Scoring Breakdown**: Detailed explanation of multipliers and bonuses
-- **Difficulty Popover**: Hover hints on difficulty badges for strategy
-- **Pro Tips**: Best practices for maximizing your score
+### Player Difficulty Tiers
 
-## 🏗️ Tech Stack
+Difficulty is computed from player career statistics using weighted international
+appearances (CL, Europa, national competitions) or top-5 league apps:
 
-### Frontend
+| Tier   | International (weighted) | Top-5 Leagues | Base Points | Multiplier | Max Score |
+| ------ | ------------------------ | ------------- | ----------- | ---------- | --------- |
+| Easy   | >80 apps                 | >400 apps     | 100         | 1.0x       | 100       |
+| Medium | 60-80 apps               | 200-400 apps  | 100         | 1.25x      | 125       |
+| Hard   | 45-60 apps               | 100-200 apps  | 100         | 1.5x       | 150       |
+| Ultra  | <45 apps                 | <100 apps     | 100         | 2.0x       | 200       |
 
-- **Nuxt 4** with Vue 3 Composition API
-- **TypeScript** for type safety
-- **Nuxt UI** (v4.x) for modern components
-- **Tailwind CSS** with cyberpunk glassmorphism design
-- **Vitest** & **Playwright** for testing
+**Downgrade Rules** (to prevent misleadingly easy ratings):
 
-### Backend
+- Top-5 basis **Easy** → **Medium** if international apps <50
+- Top-5 basis **Medium** → **Hard** if international apps <35
+- International basis **Easy** → **Medium** if top-5 apps <100
+- International basis **Medium** → **Hard** if top-5 apps <50
 
-- **Nitro** (Nuxt server engine)
-- **SQLite** with better-sqlite3 for fast local queries
-- **Valibot** for runtime validation
-- **Puppeteer** for data integration and enrichment
+This ensures players with strong domestic careers but weak European/international
+experience (or vice versa) are appropriately challenging.
 
-### Architecture
+See [server/utils/difficulty.ts](server/utils/difficulty.ts) for logic.
 
-- **Server-side API routes** for secure data handling
-- **Client-side composables** for game logic
-- **Session-based persistence** using localStorage + database
-- **Rate limiting** (10 req/min) to prevent abuse
+### Round State & Tokens
 
-## 📦 Project Structure
+Each round is stateful and secured with JWT-like tokens:
+
+- **Round Token**: Signed payload containing `roundId`, `playerId`, `sessionId`,
+  `exp` (expiration)
+- **Server Validation**: All guess submissions must include valid token. Server
+  verifies:
+  - Token signature is authentic
+  - Round ID matches
+  - Round has not expired (30-minute window)
+  - Round belongs to the session making the request
+- **Clue Tracking**: Server tracks clues used per round. Client cannot fabricate
+  lower clue counts.
+
+This prevents score manipulation via client-side tampering.
+
+### Streak System
+
+Streaks persist across browser sessions via localStorage:
+
+- **Increment**: Each correct guess increments `streak` counter
+- **Best Streak**: Tracks all-time high
+- **Reset**: First incorrect guess after starting a round resets streak to 0
+- **Bonus**: Streak multiplier applies to score (5+ streak = +5%, 100+ = +30%)
+
+See [composables/useGameStreak.ts](composables/useGameStreak.ts).
+
+### Clue Pool
+
+Clues are deterministically selected at round start using seeded randomization
+(player ID as seed). Available clue types:
+
+- **Biographical**: Age, birthplace, nationality, height, foot preference
+- **Career Stats**: Total appearances, goals, assists, minutes per match,
+  discipline (cards)
+- **Positional**: Main position + secondary positions
+- **Contextual**: Most appearances by competition, clean sheets (goalkeepers),
+  assists-per-90
+
+The client reveals clues in random order but cannot reveal more than the max
+allowed (10 by default). Server enforces this limit.
+
+See [composables/useClueData.ts](composables/useClueData.ts) and
+[composables/useCluePool.ts](composables/useCluePool.ts).
+
+## How It Works
+
+### High-Level Architecture
 
 ```text
-footyguess/
-├── pages/                      # Game pages (index, play, won)
-├── components/                 # Vue components
-│   ├── HelpModal.vue          # Game instructions modal
-│   ├── HighscoreModal.vue     # Leaderboard with player search
-│   ├── DifficultyBadge.vue    # Difficulty hover popover
-│   ├── TransferTimelineCard.vue
-│   ├── TransferTimelineView.vue
-│   ├── TransferItem.vue
-│   ├── LeaderboardSubmit.vue
-│   ├── PlayHeader.vue
-│   ├── StreakBar.vue
-│   ├── ClueBar.vue
-│   ├── GuessFooter.vue
-│   ├── ScoreSnapshot.vue
-│   ├── VictoryCard.vue
-│   ├── ErrorBoundary.vue
-│   ├── DevPanel.vue
-│   └── ...
-├── composables/                # Game logic
-│   ├── usePlayGame.ts         # Main game flow
-│   ├── useCluePool.ts         # Clue system
-│   ├── useClueData.ts         # Clue data management
-│   ├── useClueInteraction.ts  # Clue UI interactions
-│   ├── useGameSession.ts      # Session management
-│   ├── useGameStreak.ts       # Streak tracking
-│   ├── useGuessSubmission.ts  # Guess submission logic
-│   ├── usePlayerSearch.ts     # Search logic
-│   └── useTransferTimeline.ts # Timeline rendering
-├── server/
-│   ├── api/                    # API endpoints
-│   │   ├── submitScore.ts     # Score submission + auto-update
-│   │   ├── sessionStats.ts    # Session data
-│   │   ├── leaderboard.ts     # Leaderboard queries
-│   │   ├── randomPlayer.ts    # Mystery player selection
-│   │   ├── guess.ts           # Guess validation
-│   │   ├── useClue.ts         # Clue revelation
-│   │   ├── getPlayer.ts       # Player details
-│   │   ├── searchPlayers.ts   # Player search
-│   │   ├── requestPlayer.ts   # Player request queue
-│   │   └── requestStatus.ts   # Request status
-│   ├── services/              # Business logic
-│   │   ├── guess.ts
-│   │   ├── clue.ts
-│   │   ├── round.ts
-│   │   └── index.ts
-│   ├── db/
-│   │   ├── connection.ts      # SQLite connection
-│   │   ├── schema.ts          # Database schema
-│   │   ├── insert.ts          # Data insertion utilities
-│   │   └── file/
-│   ├── scraper/               # External data integration
-│   │   ├── scrape-players.ts
-│   │   ├── scrape-transfers.ts
-│   │   ├── scrape-career.ts
-│   │   ├── queue-worker.ts
-│   │   ├── index.ts
-│   │   └── ...
-│   ├── middleware/
-│   ├── plugins/
-│   │   └── db-init.ts
-│   └── utils/
-│       ├── scoring.ts         # Score calculations
-│       ├── difficulty.ts      # Difficulty detection
-│       ├── rate-limit.ts      # Request throttling
-│       ├── validate.ts        # Input validation
-│       ├── logger.ts          # Logging utilities
-│       ├── response.ts
-│       ├── tokens.ts
-│       └── chunk-array.ts
-├── tests/                      # Test suites
-│   ├── usePlayGame.test.ts
-│   ├── scraper-fixtures.test.ts
-│   ├── useCluePool.test.ts
-│   ├── usePlayerSearch.test.ts
-│   ├── useTransferTimeline.test.ts
-│   ├── api-routes.test.ts
-│   ├── setup.ts
-│   ├── fixtures/
-│   │   ├── career-stats.html
-│   │   └── transfer-history.html
-│   └── utils/
-│       ├── db.ts
-│       └── h3.ts
-├── layouts/
-│   └── default.vue            # Main layout with cyberpunk effects
-├── assets/
-│   └── css/main.css           # Tailwind + animations
-├── types/
-│   ├── player.ts              # TypeScript interfaces
-│   └── forms.ts
-├── public/
-│   └── robots.txt
-├── app.config.ts              # UI theme config
-├── nuxt.config.ts
-├── tailwind.config.ts
-├── vitest.config.ts
-├── package.json
-├── tsconfig.json
-├── README.md
-├── all_players.json           # Player database seed
-├── issues.md
-└── TODO.md
+┌─────────────────────────────────────────────────────────────┐
+│                       CLIENT (SPA)                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │    pages/    │  │ components/  │  │ composables/ │      │
+│  │  (routing)   │  │    (UI)      │  │   (state)    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                            │                                │
+│                      $fetch (REST)                          │
+└────────────────────────────┼────────────────────────────────┘
+                             │
+┌────────────────────────────┼────────────────────────────────┐
+│                       SERVER (Nitro)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  server/api/ │  │ services/    │  │   utils/     │      │
+│  │ (endpoints)  │  │ (business)   │  │  (shared)    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                            │                                │
+│                     better-sqlite3                          │
+│  ┌─────────────────────────┴───────────────────────────┐   │
+│  │                  server/db/                          │   │
+│  │            SQLite (WAL mode)                         │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Getting Started
+### Request Flow
+
+1. **User Action** (e.g., click "Reveal Clue") triggers composable method
+2. **Composable** calls `$fetch('/api/useClue')` with round token
+3. **API Route** (`server/api/useClue.ts`) parses input, enforces rate limit,
+   verifies token
+4. **Service Layer** (`server/services/clue.ts`) updates `clues_used` in
+   database
+5. **Response** returns success/error via standardized `ApiResponse<T>` format
+6. **Composable** updates reactive refs (e.g., `cluesUsed.value++`)
+7. **Vue Reactivity** triggers UI re-render
+
+All business logic (scoring, validation, persistence) happens server-side. The
+client is a presentation layer.
+
+### Data Flow Boundaries
+
+| Concern        | Handled By         | Notes                                    |
+| -------------- | ------------------ | ---------------------------------------- |
+| Routing        | `pages/`           | File-based, SPA mode                     |
+| UI Rendering   | `components/`      | Nuxt UI 4 primitives                     |
+| Client State   | `composables/`     | Reactive refs, orchestration             |
+| Business Logic | `server/services/` | **All scoring, validation, persistence** |
+| Data Access    | `server/db/`       | Single SQLite connection                 |
+| External APIs  | `server/scraper/`  | External data ingestion                  |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for full system design.
+
+## Tech Stack
+
+### Core Framework
+
+- **[Nuxt 4](https://nuxt.com/)** — Full-stack Vue framework, running in SPA
+  mode (`ssr: false`)
+- **[Nuxt UI 4](https://ui.nuxt.com/)** — Component library built on Tailwind
+  CSS
+- **[Vue 3](https://vuejs.org/)** — Composition API with TypeScript
+
+### Server Runtime
+
+- **[Nitro](https://nitro.unjs.io/)** — Universal server engine (bundled with
+  Nuxt)
+- **[h3](https://h3.unjs.io/)** — HTTP framework for API routes
+- **[better-sqlite3](https://github.com/WiseLibs/better-sqlite3)** — Synchronous
+  SQLite driver with WAL mode
+
+### Data & Validation
+
+- **[Valibot](https://valibot.dev/)** — Runtime schema validation (request
+  parsing, type inference)
+- **SQLite** — Embedded database for players, rounds, sessions, transfers, stats
+- **[Puppeteer](https://pptr.dev/)** — Headless browser for data acquisition
+
+### Development Tools
+
+- **TypeScript** — Strict mode enabled (`typescript: { strict: true }`)
+- **[Vitest](https://vitest.dev/)** — Unit testing framework
+- **[Playwright](https://playwright.dev/)** — End-to-end testing
+- **[Prettier](https://prettier.io/)** — Code formatting with Tailwind plugin
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm, pnpm, yarn, or bun
+- **Node.js** 18+ (20+ recommended)
+- **npm** 9+ or equivalent package manager
+- **SQLite3** (bundled with better-sqlite3, no separate install needed)
 
 ### Installation
 
 ```bash
+# Clone repository
 git clone https://github.com/dstN/footyguess.git
 cd footyguess
+
+# Install dependencies
 npm install
 ```
 
-### Development
+The `postinstall` script will automatically run `nuxt prepare` to generate type
+stubs.
+
+### Database Initialization
+
+The database schema is created automatically on first server start via the
+`server/plugins/db-init.ts` plugin. No manual migration step required.
+
+To populate the database with player data, you must run the data acquisition
+process (see [Data Population](#data-population) below).
+
+### Development Commands
 
 ```bash
+# Start development server (http://localhost:3000)
 npm run dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+# Build for production
+npm run build
 
-### Testing
+# Preview production build locally
+npm run preview
 
-```bash
-# Unit tests
-npm run test
+# Run unit tests
+npm test
 
-# Watch mode
+# Run unit tests in watch mode
 npm run test:watch
 
-# E2E tests
+# Run E2E tests (requires dev server or preview)
 npm run test:e2e
 
-# E2E with UI
+# Run E2E tests with UI
 npm run test:e2e:ui
 ```
 
-### Building for Production
+### Data Population
+
+The game requires player data to be populated in the database. The data
+acquisition process is **not run automatically**. You must trigger it manually:
 
 ```bash
-npm run build
-npm run preview
+npm run scrape
 ```
 
-## 🗄️ Database
+**Warning**: The data acquisition process uses Puppeteer to fetch data from
+external sources. This process:
 
-### Schema Highlights
+- Takes several hours for a full dataset
+- May trigger rate limiting if run too aggressively
+- Requires stable network connection
+- Should be run sparingly (data doesn't change frequently)
 
-- **players** (1,900+ records with seed data)
-  - Includes comprehensive player data: position, nationality, market value
-  - Indexed for fast name search (name_search, tm_short_name_search, tm_full_name_search)
-  - Data from public sources
-- **clubs**
-  - Club information with logo paths
-- **transfers** (500K+ total records across all players)
-  - Complete career transfer history per player
-  - Dates, clubs, transfer fees, types (loan, permanent, etc.)
-  - Indexed by player_id + transfer_date
-- **sessions**
-  - User gameplay sessions with streak/score tracking
-  - Persistent across page reloads
-- **rounds**
-  - Individual puzzle games with expiration
-  - Links to players and sessions
-- **scores**
-  - Score records for each round with breakdowns
-  - Base score, time score, streak multiplier tracking
-- **leaderboard_entries**
-  - Three types: `round` (per-player), `total`, `streak`
-  - Player-specific round scores with lookup indexes
-- **player_stats**
-  - Career statistics by competition
-  - Used for difficulty calculation
-- **competitions**
-  - Competition reference table (Champions League, Premier League, etc.)
-- **requested_players**
-  - Queue of players requested by users
-- **scrape_jobs**
-  - Background job queue for data updates
+Acquired data is stored in the SQLite database at `server/db/file/main.db`.
 
-### Key Queries
+See [server/scraper/](server/scraper/) for implementation details.
 
-- Player search: O(1) with name_search index
-- Recent transfers: O(1) with player_id + date index
-- Leaderboard fetch: O(log n) with type + value index
+## Project Structure
 
-## 🎯 Game Flow
-
-1. **Load Mystery**: Random player selected, transfers shown
-1. **Study Timeline**: Examine clubs and dates (name hidden)
-1. **Strategic Clues**: Optional hints cost points
-1. **Search & Guess**: Type player name, select from autocomplete
-1. **Submit**: Correct = score calculation + streak update
-1. **Leaderboard**: Submit to permanent leaderboard for bragging rights
-
-## 📊 Scoring Deep Dive
-
-### Example Calculation
-
-Player: Cristiano Ronaldo (Ultra difficulty)
-
-- Base: 100 pts
-- Difficulty: 100 × 2.0 = 200 pts
-- Clues: 200 - (2 clues × 10) = 180 pts
-- Speed: Guessed in 45s → 0% bonus = 180 pts (no time bonus)
-- Streak: 15+ → 180 × 1.10 = **198 pts final**
-
-### Time Bonus Breakdown
-
-- **≤1 second**: +120% bonus (instant guess reward)
-- **1s → 2 minutes**: Linear drop from +120% to 0% (penalty-free zone)
-- **2min → 5min**: No bonus, no penalty (safe zone)
-- **>5 minutes**: -10% per 30s penalty starting immediately (max -50%)
-
-### Difficulty Multipliers
-
-Based on player fame (international + league appearances). **More experience = easier!**
-
-**By International Competitions (weighted)**:
-
-- **Easy**: >80 weighted apps = 1.0× (100 pts max)
-- **Medium**: 60-80 weighted apps = 1.25× (125 pts max)
-- **Hard**: 45-60 weighted apps = 1.5× (150 pts max)
-- **Ultra**: <45 weighted apps = 2.0× (200 pts max) — Obscure players!
-
-**By Top 5 Leagues**:
-
-- **Easy**: >400 apps = 1.0× (famous league players)
-- **Medium**: 200-400 apps = 1.25×
-- **Hard**: 100-200 apps = 1.5×
-- **Ultra**: <100 apps = 2.0× (lesser-known league players)
-
-### Streak Bonuses
-
-- 5+ streak: +5% multiplier
-- 15+ streak: +10% multiplier
-- 30+ streak: +15% multiplier
-- 60+ streak: +20% multiplier
-- 100+ streak: +30% multiplier
-
-## 🌐 API Endpoints
-
-### Game Flow
-
-- `GET /api/randomPlayer` - Get new mystery player with transfers
-- `POST /api/guess` - Validate guess and calculate score
-- `POST /api/useClue` - Reveal clue and deduct points
-- `GET /api/getPlayer` - Get full player details + stats
-
-### Scoring & Leaderboard
-
-- `POST /api/submitScore` - Submit score to leaderboard (supports auto-update)
-- `GET /api/sessionStats` - User's current session stats (streak, total, lastPlayerId, submittedTypes)
-- `GET /api/leaderboard` - Top scores by type/player with optional player search
-
-### Search & Management
-
-- `GET /api/searchPlayers` - Find players by name (for leaderboard search)
-- `POST /api/requestPlayer` - Request player data scrape (adds to queue)
-- `GET /api/requestStatus` - Check status of player scrape requests
-
-## 🔧 Configuration
-
-### Theme (app.config.ts)
-
-```typescript
-export default defineAppConfig({
-  ui: {
-    colors: {
-      primary: 'mint',      // Primary accent (cyan)
-      secondary: 'mew',     // Secondary accent (pink)
-    },
-    // Custom glassmorphism styling
-    modal: {
-      content: 'bg-white/5 backdrop-blur-xs ...',
-    },
-    popover: {
-      content: 'bg-slate-950/80 backdrop-blur-md ...',
-    },
-  },
-});
+```text
+footyguess/
+├── pages/              # Route definitions (index, play, won)
+├── components/         # Reusable UI components (ClueBar, VictoryCard, etc.)
+├── composables/        # Reactive state management (usePlayGame, useGameSession, etc.)
+├── layouts/            # Page layout wrapper (default.vue)
+├── assets/css/         # Global styles and animations
+├── utils/              # Client-side pure utilities (scoring-constants, sanitize, etc.)
+├── types/              # Shared TypeScript types (Player, forms)
+├── server/
+│   ├── api/            # HTTP endpoints (guess.ts, getPlayer.ts, useClue.ts, etc.)
+│   ├── services/       # Business logic layer (guess, round, clue services)
+│   ├── utils/          # Server utilities (scoring, validation, logging, tokens)
+│   ├── db/             # Database connection, schema, and migrations
+│   ├── scraper/        # External data acquisition (autonomous-batch-scraper, etc.)
+│   ├── middleware/     # Request middleware (request-id, validation)
+│   └── plugins/        # Nitro lifecycle hooks (db-init.ts)
+├── tests/              # Unit and E2E tests
+├── public/             # Static assets (robots.txt)
+├── .llm/               # LLM context files (Nuxt 4 / Nuxt UI 4 documentation)
+├── nuxt.config.ts      # Nuxt configuration
+├── vitest.config.ts    # Vitest configuration
+├── playwright.config.ts # Playwright configuration
+├── ARCHITECTURE.md     # System design and conventions (read this!)
+└── README.md           # This file
 ```
 
-### Difficulty Thresholds (server/utils/difficulty.ts)
+### Key Files
 
-The system uses two basis calculations:
+- [nuxt.config.ts](nuxt.config.ts) — Nuxt configuration (SPA mode, TypeScript
+  strict, Vite optimizations)
+- [server/db/schema.ts](server/db/schema.ts) — Database schema definitions
+- [server/utils/scoring.ts](server/utils/scoring.ts) — Score calculation logic
+- [server/utils/difficulty.ts](server/utils/difficulty.ts) — Difficulty tier
+  computation
+- [composables/usePlayGame.ts](composables/usePlayGame.ts) — Main game
+  orchestration composable
+- [types/player.ts](types/player.ts) — Player type definitions
 
-- **International**: Weighted appearances in Champions League, Europa League, national team, etc.
-- **Top 5**: Raw appearances in Premier League, La Liga, Serie A, Ligue 1, Bundesliga
+## Development Guidelines
 
-Priority: International tier is preferred unless it's Ultra, then Top 5 is used. The higher the appearances, the easier the tier.
+### Adding Features Safely
 
-### Rate Limiting (server/utils/rate-limit.ts)
+1. **Read [ARCHITECTURE.md](ARCHITECTURE.md)** before making changes. It defines
+   normative conventions and anti-patterns.
+2. **Follow the 5-step API pattern** for new endpoints:
+   - Parse & validate input (Valibot)
+   - Rate limiting
+   - Authorization (token verification if needed)
+   - Business logic (delegate to services)
+   - Standardized response
+3. **Put business logic in services**, not API routes. API routes are thin
+   controllers.
+4. **Use composables for client state**, not raw refs scattered across
+   components.
+5. **Use Nuxt UI components directly**, don't wrap them. Configure defaults in
+   `app.config.ts` if needed.
+6. **Validate all user input** server-side, even if validated client-side.
 
-- Score submission: 10 requests per minute per session
-- Search: Standard rate limits
+### Extending Game Logic
 
-## 📱 Responsive Design
+#### Adding a New Clue Type
 
-- **Mobile-first** approach with Tailwind CSS
-- **Cyberpunk glassmorphism** aesthetic with:
-  - Frosted glass cards (white/5 with backdrop-blur)
-  - Gradient borders and glowing accents
-  - Animated background grid and glitch effects
-- **Touch-optimized** buttons and inputs
-- **Dark mode** by default with mint & pink accents
+1. Add clue key to `ClueKey` type in
+   [composables/useClueData.ts](composables/useClueData.ts)
+2. Implement value extraction logic in `cluePool` computed property
+3. Add UI rendering for clue in [components/ClueBar.vue](components/ClueBar.vue)
+4. Update tests in [tests/useCluePool.test.ts](tests/useCluePool.test.ts)
 
-## 🐛 Known Issues & TODOs
+#### Modifying Scoring Logic
 
-See [issues.md](issues.md) and [TODO.md](TODO.md) for:
+1. Update formula in [server/utils/scoring.ts](server/utils/scoring.ts)
+   (server-side source of truth)
+2. Update constants in [utils/scoring-constants.ts](utils/scoring-constants.ts)
+   (client-side display)
+3. Update [components/HelpModal.vue](components/HelpModal.vue) if scoring rules
+   change
+4. Update tests in [tests/utils.test.ts](tests/utils.test.ts)
 
-- Current bugs and edge cases
-- Planned features and improvements
-- Performance optimization ideas
-- Data quality concerns
+**Critical**: Never modify scoring logic only on the client. The server must
+remain authoritative.
 
-## 📈 Performance
+#### Changing Difficulty Tiers
 
-- **Database**: SQLite with strategic indexes (~50ms avg query)
-- **Bundle**: ~280KB gzipped (optimized)
-- **LCP**: <2.5s typical
-- **API Response**: <200ms avg
-- **Time Bonus Calculation**: O(1) linear interpolation
+1. Modify `computeDifficulty` function in
+   [server/utils/difficulty.ts](server/utils/difficulty.ts)
+2. Update database queries in
+   [server/services/guess.ts](server/services/guess.ts) if data requirements
+   change
+3. Update UI badges in
+   [components/DifficultyBadge.vue](components/DifficultyBadge.vue)
+4. Re-scrape players if logic requires new data fields
 
-## 🔐 Security
+### Common Pitfalls
 
-- Input validation with Valibot runtime schemas
-- Rate limiting on score submission (10 req/min)
-- Session-based score tracking (no cross-session manipulation)
-- No external API exposures
-- CSRF protection with httpOnly sessions
+1. **Trusting client-provided data** — Always validate server-side. Clients can
+   modify any value in memory or network requests.
+2. **Skipping rate limiting** — Every public endpoint must have rate limiting to
+   prevent abuse.
+3. **Using `any` type** — TypeScript strict mode is enabled. Use proper types or
+   explicit `unknown` + type guards.
+4. **Mutating props** — Vue props are read-only. Emit events or use `v-model`
+   for two-way binding.
+5. **Storing secrets in code** — Use `.env` files (never committed) for
+   sensitive values.
+6. **Direct database queries in API routes** — Use service layer functions to
+   encapsulate business logic.
 
-## 🤝 Contributing
+See [ARCHITECTURE.md § 9](ARCHITECTURE.md#9-anti-patterns--guardrails) for full
+anti-pattern list.
 
-1. Clone the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -am 'feat: description'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Open a Pull Request
+### Testing Strategy
 
-### Development Guidelines
+- **Unit Tests**: Services, utilities, composables, scoring logic
+- **E2E Tests**: Full game flow (start round → reveal clues → submit guess →
+  victory)
+- **No Tests For**: UI components (rely on type safety + manual QA), scraper
+  (external dependency)
 
-- Write tests for new features
-- Follow TypeScript strict mode
-- Use Prettier for code formatting
-- Update README/docs for new features
+Run tests before committing:
 
-## 📝 License
+```bash
+npm test              # Fast feedback on logic changes
+npm run test:e2e      # Full integration validation
+```
 
-MIT License - Feel free to use and modify.
+## Known Limitations & Future Direction
 
-## 🙏 Credits
+This project has intentional technical debt and deferred features. See
+[ARCHITECTURE.md § 8](ARCHITECTURE.md#8-known-tensions--open-issues) for full
+context. Key points:
 
-- **Data**: Public football data sources
-- **UI Library**: Nuxt UI v4 + Tailwind CSS
-- **Icons**: Lucide React
-- **Framework**: Nuxt 4 & Vue 3 Composition API
-- **Styling**: Cyberpunk glassmorphism design system
+### Accepted Technical Debt
 
-## 📧 Contact & Support
+- **Database uses synchronous I/O at import time** (issue #74) — Single-instance
+  SQLite is sufficient for expected scale. Asynchronous wrappers add complexity
+  without benefit.
+- **Scraper files use `any` type extensively** (issue #98) — Typing external
+  HTML parsing is low-value. Acquired data is validated before database
+  insertion.
+- **Database query results use type assertions** (issue #110) — SQLite schema is
+  stable. Runtime validation of every query is expensive.
 
-Questions or feedback?
+### Planned Improvements
 
-- Open an issue on GitHub
-- Check [issues.md](issues.md) for known problems
-- Review [TODO.md](TODO.md) for planned features
+- **Refactor `usePlayGame` composable** (issue #76) — Currently orchestrates 8+
+  sub-composables. Will split into focused units.
+- **Consolidate duplicate validation utilities** (issue #68) — `api.ts` and
+  `validate.ts` have overlapping helpers.
+- **Consistent error logging** (issue #101) — Mix of `console.error` and
+  structured logger. Will standardize on structured logging.
 
----
+### Low-Priority Enhancements
 
-**Last Updated**: January 2025  
-**Version**: 1.0.0  
-**Status**: Active Development
+- **Accessibility utilities not integrated** (issue #111) — `accessibility.ts`
+  exists but not used in components.
+- **HelpModal hardcodes scoring values** (issue #96) — Should import from
+  `scoring-constants.ts`.
+- **Missing fetch timeouts** (issue #84) — `utils/fetch.ts` provides helpers but
+  adoption incomplete.
+- **Session cleanup strategy** (issue #88) — Old sessions accumulate
+  indefinitely. Not urgent at current scale.
+- **No dead letter queue for scraper jobs** (issue #102) — Failed jobs are
+  logged but not reprocessed.
+
+No speculative roadmap. Future work is driven by actual usage patterns and
+maintainability pain points.
+
+## Further Reading
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — Comprehensive system design,
+  conventions, and decision rules. Read this before contributing.
+- **[.llm/nuxt/llms.txt](.llm/nuxt/llms.txt)** — Nuxt 4 documentation summary
+  for LLM tools
+- **[.llm/nuxtui/llms.txt](.llm/nuxtui/llms.txt)** — Nuxt UI 4 documentation
+  summary for LLM tools
+
+## License
+
+Private project. Not licensed for public use.
