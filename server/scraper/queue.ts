@@ -1,4 +1,5 @@
 import db from "../db/connection.ts";
+import { logInfo, logError } from "../utils/logger";
 
 export type ScrapeJobType = "requested" | "stale" | "error";
 
@@ -62,9 +63,65 @@ export function markJobFailed(
   attempts: number,
   nextRunAt: number | null,
 ) {
-  db.prepare(
-    `UPDATE scrape_jobs
-     SET status = ?, attempts = ?, last_error = ?, next_run_at = ?, updated_at = strftime('%s','now')
-     WHERE id = ?`,
-  ).run(nextRunAt ? "pending" : "failed", attempts, error, nextRunAt, id);
+  // If nextRunAt is null, it means max retries reached -> move to DLQ
+  if (nextRunAt === null) {
+    const job = db
+      .prepare(
+        `SELECT type, target, priority, created_at FROM scrape_jobs WHERE id = ?`,
+      )
+      .get(id) as
+      | {
+          type: string;
+          target: string;
+          priority: number;
+          created_at: number;
+        }
+      | undefined;
+
+    if (job) {
+      try {
+        db.transaction(() => {
+          // Insert into DLQ
+          db.prepare(
+            `INSERT INTO scrape_jobs_dlq (id, type, target, priority, attempts, last_error, original_created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          ).run(
+            id,
+            job.type,
+            job.target,
+            job.priority,
+            attempts,
+            error,
+            job.created_at,
+          );
+
+          // Remove from active queue
+          db.prepare(`DELETE FROM scrape_jobs WHERE id = ?`).run(id);
+        })();
+
+        logError(
+          `Job ${id} permanently failed, moved to DLQ`,
+          new Error(error),
+          { jobId: id, target: job.target },
+        );
+      } catch (err) {
+        logError(`Failed to move job ${id} to DLQ`, err as Error, {
+          jobId: id,
+        });
+        // Fallback: just mark as failed in place
+        db.prepare(
+          `UPDATE scrape_jobs
+             SET status = 'failed', attempts = ?, last_error = ?, next_run_at = NULL, updated_at = strftime('%s','now')
+             WHERE id = ?`,
+        ).run(attempts, error, id);
+      }
+    }
+  } else {
+    // Retry: update status to pending and set next_run_at
+    db.prepare(
+      `UPDATE scrape_jobs
+       SET status = 'pending', attempts = ?, last_error = ?, next_run_at = ?, updated_at = strftime('%s','now')
+       WHERE id = ?`,
+    ).run(attempts, error, nextRunAt, id);
+  }
 }

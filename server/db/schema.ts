@@ -181,6 +181,17 @@ export function initSchema() {
       UNIQUE (type, target)
     );
 
+    CREATE TABLE IF NOT EXISTS scrape_jobs_dlq (
+      id INTEGER PRIMARY KEY,
+      type TEXT NOT NULL,
+      target TEXT NOT NULL,
+      priority INTEGER NOT NULL,
+      attempts INTEGER NOT NULL,
+      last_error TEXT,
+      original_created_at INTEGER,
+      failed_at INTEGER DEFAULT (strftime('%s','now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search);
     CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search);
     CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search);
