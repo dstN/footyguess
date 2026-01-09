@@ -52,8 +52,11 @@ describe("api routes", () => {
       body: { roundId: "round1", token },
     });
 
-    const result = await useClueHandler(event);
-    expect(result?.cluesUsed).toBe(1);
+    const result = (await useClueHandler(event)) as {
+      cluesUsed: number;
+      cluesRemaining: number;
+    };
+    expect(result.cluesUsed).toBe(1);
   });
 
   it("guess awards score and updates session", async () => {
@@ -83,9 +86,12 @@ describe("api routes", () => {
       body: { roundId: "round1", token, guess: "Test Player" },
     });
 
-    const result = await guessHandler(event);
-    expect(result?.correct).toBe(true);
-    expect(result?.score).toBeGreaterThan(0);
+    const result = (await guessHandler(event)) as {
+      correct: boolean;
+      score: number;
+    };
+    expect(result.correct).toBe(true);
+    expect(result.score).toBeGreaterThan(0);
 
     const session = db
       .prepare(`SELECT streak, total_score FROM sessions WHERE id = ?`)
@@ -128,8 +134,8 @@ describe("api routes", () => {
       body: { sessionId: "sess1", nickname: "Tester", type: "round" },
     });
 
-    const result = await submitScoreHandler(submitEvent);
-    expect(result?.ok).toBe(true);
+    const result = (await submitScoreHandler(submitEvent)) as { ok: boolean };
+    expect(result.ok).toBe(true);
 
     const entry = db
       .prepare(
