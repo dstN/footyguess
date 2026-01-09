@@ -9,7 +9,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "scrape": "tsx server/scraper/index.ts",
+    "scrape": "tsx server/scraper/autonomous-batch-scraper.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
