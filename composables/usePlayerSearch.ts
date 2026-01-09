@@ -1,4 +1,5 @@
 import { ref, onUnmounted, computed } from "vue";
+import { logError } from "~/utils/client-logger";
 
 /**
  * Lightweight search composable with debounced remote suggestions and LRU caching.
@@ -78,7 +79,7 @@ export function usePlayerSearch() {
       if (error instanceof Error && error.name === "AbortError") {
         return;
       }
-      if (import.meta.dev) console.error("Search failed", error);
+      logError("usePlayerSearch", "Search failed", error);
       suggestions.value = [];
     } finally {
       isSearching.value = false;

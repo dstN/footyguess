@@ -1,4 +1,5 @@
 import { computed, inject, onMounted, reactive, ref } from "vue";
+import { logError } from "~/utils/client-logger";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import type { GuessFormState, GuessFormOutput } from "~/types/forms";
@@ -119,7 +120,7 @@ export function usePlayGame() {
       const message =
         err instanceof Error ? err.message : "Failed to reveal clue";
       errorMessage.value = message;
-      if (import.meta.dev) console.error("Failed to record clue", err);
+      logError("usePlayGame", "Failed to record clue", err);
       toast.add({
         title: "Clue error",
         description: message,

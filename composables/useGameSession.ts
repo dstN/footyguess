@@ -1,4 +1,5 @@
 import { ref, onMounted } from "vue";
+import { logError } from "~/utils/client-logger";
 import type { Player } from "~/types/player";
 
 /**
@@ -109,7 +110,7 @@ export function useGameSession() {
       errorMessage.value = "";
       return;
     } catch (err) {
-      if (import.meta.dev) console.error("Failed to load player", err);
+      logError("useGameSession", "Failed to load player", err);
       errorMessage.value =
         "Couldn't fetch the mystery player. Please try again.";
       player.value = null;
