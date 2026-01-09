@@ -1,5 +1,4 @@
 import { computed, inject, onMounted, reactive, ref } from "vue";
-import { logError } from "~/utils/client-logger";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import type { GuessFormState, GuessFormOutput } from "~/types/forms";
@@ -7,13 +6,23 @@ import { GuessFormSchema } from "~/types/forms";
 import { useGameSession } from "~/composables/useGameSession";
 import { useGuessSubmission } from "~/composables/useGuessSubmission";
 import { useGameStreak } from "~/composables/useGameStreak";
-import { useCluePool } from "~/composables/useCluePool";
+import { useClueReveal } from "~/composables/useClueReveal";
+import { usePlayerReset } from "~/composables/usePlayerReset";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
 
 /**
  * Main game composable that orchestrates all game logic
  * Coordinates session management, guess submission, streak tracking, and clue system
+ *
+ * This is a thin orchestration layer that delegates to focused sub-composables:
+ * - useGameSession: Session and round state
+ * - useGuessSubmission: Guess validation and submission
+ * - useGameStreak: Streak tracking and persistence
+ * - useClueReveal: Clue pool and server sync
+ * - usePlayerReset: New player confirmation flow
+ * - usePlayerSearch: Search autocomplete
+ * - useTransferTimeline: Career timeline display
  *
  * @example
  * ```ts
@@ -26,7 +35,7 @@ export function usePlayGame() {
   const toast = useToast();
   const triggerShake = inject<() => void>("triggerShake");
 
-  // Composable orchestration
+  // === Session & Player State ===
   const {
     sessionId,
     player,
@@ -38,6 +47,7 @@ export function usePlayGame() {
     loadPlayer: loadPlayerSession,
   } = useGameSession();
 
+  // === Streak Management ===
   const {
     streak,
     bestStreak,
@@ -46,36 +56,29 @@ export function usePlayGame() {
     updateStreak,
   } = useGameStreak();
 
-  // Form and UI state
+  // === Form State ===
   const schema = GuessFormSchema;
   const formState = reactive<GuessFormState>({
     guess: "",
   });
-
-  const confirmResetOpen = ref(false);
-  const pendingName = ref<string | undefined>(undefined);
-
   const hasGuess = computed(() => formState.guess.trim().length > 0);
 
-  // Clear error when user starts typing
-  const onGuessInput = () => {
-    if (isError.value) {
-      isError.value = false;
-      errorMessage.value = "";
-    }
-  };
-
-  // Dependent composables
+  // === Search ===
   const { searchTerm, suggestions, onSearch, clearSearch } = usePlayerSearch();
+
+  // === Timeline ===
   const { careerTimeline } = useTransferTimeline(player);
+
+  // === Clue Reveal ===
   const {
     revealedClues,
     hiddenClueLabels,
     tipButtonDisabled,
     selectRandomClues,
-    revealNextClue,
-  } = useCluePool(player, { isLoading });
+    revealClue,
+  } = useClueReveal(player, round, toast, errorMessage, isLoading);
 
+  // === Computed from player ===
   const difficulty = computed(() => player.value?.difficulty ?? null);
   const maxBasePoints = computed(() =>
     difficulty.value
@@ -83,8 +86,9 @@ export function usePlayGame() {
       : 0,
   );
 
+  // === Player Loading ===
   /**
-   * Load player wrapper that also resets form and clues
+   * Load player with form reset and clue selection
    */
   async function loadPlayer(name?: string) {
     await loadPlayerSession(name);
@@ -93,6 +97,31 @@ export function usePlayGame() {
     selectRandomClues();
   }
 
+  // === Player Reset ===
+  const {
+    confirmOpen: confirmResetOpen,
+    request: requestNewPlayer,
+    confirm: confirmNewPlayer,
+    cancel: cancelNewPlayer,
+  } = usePlayerReset(streak, resetStreak, loadPlayer);
+
+  // === Form Input Handling ===
+  /**
+   * Clear error when user starts typing
+   */
+  function onGuessInput() {
+    if (isError.value) {
+      isError.value = false;
+      errorMessage.value = "";
+    }
+  }
+
+  function clearGuess() {
+    formState.guess = "";
+    clearSearch();
+  }
+
+  // === Guess Handlers ===
   /**
    * Persist last player to localStorage
    */
@@ -100,36 +129,6 @@ export function usePlayGame() {
     if (import.meta.client) {
       localStorage.setItem("footyguess_last_player", name);
     }
-  }
-
-  /**
-   * Reveal next clue with server synchronization
-   */
-  async function revealNextClueWithServer() {
-    if (!round.value) return;
-    try {
-      const res = await $fetch<{ cluesUsed: number }>("/api/useClue", {
-        method: "POST",
-        body: { roundId: round.value.id, token: round.value.token },
-      });
-      if (res?.cluesUsed !== undefined) {
-        round.value = { ...round.value, cluesUsed: res.cluesUsed };
-      }
-      errorMessage.value = ""; // Clear error on success
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to reveal clue";
-      errorMessage.value = message;
-      logError("usePlayGame", "Failed to record clue", err);
-      toast.add({
-        title: "Clue error",
-        description: message,
-        color: "error",
-        icon: "i-lucide-alert-triangle",
-      });
-      throw err;
-    }
-    revealNextClue();
   }
 
   /**
@@ -157,7 +156,7 @@ export function usePlayGame() {
    * Handle incorrect guess - trigger shake and error message
    */
   function handleIncorrectGuess() {
-    formState.guess = ""; // Clear input after guess submission
+    formState.guess = "";
     clearSearch();
     isError.value = true;
     errorMessage.value = "Incorrect guess - follow the clues more carefully";
@@ -184,6 +183,7 @@ export function usePlayGame() {
     });
   }
 
+  // === Guess Submission ===
   const { submitGuess, onSubmit, submitGuessViaEnter } = useGuessSubmission(
     player,
     round,
@@ -195,66 +195,57 @@ export function usePlayGame() {
     handleGuessError,
   );
 
-  function clearGuess() {
-    formState.guess = "";
-    clearSearch();
-  }
-
-  function requestNewPlayer(name?: string) {
-    if (streak.value > 0) {
-      pendingName.value = name;
-      confirmResetOpen.value = true;
-      return;
-    }
-    loadPlayer(name);
-  }
-
-  function confirmNewPlayer() {
-    resetStreak();
-    confirmResetOpen.value = false;
-    loadPlayer(pendingName.value);
-    pendingName.value = undefined;
-  }
-
-  function cancelNewPlayer() {
-    confirmResetOpen.value = false;
-    pendingName.value = undefined;
-  }
-
+  // === Lifecycle ===
   onMounted(async () => {
     loadStreakFromStorage();
     await loadPlayer();
   });
 
+  // === Public API ===
   return {
+    // Form
     schema,
     formState,
     hasGuess,
+    onGuessInput,
+    clearGuess,
+
+    // Player/Round
     player,
     currentName,
     isLoading,
     errorMessage,
     isError,
+    difficulty,
+    maxBasePoints,
+
+    // Clues
     revealedClues,
     hiddenClueLabels,
     tipButtonDisabled,
+    revealNextClue: revealClue,
+
+    // Timeline
     careerTimeline,
+
+    // Search
     suggestions,
     searchTerm,
+    onSearch,
+
+    // Streak
     streak,
     bestStreak,
-    difficulty,
-    maxBasePoints,
+
+    // Player Reset
     confirmResetOpen,
     loadPlayer,
     requestNewPlayer,
     confirmNewPlayer,
     cancelNewPlayer,
-    revealNextClue: revealNextClueWithServer,
-    onSearch,
-    onGuessInput,
+
+    // Guess
     submitGuessViaEnter,
     onSubmit,
-    clearGuess,
   };
 }
