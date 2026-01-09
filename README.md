@@ -35,8 +35,8 @@ Scores are calculated server-side using:
 
 - **Base Points**: Always 100 points
 - **Difficulty Multiplier**: Applied to base points based on player tier (`easy`
-  1.0x, `medium` 1.25x, `hard` 1.5x, `ultra` 2.0x). Max score before clues:
-  100 (easy), 125 (medium), 150 (hard), 200 (ultra)
+  1.0x, `medium` 1.25x, `hard` 1.5x, `ultra` 2.0x). Max score before clues: 100
+  (easy), 125 (medium), 150 (hard), 200 (ultra)
 - **Clue Penalty**: Each revealed clue subtracts 10 points
 - **Time Bonus**: Faster guesses earn bonuses up to +120% (within 1 second).
   Slow guesses (>5 minutes) incur penalties up to -50%.
@@ -51,8 +51,9 @@ See [server/utils/scoring.ts](server/utils/scoring.ts) for implementation.
 
 ### Player Difficulty Tiers
 
-Difficulty is computed from player career statistics using weighted international
-appearances (CL, Europa, national competitions) or top-5 league apps:
+Difficulty is computed from player career statistics using weighted
+international appearances (CL, Europa, national competitions) or top-5 league
+apps:
 
 | Tier   | International (weighted) | Top-5 Leagues | Base Points | Multiplier | Max Score |
 | ------ | ------------------------ | ------------- | ----------- | ---------- | --------- |
@@ -68,8 +69,8 @@ appearances (CL, Europa, national competitions) or top-5 league apps:
 - International basis **Easy** → **Medium** if top-5 apps <100
 - International basis **Medium** → **Hard** if top-5 apps <50
 
-This ensures players with strong domestic careers but weak European/international
-experience (or vice versa) are appropriately challenging.
+This ensures players with strong domestic careers but weak
+European/international experience (or vice versa) are appropriately challenging.
 
 See [server/utils/difficulty.ts](server/utils/difficulty.ts) for logic.
 
@@ -125,26 +126,28 @@ See [composables/useClueData.ts](composables/useClueData.ts) and
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                       CLIENT (SPA)                          │
+│                         CLIENT (SPA)                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │    pages/    │  │ components/  │  │ composables/ │      │
 │  │  (routing)   │  │    (UI)      │  │   (state)    │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │                            │                                │
 │                      $fetch (REST)                          │
+│           (with timeouts & unified logging)                 │
 └────────────────────────────┼────────────────────────────────┘
                              │
 ┌────────────────────────────┼────────────────────────────────┐
-│                       SERVER (Nitro)                        │
+│                         SERVER (Nitro)                      │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  server/api/ │  │ services/    │  │   utils/     │      │
-│  │ (endpoints)  │  │ (business)   │  │  (shared)    │      │
+│  │   server/    │  │   server/    │  │   server/    │      │
+│  │    api/      │  │  services/   │  │    utils/    │      │
+│  │ (endpoints)  │  │  (business)  │  │  (shared)    │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │                            │                                │
 │                     better-sqlite3                          │
 │  ┌─────────────────────────┴───────────────────────────┐   │
-│  │                  server/db/                          │   │
-│  │            SQLite (WAL mode)                         │   │
+│  │                    server/db/                        │   │
+│  │         SQLite + WAL mode + Auto-Cleanup             │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -173,7 +176,7 @@ client is a presentation layer.
 | Client State   | `composables/`     | Reactive refs, orchestration             |
 | Business Logic | `server/services/` | **All scoring, validation, persistence** |
 | Data Access    | `server/db/`       | Single SQLite connection                 |
-| External APIs  | `server/scraper/`  | External data ingestion                  |
+| External APIs  | `server/scraper/`  | External data ingestion (with DLQ)       |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for full system design.
 
@@ -294,15 +297,16 @@ footyguess/
 ├── composables/        # Reactive state management (usePlayGame, useGameSession, etc.)
 ├── layouts/            # Page layout wrapper (default.vue)
 ├── assets/css/         # Global styles and animations
-├── utils/              # Client-side pure utilities (scoring-constants, sanitize, etc.)
+├── utils/              # Client-side pure utilities (scoring-constants, sanitize, client-logger, etc.)
 ├── types/              # Shared TypeScript types (Player, forms)
 ├── server/
 │   ├── api/            # HTTP endpoints (guess.ts, getPlayer.ts, useClue.ts, etc.)
 │   ├── services/       # Business logic layer (guess, round, clue services)
-│   ├── utils/          # Server utilities (scoring, validation, logging, tokens)
+│   ├── utils/          # Server utilities (scoring, validation, logging, tokens, session-cleanup)
 │   ├── db/             # Database connection, schema, and migrations
 │   ├── scraper/        # External data acquisition (autonomous-batch-scraper, etc.)
 │   ├── middleware/     # Request middleware (request-id, validation)
+│   ├── tasks/          # Nitro scheduled tasks
 │   └── plugins/        # Nitro lifecycle hooks (db-init.ts)
 ├── tests/              # Unit and E2E tests
 ├── public/             # Static assets (robots.txt)
@@ -415,9 +419,9 @@ npm run test:e2e      # Full integration validation
 
 ## Known Limitations & Future Direction
 
-This project has intentional technical debt and deferred features. See
+This project has intentional technical debt. See
 [ARCHITECTURE.md § 8](ARCHITECTURE.md#8-known-tensions--open-issues) for full
-context. Key points:
+context.
 
 ### Accepted Technical Debt
 
@@ -429,31 +433,6 @@ context. Key points:
   insertion.
 - **Database query results use type assertions** (issue #110) — SQLite schema is
   stable. Runtime validation of every query is expensive.
-
-### Planned Improvements
-
-- **Refactor `usePlayGame` composable** (issue #76) — Currently orchestrates 8+
-  sub-composables. Will split into focused units.
-- **Consolidate duplicate validation utilities** (issue #68) — `api.ts` and
-  `validate.ts` have overlapping helpers.
-- **Consistent error logging** (issue #101) — Mix of `console.error` and
-  structured logger. Will standardize on structured logging.
-
-### Low-Priority Enhancements
-
-- **Accessibility utilities not integrated** (issue #111) — `accessibility.ts`
-  exists but not used in components.
-- **HelpModal hardcodes scoring values** (issue #96) — Should import from
-  `scoring-constants.ts`.
-- **Missing fetch timeouts** (issue #84) — `utils/fetch.ts` provides helpers but
-  adoption incomplete.
-- **Session cleanup strategy** (issue #88) — Old sessions accumulate
-  indefinitely. Not urgent at current scale.
-- **No dead letter queue for scraper jobs** (issue #102) — Failed jobs are
-  logged but not reprocessed.
-
-No speculative roadmap. Future work is driven by actual usage patterns and
-maintainability pain points.
 
 ## Further Reading
 
