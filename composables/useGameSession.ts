@@ -1,5 +1,6 @@
 import { ref, onMounted } from "vue";
 import { logError } from "~/utils/client-logger";
+import { createTimeoutSignal } from "~/utils/fetch";
 import type { Player } from "~/types/player";
 
 /**
@@ -88,7 +89,9 @@ export function useGameSession() {
         {
           round: RoundState;
         } & Player
-      >(endpoint);
+      >(endpoint, {
+        signal: createTimeoutSignal(15000),
+      });
 
       player.value = response;
       currentName.value = response?.name;

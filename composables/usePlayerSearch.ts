@@ -1,5 +1,6 @@
 import { ref, onUnmounted, computed } from "vue";
 import { logError } from "~/utils/client-logger";
+import { withTimeout } from "~/utils/fetch";
 
 /**
  * Lightweight search composable with debounced remote suggestions and LRU caching.
@@ -65,7 +66,7 @@ export function usePlayerSearch() {
       const results = await $fetch<string[]>(
         `/api/searchPlayers?q=${encodeURIComponent(query)}&limit=10`,
         {
-          signal: abortController.value.signal,
+          signal: withTimeout(abortController.value.signal, 10000),
         },
       );
 

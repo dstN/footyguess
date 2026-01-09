@@ -2,6 +2,7 @@ import { ref, type Ref } from "vue";
 import type { Player } from "~/types/player";
 import { useCluePool } from "~/composables/useCluePool";
 import { logError } from "~/utils/client-logger";
+import { createTimeoutSignal } from "~/utils/fetch";
 
 /**
  * Round state interface for clue tracking
@@ -63,6 +64,7 @@ export function useClueReveal(
       const res = await $fetch<{ cluesUsed: number }>("/api/useClue", {
         method: "POST",
         body: { roundId: round.value.id, token: round.value.token },
+        signal: createTimeoutSignal(10000),
       });
 
       if (res?.cluesUsed !== undefined) {

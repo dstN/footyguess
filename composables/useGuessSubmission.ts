@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { logError } from "~/utils/client-logger";
+import { createTimeoutSignal } from "~/utils/fetch";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import type { GuessFormOutput } from "~/types/forms";
@@ -81,6 +82,7 @@ export function useGuessSubmission(
           token: round.value.token,
           guess,
         },
+        signal: createTimeoutSignal(15000),
       });
 
       streak.value = res.streak;
