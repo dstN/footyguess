@@ -1,6 +1,7 @@
 import { ref, computed } from "vue";
 import { logError } from "~/utils/client-logger";
 import { createTimeoutSignal } from "~/utils/fetch";
+import { announceToScreenReader } from "~/utils/accessibility";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player } from "~/types/player";
 import type { GuessFormOutput } from "~/types/forms";
@@ -90,6 +91,10 @@ export function useGuessSubmission(
       onStreakUpdate(res.streak, res.bestStreak);
 
       if (res.correct) {
+        announceToScreenReader(
+          `Correct! You guessed ${res.playerName}. Score: ${res.score}`,
+          "assertive",
+        );
         onCorrectGuess(
           res.playerName,
           res.difficulty,
@@ -98,6 +103,7 @@ export function useGuessSubmission(
           res.streak,
         );
       } else {
+        announceToScreenReader("Incorrect guess. Try again.", "assertive");
         onIncorrectGuess();
       }
     } catch (err) {

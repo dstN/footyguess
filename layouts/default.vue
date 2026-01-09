@@ -3,6 +3,13 @@
     class="relative min-h-screen overflow-visible bg-[#050915] text-slate-100"
     :class="{ 'animations-paused': isModalOpen }"
   >
+    <a
+      href="#main-content"
+      @click.prevent="skipToMainContent"
+      class="focus:ring-primary-500 sr-only fixed top-4 left-4 z-50 rounded bg-white px-4 py-2 font-bold text-black outline-hidden focus:not-sr-only focus:ring-4"
+    >
+      Skip to main content
+    </a>
     <div class="pointer-events-none absolute inset-0">
       <div
         class="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(72,204,255,0.12),transparent_26%),radial-gradient(circle_at_80%_10%,rgba(255,75,165,0.16),transparent_30%),radial-gradient(circle_at_40%_80%,rgba(0,255,178,0.14),transparent_32%)]"
@@ -28,7 +35,11 @@
           />
         </div>
 
-        <div class="relative z-10 p-6 sm:p-8">
+        <div
+          id="main-content"
+          class="relative z-10 p-6 sm:p-8"
+          tabindex="-1"
+        >
           <slot @shake="triggerShake" />
         </div>
       </div>
@@ -42,6 +53,7 @@ import {
   setModalOpenKey,
   isModalOpenKey,
 } from "~/utils/injection-keys";
+import { skipToMainContent } from "~/utils/accessibility";
 
 const shouldShake = ref(false);
 const isModalOpen = ref(false);

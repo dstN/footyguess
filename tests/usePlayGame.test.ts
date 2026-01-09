@@ -2,6 +2,20 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { usePlayGame } from "~/composables/usePlayGame";
 import { routerPushMock, toastAddMock } from "./setup";
 
+// Mock standard utils
+vi.mock("~/utils/client-logger", () => ({
+  logError: vi.fn(),
+  logInfo: vi.fn(),
+}));
+
+vi.mock("~/utils/accessibility", () => ({
+  announceToScreenReader: vi.fn(),
+}));
+
+vi.mock("~/utils/fetch", () => ({
+  createTimeoutSignal: () => new AbortController().signal,
+}));
+
 const samplePlayer = {
   name: "Toni Kroos",
   active: 1,
@@ -38,6 +52,7 @@ const samplePlayer = {
     expiresAt: Date.now() + 600_000,
     cluesUsed: 0,
   },
+  last_scraped_at: Date.now(),
 };
 
 const guessBreakdown = {
@@ -126,7 +141,10 @@ describe("usePlayGame", () => {
     await loadPlayer();
 
     formState.guess = samplePlayer.name;
-    await onSubmit({ preventDefault: () => {}, data: { guess: samplePlayer.name } } as any);
+    await onSubmit({
+      preventDefault: () => {},
+      data: { guess: samplePlayer.name },
+    } as any);
     expect(streak.value).toBe(1);
     expect(bestStreak.value).toBe(1);
 
@@ -141,7 +159,10 @@ describe("usePlayGame", () => {
     };
 
     formState.guess = "Wrong Name";
-    await onSubmit({ preventDefault: () => {}, data: { guess: "Wrong Name" } } as any);
+    await onSubmit({
+      preventDefault: () => {},
+      data: { guess: "Wrong Name" },
+    } as any);
     expect(streak.value).toBe(0);
     expect(bestStreak.value).toBe(1);
   });

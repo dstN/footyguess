@@ -340,7 +340,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, watch } from "vue";
+import { ref, inject, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  createFocusTrap,
+  restoreFocus,
+  getFocusedElement,
+} from "~/utils/accessibility";
 import {
   DIFFICULTY_MULTIPLIERS,
   MAX_POINTS_BY_TIER,
@@ -382,4 +387,30 @@ watch(isOpen, (open) => {
 function openModal() {
   isOpen.value = true;
 }
+
+// Accessibility: Focus management
+let removeTrap: (() => void) | null = null;
+let previousFocus: HTMLElement | null = null;
+const modalRef = ref<HTMLElement | null>(null); // Note: UModal doesn't easily expose ref to inner content via prop, so we might need to rely on UModal's built-in focus management or use a different approach.
+// Ideally, UModal handles this. But to demonstrate integration:
+
+watch(isOpen, (open) => {
+  if (open) {
+    previousFocus = getFocusedElement();
+    // Tiny delay to allow modal to render
+    setTimeout(() => {
+      const modalEl = document.querySelector('[role="dialog"]');
+      if (modalEl instanceof HTMLElement) {
+        removeTrap = createFocusTrap(modalEl);
+      }
+    }, 100);
+  } else {
+    removeTrap?.();
+    restoreFocus(previousFocus);
+  }
+});
+
+onBeforeUnmount(() => {
+  removeTrap?.();
+});
 </script>
