@@ -1,7 +1,7 @@
 # Architecture & Technical Direction
 
 > **Status**: Living Document  
-> **Last Updated**: 2026-01-07  
+> **Last Updated**: 2026-01-09  
 > **Scope**: Nuxt 4 / Nuxt UI 4 — FootyGuess
 
 This document defines the architectural intent, conventions, and guardrails for
@@ -46,6 +46,7 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │                            │                                │
 │                      $fetch (REST)                          │
+│           (with timeouts & unified logging)                 │
 └────────────────────────────┼────────────────────────────────┘
                              │
 ┌────────────────────────────┼────────────────────────────────┐
@@ -59,7 +60,7 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 │                     better-sqlite3                          │
 │  ┌─────────────────────────┴───────────────────────────┐   │
 │  │                    server/db/                        │   │
-│  │              SQLite + WAL mode                       │   │
+│  │         SQLite + WAL mode + Auto-Cleanup             │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -73,7 +74,7 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 | Client State   | `composables/`     | Reactive refs, orchestration             |
 | Business Logic | `server/services/` | **All scoring, validation, persistence** |
 | Data Access    | `server/db/`       | Single SQLite connection                 |
-| External APIs  | `server/scraper/`  | External data ingestion                  |
+| External APIs  | `server/scraper/`  | External data ingestion (with DLQ)       |
 
 **Key principle**: The client is a **presentation layer**. All authoritative
 game state (scores, streaks, clue counts) lives server-side and is validated via
@@ -251,8 +252,13 @@ logError("guess", "Token verification failed", error, { roundId });
 logInfo("round", "New round created", { sessionId, playerId });
 ```
 
-**Client-side**: Currently uses `console.error` (see issue #101). Planned
-migration to unified logging.
+**Client-side**: Use the unified client logger (`utils/client-logger.ts`):
+
+```typescript
+import { logError, logInfo } from "~/utils/client-logger";
+
+logError("useGameSession", "Failed to load player", err);
+```
 
 ### 6.3 What Is Allowed to Fail
 
@@ -276,15 +282,14 @@ migration to unified logging.
 - **DB query efficiency** — Indexes on frequently queried columns
 - **Rate limiting** — IP and session-based to prevent abuse
 - **WAL mode** — SQLite configured for concurrent reads
+- **Robustness** — Client side timeouts, dead letter queues, and session cleanup
 
 ### 7.2 Deferred Concerns
 
-| Concern                      | Status                 | Reference                          |
-| ---------------------------- | ---------------------- | ---------------------------------- |
-| Session cleanup              | Deferred               | Issue #88                          |
-| Dead letter queue            | Deferred               | Issue #102                         |
-| Lazy DB initialization       | Accepted trade-off     | Issue #74                          |
-| Client-side request timeouts | Partial implementation | Issue #84, `utils/fetch.ts` exists |
+| Concern                    | Status             | Reference         |
+| -------------------------- | ------------------ | ----------------- |
+| Lazy DB initialization     | Accepted trade-off | Issue #74         |
+| Production-grade analytics | Deferred           | No immediate need |
 
 ---
 
@@ -297,24 +302,6 @@ migration to unified logging.
 | **#98**: Scraper uses `any` types | TypeScript  | Accepted. Scraper is isolated, external API shapes are unstable.      |
 | **#74**: Sync DB init             | Performance | Accepted. Simplicity > serverless cold-start optimization.            |
 | **#110**: DB type assertions      | TypeScript  | Accepted for now. Runtime validation adds overhead; schema is stable. |
-
-### 8.2 Planned Architectural Improvements
-
-| Issue                                     | Category     | Status                                |
-| ----------------------------------------- | ------------ | ------------------------------------- |
-| **#76**: usePlayGame responsibility count | Refactor     | Future split into focused composables |
-| **#68**: Duplicate validation utilities   | Architecture | Consolidation planned                 |
-| **#101**: Inconsistent logging            | Architecture | Client logger planned                 |
-
-### 8.3 Low-Priority Enhancements
-
-| Issue                                    | Category        | Notes                                                  |
-| ---------------------------------------- | --------------- | ------------------------------------------------------ |
-| **#111**: Accessibility utilities unused | Accessibility   | Utilities exist; integration deferred                  |
-| **#96**: HelpModal hardcodes scoring     | Maintainability | `scoring-constants.ts` exists; UI binding deferred     |
-| **#84**: Missing fetch timeouts          | Reliability     | `utils/fetch.ts` provides helpers; adoption incomplete |
-| **#88**: Session cleanup                 | Scalability     | Not urgent at current scale                            |
-| **#102**: Dead letter queue              | Observability   | Not urgent; failed jobs are logged                     |
 
 ---
 
@@ -337,7 +324,7 @@ migration to unified logging.
 | Pattern                      | When Acceptable                                                  |
 | ---------------------------- | ---------------------------------------------------------------- |
 | Type assertions (`as T`)     | After parsing (parseSchema) or for DB results with stable schema |
-| `console.log` in client code | During development; remove before merge                          |
+| `console.log` in client code | **Only during development debugging**; use `logInfo` otherwise   |
 | Inline styles                | One-off animations or dynamic values only                        |
 | Direct localStorage access   | Only in composables, with try/catch for private browsing         |
 
@@ -356,7 +343,7 @@ migration to unified logging.
 | Adding validation           | Use Valibot; server uses `parseSchema()`                          |
 | Adding an API endpoint      | Follow the 5-step pattern in §3.1                                 |
 | Catching errors server-side | Use `logError()` + `errorResponse()`                              |
-| Catching errors client-side | Update `isError` ref, show toast                                  |
+| Catching errors client-side | Use `logError()` + update `isError` ref + show toast              |
 | Typing a function return    | Explicit if public API, inferred if internal                      |
 | Modifying scoring logic     | Update `server/utils/scoring.ts` AND `utils/scoring-constants.ts` |
 
@@ -403,6 +390,7 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 ## Changelog
 
-| Date       | Change                                |
-| ---------- | ------------------------------------- |
-| 2026-01-07 | Initial architecture document created |
+| Date       | Change                                       |
+| ---------- | -------------------------------------------- |
+| 2026-01-09 | Updated: Resolved all major tech debt issues |
+| 2026-01-07 | Initial architecture document created        |
