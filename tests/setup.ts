@@ -27,12 +27,8 @@ interface TestGlobals {
   reactive: typeof reactive;
   computed: typeof computed;
   watch: typeof watch;
-  localStorage: {
+  localStorage: Storage & {
     store: Record<string, string>;
-    getItem(key: string): string | null;
-    setItem(key: string, value: string): void;
-    removeItem(key: string): void;
-    clear(): void;
   };
 }
 
@@ -49,6 +45,13 @@ testGlobals.computed = computed;
 testGlobals.watch = watch;
 testGlobals.localStorage = {
   store: {} as Record<string, string>,
+  get length() {
+    return Object.keys(this.store).length;
+  },
+  key(index: number): string | null {
+    const keys = Object.keys(this.store);
+    return keys[index] ?? null;
+  },
   getItem(key: string) {
     return this.store[key] ?? null;
   },
