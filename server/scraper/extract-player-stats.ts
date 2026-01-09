@@ -67,10 +67,18 @@ function getCellText(cellHtml: string): string {
 }
 
 /**
- * Parse numeric value, handling dashes and special characters
+ * Parse numeric value, handling dashes and special characters.
+ * TransferMarkt uses European number format where "." is a thousands separator
+ * (e.g., "25.000" means 25000, not 25).
  */
 function parseSafe(value: string): number {
-  const cleaned = value.replace(/[^\d.-]/g, "");
+  // First, remove all non-digit, non-dot, non-dash characters
+  let cleaned = value.replace(/[^\d.-]/g, "");
+  // Remove dots used as thousands separators (dot followed by exactly 3 digits)
+  // This handles patterns like "25.000" -> "25000" or "1.234.567" -> "1234567"
+  cleaned = cleaned.replace(/\.(\d{3})(?=\d{0,2}(?:\.|$))/g, "$1");
+  // Also handle the simpler case of a single thousands separator
+  cleaned = cleaned.replace(/\.(\d{3})$/g, "$1");
   const parsed = parseInt(cleaned, 10);
   return isNaN(parsed) ? 0 : parsed;
 }
@@ -171,19 +179,22 @@ export async function fetchPlayerStats(
       const cellMatches = row.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [];
 
       if (isGoalkeeper && cellMatches.length >= 13) {
-        // Goalkeeper stats (13 columns)
+        // Goalkeeper stats (13 columns):
+        // 0: image, 1: competition, 2: appearances, 3: goals, 4: own goals,
+        // 5: subbed on, 6: subbed off, 7: yellow, 8: yellow-red, 9: red,
+        // 10: goals conceded, 11: clean sheets, 12: minutes played
         const competitionCell = cellMatches[1];
         const competitionId = extractCompetitionId(competitionCell);
         const competition = getCellText(competitionCell);
 
         const appearances = parseSafe(getCellText(cellMatches[2]));
         const goals = parseSafe(getCellText(cellMatches[3]));
-        const ownGoals = goals; // GK own goals in same column
-        const subbedOn = parseSafe(getCellText(cellMatches[4]));
-        const subbedOff = parseSafe(getCellText(cellMatches[5]));
-        const yellowCards = parseSafe(getCellText(cellMatches[6]));
-        const yellowRedCards = parseSafe(getCellText(cellMatches[7]));
-        const redCards = parseSafe(getCellText(cellMatches[8]));
+        const ownGoals = parseSafe(getCellText(cellMatches[4]));
+        const subbedOn = parseSafe(getCellText(cellMatches[5]));
+        const subbedOff = parseSafe(getCellText(cellMatches[6]));
+        const yellowCards = parseSafe(getCellText(cellMatches[7]));
+        const yellowRedCards = parseSafe(getCellText(cellMatches[8]));
+        const redCards = parseSafe(getCellText(cellMatches[9]));
         const goalsConceded = parseSafe(getCellText(cellMatches[10]));
         const cleanSheets = parseSafe(getCellText(cellMatches[11]));
         const minutesPlayed = parseSafe(getCellText(cellMatches[12]));
@@ -255,13 +266,15 @@ export async function fetchPlayerStats(
           const totalCells = totalRow.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [];
 
           if (isGoalkeeper && totalCells.length >= 13) {
+            // Same column layout as season stats
             const appearances = parseSafe(getCellText(totalCells[2]));
-            const own_goals = parseSafe(getCellText(totalCells[3]));
-            const subbed_on = parseSafe(getCellText(totalCells[4]));
-            const subbed_off = parseSafe(getCellText(totalCells[5]));
-            const yellow_cards = parseSafe(getCellText(totalCells[6]));
-            const yellow_red_cards = parseSafe(getCellText(totalCells[7]));
-            const red_cards = parseSafe(getCellText(totalCells[8]));
+            const goals = parseSafe(getCellText(totalCells[3]));
+            const own_goals = parseSafe(getCellText(totalCells[4]));
+            const subbed_on = parseSafe(getCellText(totalCells[5]));
+            const subbed_off = parseSafe(getCellText(totalCells[6]));
+            const yellow_cards = parseSafe(getCellText(totalCells[7]));
+            const yellow_red_cards = parseSafe(getCellText(totalCells[8]));
+            const red_cards = parseSafe(getCellText(totalCells[9]));
             const goals_conceded = parseSafe(getCellText(totalCells[10]));
             const clean_sheets = parseSafe(getCellText(totalCells[11]));
             const minutes_played = parseSafe(getCellText(totalCells[12]));
@@ -270,6 +283,7 @@ export async function fetchPlayerStats(
 
             totals = {
               appearances,
+              goals,
               own_goals,
               subbed_on,
               subbed_off,
