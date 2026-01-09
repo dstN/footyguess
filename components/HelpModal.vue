@@ -99,7 +99,12 @@
                     size="xs"
                     >Easy</UBadge
                   >
-                  <span class="text-slate-300">1.0× (100 pts max)</span>
+                  <span class="text-slate-300"
+                    >{{ DIFFICULTY_MULTIPLIERS.easy }}× ({{
+                      MAX_POINTS_BY_TIER.easy
+                    }}
+                    pts max)</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <UBadge
@@ -108,7 +113,12 @@
                     size="xs"
                     >Medium</UBadge
                   >
-                  <span class="text-slate-300">1.25× (125 pts)</span>
+                  <span class="text-slate-300"
+                    >{{ DIFFICULTY_MULTIPLIERS.medium }}× ({{
+                      MAX_POINTS_BY_TIER.medium
+                    }}
+                    pts)</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <UBadge
@@ -118,7 +128,12 @@
                     class="bg-orange-500/10 text-orange-100"
                     >Hard</UBadge
                   >
-                  <span class="text-slate-300">1.5× (150 pts)</span>
+                  <span class="text-slate-300"
+                    >{{ DIFFICULTY_MULTIPLIERS.hard }}× ({{
+                      MAX_POINTS_BY_TIER.hard
+                    }}
+                    pts)</span
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <UBadge
@@ -127,7 +142,12 @@
                     size="xs"
                     >Ultra</UBadge
                   >
-                  <span class="text-slate-300">2.0× (200 pts)</span>
+                  <span class="text-slate-300"
+                    >{{ DIFFICULTY_MULTIPLIERS.ultra }}× ({{
+                      MAX_POINTS_BY_TIER.ultra
+                    }}
+                    pts)</span
+                  >
                 </div>
               </div>
             </div>
@@ -148,20 +168,34 @@
               </p>
               <div class="space-y-1 text-xs text-slate-300">
                 <div class="flex justify-between">
-                  <span>Instant (≤1s)</span>
-                  <span class="text-emerald-400">+120% bonus</span>
+                  <span>Instant (≤{{ TIME_BONUS.instantThreshold }}s)</span>
+                  <span class="text-emerald-400"
+                    >+{{ Math.round(TIME_BONUS.maxBonus * 100) }}% bonus</span
+                  >
                 </div>
                 <div class="flex justify-between">
-                  <span>1s → 2min</span>
+                  <span
+                    >{{ TIME_BONUS.instantThreshold }}s →
+                    {{ Math.floor(TIME_BONUS.zeroBonusTime / 60) }}min</span
+                  >
                   <span class="text-slate-400">Linear drop to 0%</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>2min → 5min</span>
+                  <span
+                    >{{ Math.floor(TIME_BONUS.zeroBonusTime / 60) }}min →
+                    {{ Math.floor(TIME_BONUS.penaltyStartTime / 60) }}min</span
+                  >
                   <span class="text-slate-400">No bonus/penalty</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>After 5min</span>
-                  <span class="text-red-400">-10% per 30s (max -50%)</span>
+                  <span
+                    >After
+                    {{ Math.floor(TIME_BONUS.penaltyStartTime / 60) }}min</span
+                  >
+                  <span class="text-red-400"
+                    >-{{ Math.round(TIME_BONUS.penaltyPerStep * 100) }}% per 30s
+                    (max -{{ Math.round(TIME_BONUS.maxPenalty * 100) }}%)</span
+                  >
                 </div>
               </div>
             </div>
@@ -181,11 +215,15 @@
                 Consecutive correct guesses multiply your score:
               </p>
               <div class="grid grid-cols-3 gap-2 text-xs text-slate-300">
-                <div>5+ streak: <span class="text-mew-500">+5%</span></div>
-                <div>15+ streak: <span class="text-mew-500">+10%</span></div>
-                <div>30+ streak: <span class="text-mew-500">+15%</span></div>
-                <div>60+ streak: <span class="text-mew-500">+20%</span></div>
-                <div>100+ streak: <span class="text-mew-500">+30%</span></div>
+                <div
+                  v-for="bonus in STREAK_BONUSES"
+                  :key="bonus.threshold"
+                >
+                  {{ bonus.threshold }}+ streak:
+                  <span class="text-mew-500"
+                    >+{{ Math.round(bonus.bonus * 100) }}%</span
+                  >
+                </div>
               </div>
             </div>
 
@@ -202,8 +240,8 @@
               </h4>
               <p class="text-xs text-slate-300">
                 Each clue revealed costs
-                <span class="text-red-400">-10 points</span> from your base
-                score. Use clues wisely!
+                <span class="text-red-400">-{{ CLUE_PENALTY }} points</span>
+                from your base score. Use clues wisely!
               </p>
             </div>
 
@@ -225,10 +263,19 @@
                 <div class="rounded bg-black/30 p-2">
                   <p class="mb-1 font-medium text-slate-200">How it works:</p>
                   <p class="text-slate-400">
-                    <span class="text-red-400">-2% penalty</span> per wrong
-                    guess, up to a maximum of
-                    <span class="text-red-400">-50%</span> after 25 wrong
-                    guesses.
+                    <span class="text-red-400"
+                      >-{{ Math.round(MALICE_PENALTY.perGuess * 100) }}%
+                      penalty</span
+                    >
+                    per wrong guess, up to a maximum of
+                    <span class="text-red-400"
+                      >-{{ Math.round(MALICE_PENALTY.max * 100) }}%</span
+                    >
+                    after
+                    {{
+                      Math.round(MALICE_PENALTY.max / MALICE_PENALTY.perGuess)
+                    }}
+                    wrong guesses.
                   </p>
                 </div>
                 <div class="text-slate-400">
@@ -294,6 +341,14 @@
 
 <script setup lang="ts">
 import { ref, inject, watch } from "vue";
+import {
+  DIFFICULTY_MULTIPLIERS,
+  MAX_POINTS_BY_TIER,
+  STREAK_BONUSES,
+  TIME_BONUS,
+  CLUE_PENALTY,
+  MALICE_PENALTY,
+} from "~/utils/scoring-constants";
 
 const props = withDefaults(
   defineProps<{

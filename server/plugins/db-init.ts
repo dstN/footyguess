@@ -1,4 +1,4 @@
-import { defineNitroPlugin } from "#imports";
+import { defineNitroPlugin } from "nitropack/runtime";
 import db from "../db/connection.ts";
 import { initSchema } from "../db/schema.ts";
 
