@@ -53,7 +53,11 @@
   --ui-bg: var(--color-primary-950);
 }
 
-/* Offset toasts above the fixed guess bar */
+/*
+ * Toast positioning override - !important justified per ARCHITECTURE.md:
+ * Nuxt UI notifications need to appear above the fixed guess bar at bottom.
+ * There's no other way to override the inline positioning from UNotifications.
+ */
 .u-notifications {
   bottom: 18rem !important;
   inset-inline: 0 !important;
