@@ -296,7 +296,8 @@ external sources. This process:
 - Requires stable network connection
 - Should be run sparingly (data doesn't change frequently)
 
-Acquired data is stored in the SQLite database at `server/db/file/main.db`.
+Acquired data is stored in the SQLite database at
+`server/db/file/footyguess.db`.
 
 See [server/scraper/](server/scraper/) for implementation details.
 
