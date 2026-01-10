@@ -77,6 +77,7 @@ export interface Player {
 export interface RoundScoreInfo {
   score: number;
   baseScore: number;
+  cluesUsed: number;
   streak: number;
   streakBonus: number;
   timeMultiplier: number;

@@ -9,6 +9,7 @@ import { getStreakBonusMultiplier } from "../utils/scoring.ts";
 export interface LastScore {
   score: number;
   baseScore: number;
+  cluesUsed: number;
   streak: number;
   streakBonus: number;
   timeMultiplier: number;
@@ -47,7 +48,7 @@ export function getSessionStats(sessionId: string): SessionStats {
 
   const lastScoreRow = db
     .prepare(
-      `SELECT s.score, s.base_score, s.time_score, s.malice_penalty, s.streak, r.player_id
+      `SELECT s.score, s.base_score, s.time_score, s.malice_penalty, s.streak, r.player_id, r.clues_used
        FROM scores s
        JOIN rounds r ON r.id = s.round_id
        WHERE s.session_id = ?
@@ -62,6 +63,7 @@ export function getSessionStats(sessionId: string): SessionStats {
         malice_penalty?: number;
         streak: number;
         player_id: number;
+        clues_used: number;
       }
     | undefined;
 
@@ -99,6 +101,7 @@ export function getSessionStats(sessionId: string): SessionStats {
     lastScore = {
       score: lastScoreRow.score,
       baseScore: lastScoreRow.base_score,
+      cluesUsed: lastScoreRow.clues_used ?? 0,
       streak: lastScoreRow.streak,
       streakBonus,
       timeMultiplier,

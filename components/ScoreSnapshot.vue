@@ -14,16 +14,28 @@
         <div class="space-y-2 text-sm">
           <div class="flex justify-between">
             <span class="text-slate-400">Base points</span>
-            <span class="font-mono text-slate-200">{{
-              lastScore.baseScore
-            }}</span>
+            <span class="font-mono text-slate-200">{{ difficultyBase }}</span>
+          </div>
+          <div
+            v-if="cluesUsed > 0"
+            class="flex justify-between"
+          >
+            <span class="text-slate-400">
+              Clue penalty
+              <span class="text-slate-500">({{ cluesUsed }} clues)</span>
+            </span>
+            <span class="font-mono text-red-400">-{{ cluePenaltyPoints }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-slate-400">
               Time bonus
               <span class="text-slate-500">({{ timeBonusPercent }}%)</span>
             </span>
-            <span class="font-mono" :class="timeBonus >= 0 ? 'text-emerald-400' : 'text-red-400'">{{ timeBonus >= 0 ? '+' : '' }}{{ timeBonus }}</span>
+            <span
+              class="font-mono"
+              :class="timeBonus >= 0 ? 'text-emerald-400' : 'text-red-400'"
+              >{{ timeBonus >= 0 ? "+" : "" }}{{ timeBonus }}</span
+            >
           </div>
           <div class="mt-2 border-t border-slate-700/50 pt-2">
             <div class="flex justify-between">
@@ -97,6 +109,7 @@ const props = defineProps<{
   lastScore: {
     score: number;
     baseScore: number;
+    cluesUsed?: number;
     streak: number;
     streakBonus: number;
     timeMultiplier: number;
@@ -106,6 +119,18 @@ const props = defineProps<{
   totalScore: number;
   bestStreak: number;
 }>();
+
+// Standard clue penalty per clue (matches server/utils/scoring.ts)
+const CLUE_PENALTY = 10;
+
+const cluesUsed = computed(() => props.lastScore?.cluesUsed ?? 0);
+
+const cluePenaltyPoints = computed(() => cluesUsed.value * CLUE_PENALTY);
+
+// Calculate original difficulty base by reversing clue penalty
+const difficultyBase = computed(() =>
+  props.lastScore ? props.lastScore.baseScore + cluePenaltyPoints.value : 0,
+);
 
 const lastBaseWithTime = computed(() =>
   props.lastScore
