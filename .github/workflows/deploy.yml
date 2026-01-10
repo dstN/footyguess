@@ -26,6 +26,7 @@ jobs:
         run: |
           npm run build
           cp rebuild.js .output/
+          cp plesk_entry.js .output/app.js
 
       - name: Deploy via SCP (Password)
         uses: appleboy/scp-action@v0.1.7
