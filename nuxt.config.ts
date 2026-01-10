@@ -4,6 +4,19 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
 
+  routeRules: {
+    // Cache static assets for 1 year
+    "/_nuxt/**": {
+      headers: { "cache-control": "public, max-age=31536000, immutable" },
+    },
+    "/assets/**": {
+      headers: { "cache-control": "public, max-age=31536000, immutable" },
+    },
+    "/public/**": {
+      headers: { "cache-control": "public, max-age=31536000, immutable" },
+    },
+  },
+
   // SEO & Meta Tags
   app: {
     head: {

@@ -10,6 +10,7 @@
       :variant="buttonVariant"
       :size="buttonSize"
       :class="`cursor-pointer ${buttonClass}`"
+      :aria-label="buttonLabel"
       @click="openModal"
     >
       <span

@@ -9,6 +9,7 @@
       :color="buttonColor"
       variant="ghost"
       class="cursor-pointer"
+      aria-label="Highscores"
       @click="openModal"
     >
       <span class="hidden md:inline">Highscores</span>

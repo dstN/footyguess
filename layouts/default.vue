@@ -89,9 +89,7 @@ provide(isModalOpenKey, isModalOpen);
   background-size: 80px 80px;
   mix-blend-mode: screen;
   opacity: 0.6;
-  animation: glitch-shift 9s linear infinite;
-  will-change: background-position, opacity;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 200, 0.25));
+  /* Animation moved to media query for performance */
 }
 
 @keyframes animate {
@@ -126,7 +124,7 @@ provide(isModalOpenKey, isModalOpen);
     linear-gradient(180deg, rgba(0, 255, 170, 0.08), rgba(0, 0, 0, 0));
   mix-blend-mode: screen;
   filter: blur(1.5px);
-  animation: glitch-drift 14s ease-in-out infinite alternate;
+  /* Animation moved to media query */
 }
 
 @keyframes glitch-shift {
@@ -168,5 +166,17 @@ provide(isModalOpenKey, isModalOpen);
 .animations-paused .glitch-layer,
 .animations-paused .glitch-layer::after {
   animation-play-state: paused;
+}
+
+@media (min-width: 768px) {
+  .glitch-layer {
+    animation: glitch-shift 9s linear infinite;
+    will-change: background-position, opacity;
+    filter: drop-shadow(0 0 6px rgba(0, 255, 200, 0.25));
+  }
+
+  .glitch-layer::after {
+    animation: glitch-drift 14s ease-in-out infinite alternate;
+  }
 }
 </style>

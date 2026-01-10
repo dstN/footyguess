@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.1] - 2026-01-10
+
+### Accessibility & Performance
+
+This release addresses critical Lighthouse findings and improves mobile device
+efficiency.
+
+### Fixed
+
+- **[Lighthouse] Accessibility**: Added accessible names (`aria-label`) to all
+  icon-only buttons (Ko-fi, Modals) improving screen reader support.
+- **[Lighthouse] Caching**: Implemented long-term caching headers
+  (`max-age=31536000, immutable`) for static assets via `nuxt.config.ts`.
+- **Mobile Overheating**: Optimized the background "glitch" animation
+  (`default.vue`) to be static on mobile devices, significantly reducing GPU
+  usage and heat while preserving the aesthetic.
+
+---
+
 ## [1.2.0] - 2026-01-10
 
 ### SEO & Meta Optimization

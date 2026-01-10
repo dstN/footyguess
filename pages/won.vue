@@ -44,6 +44,7 @@
           to="https://ko-fi.com/dstn"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Buy me a coffee"
         >
           <span class="hidden md:inline">Buy me a coffee</span>
         </UButton>
