@@ -81,6 +81,19 @@ const {
   submit,
 } = useWonState();
 
+useSeoMeta({
+  title: "Victory - FootyGuess",
+  ogTitle: "I cracked the code on FootyGuess!",
+  description:
+    "Check your score, submit to the leaderboard, and keep your streak going!",
+  ogDescription:
+    "See how you scored and compete on the FootyGuess leaderboard.",
+});
+
+useHead({
+  link: [{ rel: "canonical", href: "https://footyguess.yinside.de/won" }],
+});
+
 const route = useRoute();
 const isSurrender = computed(() => {
   return route.query.surrendered === "true" || lastScore.value?.score === 0;

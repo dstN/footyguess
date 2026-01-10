@@ -1,7 +1,7 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-09 **Scope**: FootyGuess
-> Future Enhancements
+> **Status**: Living Document **Last Updated**: 2026-01-10 **Scope**: FootyGuess
+> Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
 frontend experience, and developer experience. Items are categorized by priority
@@ -25,7 +25,7 @@ All improvements should follow the guidelines in
 
 ## 1. Code Stability
 
-### 1.1 Service Layer Completion
+### 1.1 Service Layer Completion ✅ DONE
 
 **Priority**: P1 | **Effort**: Large | **Category**: Architecture
 
@@ -59,7 +59,7 @@ server/services/
 
 ---
 
-### 1.2 TypeScript Strictness
+### 1.2 TypeScript Strictness ✅ DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: Type Safety
 
@@ -115,7 +115,7 @@ server/services/
 
 ---
 
-### 1.3 Error Handling Standardization
+### 1.3 Error Handling Standardization ✅ DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: Reliability
 
@@ -153,7 +153,7 @@ export function handleApiError(event: H3Event, error: unknown) {
 
 ---
 
-### 1.4 Test Coverage Expansion
+### 1.4 Test Coverage Expansion ✅ DONE
 
 **Priority**: P1 | **Effort**: Large | **Category**: Testing
 
@@ -201,7 +201,7 @@ describe('calculateScore', () => {
 
 ## 2. Game Logic Enhancements
 
-### 2.1 Clue System Improvements
+### 2.1 Clue System Improvements ❌ NOT DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: Game Logic
 
@@ -224,7 +224,7 @@ describe('calculateScore', () => {
 
 ---
 
-### 2.2 Scoring System Refinements
+### 2.2 Scoring System Refinements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: Game Logic
 
@@ -255,7 +255,7 @@ describe('calculateScore', () => {
 
 ---
 
-### 2.3 Difficulty System Enhancements
+### 2.3 Difficulty System Enhancements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Medium | **Category**: Game Logic
 
@@ -285,7 +285,7 @@ describe('calculateScore', () => {
 
 ---
 
-### 2.4 Streak System Enhancements
+### 2.4 Streak System Enhancements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: Game Logic
 
@@ -314,7 +314,7 @@ describe('calculateScore', () => {
 
 ## 3. Frontend/UX Improvements
 
-### 3.1 Accessibility Enhancements
+### 3.1 Accessibility Enhancements 🟡 PARTIALLY DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: Accessibility
 
@@ -353,7 +353,7 @@ links
 
 ---
 
-### 3.2 Mobile Experience
+### 3.2 Mobile Experience 🟡 PARTIALLY DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: UX
 
@@ -387,7 +387,7 @@ links
 
 ---
 
-### 3.3 Visual Feedback Enhancements
+### 3.3 Visual Feedback Enhancements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: UX
 
@@ -416,7 +416,7 @@ links
 
 ---
 
-### 3.4 Game State Persistence
+### 3.4 Game State Persistence ❌ NOT DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: UX
 
@@ -437,7 +437,7 @@ links
 
 ---
 
-### 3.5 Social Features
+### 3.5 Social Features ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Large | **Category**: Feature
 
@@ -461,7 +461,7 @@ links
 
 ---
 
-### 3.6 SEO Optimizations
+### 3.6 SEO Optimizations ✅ DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: SEO
 
@@ -488,7 +488,7 @@ links
 
 ## 4. Developer Experience
 
-### 4.1 Development Tooling
+### 4.1 Development Tooling 🟡 PARTIALLY DONE
 
 **Priority**: P2 | **Effort**: Small | **Category**: DX
 
@@ -522,7 +522,7 @@ links
 
 ---
 
-### 4.2 Documentation Improvements
+### 4.2 Documentation Improvements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Medium | **Category**: DX
 
@@ -547,7 +547,7 @@ links
 
 ---
 
-### 4.3 Debugging Improvements
+### 4.3 Debugging Improvements ❌ NOT DONE
 
 **Priority**: P2 | **Effort**: Small | **Category**: DX
 
@@ -571,7 +571,7 @@ links
 
 ## 5. Performance Optimizations
 
-### 5.1 Database Query Optimization
+### 5.1 Database Query Optimization ❌ NOT DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: Performance
 
@@ -593,7 +593,7 @@ links
 
 ---
 
-### 5.2 Client Bundle Optimization
+### 5.2 Client Bundle Optimization ❌ NOT DONE
 
 **Priority**: P2 | **Effort**: Small | **Category**: Performance
 
@@ -618,7 +618,7 @@ links
 
 ---
 
-### 5.3 Caching Strategies
+### 5.3 Caching Strategies ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Medium | **Category**: Performance
 
@@ -642,7 +642,7 @@ links
 
 ## 6. Future Features
 
-### 6.1 Game Modes
+### 6.1 Game Modes ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Large | **Category**: Feature
 
@@ -672,7 +672,7 @@ links
 
 ---
 
-### 6.2 Content Expansion
+### 6.2 Content Expansion ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Large | **Category**: Content
 
@@ -694,7 +694,7 @@ links
 
 ---
 
-### 6.3 Monetization Options
+### 6.3 Monetization Options ❌ NOT DONE
 
 **Priority**: P4 | **Effort**: Large | **Category**: Business
 
@@ -718,19 +718,33 @@ links
 
 ---
 
+## Status Summary (Reconciliation Audit 2026-01-10)
+
+| Section                 | Done  | Partial | Not Done |
+| ----------------------- | ----- | ------- | -------- |
+| 1. Code Stability       | 4     | 0       | 0        |
+| 2. Game Logic           | 0     | 0       | 4        |
+| 3. Frontend/UX          | 0     | 2       | 4        |
+| 4. Developer Experience | 0     | 1       | 2        |
+| 5. Performance          | 0     | 0       | 3        |
+| 6. Future Features      | 0     | 0       | 3        |
+| **Total**               | **4** | **3**   | **16**   |
+
+---
+
 ## Priority Matrix
 
-| Priority | Category     | Items                                    |
-| -------- | ------------ | ---------------------------------------- |
-| **P0**   | Testing      | Scoring tests                            |
-| **P1**   | Architecture | Service layer, TypeScript strictness     |
-| **P1**   | Testing      | Difficulty tests, token tests            |
-| **P2**   | Stability    | Error handling, response standardization |
-| **P2**   | UX           | Accessibility, mobile, game persistence  |
-| **P2**   | DX           | Tooling, debugging                       |
-| **P3**   | Game Logic   | Clue improvements, scoring refinements   |
-| **P3**   | UX           | Visual feedback, social features         |
-| **P3**   | Features     | Game modes, content expansion            |
+| Priority | Category     | Items                                    | Status         |
+| -------- | ------------ | ---------------------------------------- | -------------- |
+| **P0**   | Testing      | Scoring tests                            | ✅ DONE        |
+| **P1**   | Architecture | Service layer, TypeScript strictness     | ✅ DONE        |
+| **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
+| **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
+| **P2**   | UX           | Accessibility, mobile, game persistence  | 🟡 Partial     |
+| **P2**   | DX           | Tooling, debugging                       | 🟡 Partial     |
+| **P3**   | Game Logic   | Clue improvements, scoring refinements   | ❌ Not Started |
+| **P3**   | UX           | Visual feedback, social features         | ❌ Not Started |
+| **P3**   | Features     | Game modes, content expansion            | ❌ Not Started |
 
 ---
 
@@ -748,6 +762,7 @@ When implementing any improvement:
 
 ## Changelog
 
-| Date       | Change                        |
-| ---------- | ----------------------------- |
-| 2026-01-09 | Initial improvements document |
+| Date       | Change                                                  |
+| ---------- | ------------------------------------------------------- |
+| 2026-01-10 | Reconciliation audit: added status markers to all items |
+| 2026-01-09 | Initial improvements document                           |

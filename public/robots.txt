@@ -1,1 +1,25 @@
+# FootyGuess robots.txt
+# https://footyguess.yinside.de
 
+User-agent: *
+Allow: /
+
+# Block API endpoints from indexing
+Disallow: /api/
+
+# Block development/debug pages
+Disallow: /_nuxt/
+Disallow: /__nuxt_devtools__/
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Sitemap location
+Sitemap: https://footyguess.yinside.de/sitemap.xml

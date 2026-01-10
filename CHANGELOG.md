@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.2.0] - 2026-01-10
+
+### SEO & Meta Optimization
+
+This release adds comprehensive SEO support and fixes UI consistency issues.
+
+### Added
+
+- **SEO Meta Tags**: Full meta description, Open Graph, and Twitter Card support
+  in `nuxt.config.ts`.
+  - `og:title`, `og:description`, `og:type`, `og:site_name`, `og:locale`,
+    `og:url`, `og:image`
+  - `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+- **Canonical URLs**: Added `rel="canonical"` to all pages (`index`, `play`,
+  `won`).
+- **robots.txt**: Proper configuration blocking `/api/` and `/_nuxt/` from
+  indexing.
+- **sitemap.xml**: Static sitemap with all three pages.
+- **Favicons**: Full favicon set with `favicon.ico`, `favicon-16x16.png`,
+  `favicon-32x32.png`.
+- **Apple Touch Icon**: 180x180 icon for iOS home screen.
+- **Web Manifest**: `site.webmanifest` with app name, theme color, and Android
+  icons.
+- **Page-Specific SEO**: Each page now has `useSeoMeta()` with unique title and
+  description.
+
+### Fixed
+
+- **Ko-fi Icon**: Changed icon from `i-lucide-heart` to `i-lucide-coffee` on
+  `index.vue` and `play.vue` to match `won.vue`.
+
+### Changed
+
+- **Theme Color**: Updated from dark (`#0a0a0a`) to mint primary (`#0ef9ae`).
+
+---
+
 ## [1.1.0] - 2026-01-10
 
 ### Game Integrity & Polish

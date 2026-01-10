@@ -79,7 +79,7 @@
         <UButton
           color="primary"
           variant="ghost"
-          icon="i-lucide-heart"
+          icon="i-lucide-coffee"
           class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
           to="https://ko-fi.com/dstn"
           target="_blank"
@@ -110,8 +110,17 @@ import DevPanel from "~/components/DevPanel.vue";
 import { usePlayGame } from "~/composables/usePlayGame";
 import { ref, onBeforeUnmount } from "vue";
 
+useSeoMeta({
+  title: "Play - FootyGuess",
+  ogTitle: "Play FootyGuess - Mystery Player Challenge",
+  description:
+    "Can you guess the mystery player? Study their transfer timeline, reveal clues, and make your guess!",
+  ogDescription:
+    "Can you guess the mystery player? Study their transfer timeline and make your guess!",
+});
+
 useHead({
-  title: "Footyguess - Mystery Player",
+  link: [{ rel: "canonical", href: "https://footyguess.yinside.de/play" }],
 });
 
 const {

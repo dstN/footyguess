@@ -204,7 +204,7 @@
         <UButton
           color="primary"
           variant="ghost"
-          icon="i-lucide-heart"
+          icon="i-lucide-coffee"
           class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
           to="https://ko-fi.com/dstn"
           target="_blank"
@@ -227,4 +227,17 @@
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
+
+useSeoMeta({
+  title: "FootyGuess - Guess the Player from Their Transfer Trail",
+  ogTitle: "FootyGuess - Guess the Player from Their Transfer Trail",
+  description:
+    "A football guessing game. Study the transfer timeline, unlock clues, and name the mystery player. Build streaks and compete on the leaderboard!",
+  ogDescription:
+    "A football guessing game. Study the transfer timeline, unlock clues, and name the mystery player.",
+});
+
+useHead({
+  link: [{ rel: "canonical", href: "https://footyguess.yinside.de/" }],
+});
 </script>
