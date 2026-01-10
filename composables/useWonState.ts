@@ -23,6 +23,7 @@ export function useWonState() {
   // Player state
   const lastPlayer = ref<string | null>(null);
   const lastPlayerId = ref<number | null>(null);
+  const lastPlayerTmUrl = ref<string | null>(null);
 
   // Submission state
   const submittedTypes = ref<string[]>([]);
@@ -67,6 +68,7 @@ export function useWonState() {
       lastScore.value = res.lastScore;
       lastPlayerId.value = res.lastPlayerId;
       lastPlayer.value = res.lastScore?.playerName ?? null;
+      lastPlayerTmUrl.value = res.lastScore?.playerTmUrl ?? null;
       submittedTypes.value = res.submittedTypes ?? [];
 
       if (res.nickname) {
@@ -181,6 +183,7 @@ export function useWonState() {
     lastScore,
     lastPlayer,
     lastPlayerId,
+    lastPlayerTmUrl,
     submittedTypes,
     isLoading,
 

@@ -5,6 +5,7 @@
         :streak="streak"
         :best-streak="bestStreak"
         :last-player="lastPlayer"
+        :last-player-tm-url="lastPlayerTmUrl"
       />
 
       <div class="grid gap-4 md:grid-cols-2">
@@ -70,6 +71,7 @@ const {
   lastScore,
   lastPlayer,
   lastPlayerId,
+  lastPlayerTmUrl,
   displaySubmittedTypes,
   submit,
 } = useWonState();

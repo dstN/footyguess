@@ -15,6 +15,7 @@ export interface LastScore {
   timeMultiplier: number;
   malicePenalty: number;
   playerName: string | null;
+  playerTmUrl: string | null;
 }
 
 export interface SessionStats {
@@ -69,8 +70,10 @@ export function getSessionStats(sessionId: string): SessionStats {
 
   const lastPlayer = lastScoreRow
     ? (db
-        .prepare(`SELECT name FROM players WHERE id = ?`)
-        .get(lastScoreRow.player_id) as { name: string } | undefined)
+        .prepare(`SELECT name, tm_url FROM players WHERE id = ?`)
+        .get(lastScoreRow.player_id) as
+        | { name: string; tm_url: string | null }
+        | undefined)
     : undefined;
 
   const cachedTotal =
@@ -107,6 +110,7 @@ export function getSessionStats(sessionId: string): SessionStats {
       timeMultiplier,
       malicePenalty: lastScoreRow.malice_penalty ?? 0,
       playerName: lastPlayer?.name ?? null,
+      playerTmUrl: lastPlayer?.tm_url ?? null,
     };
   }
 

@@ -27,7 +27,17 @@
         v-if="lastPlayer"
         class="text-sm text-slate-400"
       >
-        Last win: {{ lastPlayer }}
+        Last win:
+        <a
+          v-if="lastPlayerTmUrl"
+          :href="lastPlayerTmUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary-400 hover:text-primary-300 underline"
+        >
+          {{ lastPlayer }}
+        </a>
+        <span v-else>{{ lastPlayer }}</span>
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <UButton
@@ -56,5 +66,6 @@ defineProps<{
   streak: number;
   bestStreak: number;
   lastPlayer: string | null;
+  lastPlayerTmUrl: string | null;
 }>();
 </script>

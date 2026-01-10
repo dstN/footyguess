@@ -83,4 +83,5 @@ export interface RoundScoreInfo {
   timeMultiplier: number;
   malicePenalty: number;
   playerName: string | null;
+  playerTmUrl: string | null;
 }
