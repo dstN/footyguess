@@ -13,7 +13,8 @@ the player correctly.
 
 The scoring system rewards speed, accuracy, and using fewer clues. A persistent
 streak system tracks consecutive correct guesses across sessions. All game state
-is validated server-side to prevent tampering.
+is validated server-side to prevent tampering, protected by rate limiting and
+secure headers.
 
 ## Core Concepts
 
@@ -117,8 +118,19 @@ Clues are deterministically selected at round start using seeded randomization
 The client reveals clues in random order but cannot reveal more than the max
 allowed (10 by default). Server enforces this limit.
 
-See [composables/useClueData.ts](composables/useClueData.ts) and
+See [composables/useClueData.ts](composables/useClueData.ts) and See
+[composables/useClueData.ts](composables/useClueData.ts) and
 [composables/useCluePool.ts](composables/useCluePool.ts).
+
+### Security & Stability
+
+- **Rate Limiting**: All API endpoints are rate-limited to prevent abuse (e.g.,
+  30-60 req/min).
+- **Security Headers**: HSTS, Content-Security-Policy, and other headers
+  enforced via middleware.
+- **Health Checks**: `/api/health` endpoint for monitoring database
+  connectivity.
+- **Error Handling**: Standardized error responses and logging.
 
 ## How It Works
 
@@ -301,11 +313,11 @@ footyguess/
 ├── types/              # Shared TypeScript types (Player, forms)
 ├── server/
 │   ├── api/            # HTTP endpoints (guess.ts, getPlayer.ts, useClue.ts, etc.)
-│   ├── services/       # Business logic layer (guess, round, clue services)
-│   ├── utils/          # Server utilities (scoring, validation, logging, tokens, session-cleanup)
+│   ├── services/       # Business logic layer (player, guess, round, session, etc.)
+│   ├── utils/          # Server utilities (scoring, validation, errors, security)
 │   ├── db/             # Database connection, schema, and migrations
 │   ├── scraper/        # External data acquisition (autonomous-batch-scraper, etc.)
-│   ├── middleware/     # Request middleware (request-id, validation)
+│   ├── middleware/     # Request middleware (security-headers, rate-limit, validation)
 │   ├── tasks/          # Nitro scheduled tasks
 │   └── plugins/        # Nitro lifecycle hooks (db-init.ts)
 ├── tests/              # Unit and E2E tests

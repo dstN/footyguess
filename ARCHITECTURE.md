@@ -61,6 +61,21 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 │  ┌─────────────────────────┴───────────────────────────┐    │
 │  │                    server/db/                       │    │
 │  │         SQLite + WAL mode + Auto-Cleanup            │    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   server/    │  │   server/    │  │   server/    │       │
+│  │    api/      │  │  services/   │  │    utils/    │       │
+│  │ (endpoints)  │  │  (business)  │  │  (shared)    │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                            │                                │
+│                     better-sqlite3                          │
+│  ┌─────────────────────────┴───────────────────────────┐    │
+│  │                    server/db/                       │    │
+│  │         SQLite + WAL mode + Auto-Cleanup            │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                            │                                │
+│                     Security Layer                          │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │   Headers Middleware  •  Rate Limiting  •  DLQ      │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -121,20 +136,19 @@ export default defineEventHandler(async (event) => {
     // 5. Response
     return successResponse(result, event);
   } catch (err) {
-    logError("context", "message", err);
-    return errorResponse(500, "Internal error", event);
+    return handleApiError(event, err, "context");
   }
 });
 ```
 
 ### 3.2 Async & Side-Effect Handling
 
-| Location           | Allowed Side Effects                          | Error Handling                   |
-| ------------------ | --------------------------------------------- | -------------------------------- |
-| `server/api/`      | None directly; delegate to services           | Try/catch → `errorResponse`      |
-| `server/services/` | DB writes, external calls                     | Throw; let API layer catch       |
-| `composables/`     | `$fetch`, `localStorage`, toast notifications | Try/catch, update `isError` refs |
-| `components/`      | None                                          | Emit to parent or use composable |
+| Location           | Allowed Side Effects                          | Error Handling                    |
+| ------------------ | --------------------------------------------- | --------------------------------- |
+| `server/api/`      | None directly; delegate to services           | `handleApiError()`                |
+| `server/services/` | DB writes, external calls                     | Throw `AppError` on known failure |
+| `composables/`     | `$fetch`, `localStorage`, toast notifications | Try/catch, update `isError` refs  |
+| `components/`      | None                                          | Emit to parent or use composable  |
 
 ### 3.3 Composable vs Utility
 
@@ -236,8 +250,8 @@ function useGameSession() {
 
 | Layer          | Error Handling Strategy                                          |
 | -------------- | ---------------------------------------------------------------- |
-| **DB/Service** | Throw errors; include context                                    |
-| **API Route**  | Catch, log via `logError()`, return `errorResponse()`            |
+| **DB/Service** | Throw `AppError` for logic failures; standard Error for crashes  |
+| **API Route**  | Catch via `handleApiError()`, which logs and formats response    |
 | **Composable** | Catch, set `isError` ref, show toast, log to console             |
 | **Component**  | Should not catch; propagate to composable or use `ErrorBoundary` |
 
@@ -262,15 +276,21 @@ logError("useGameSession", "Failed to load player", err);
 
 ### 6.3 What Is Allowed to Fail
 
-| Failure Mode           | Response                        |
-| ---------------------- | ------------------------------- |
-| Invalid user input     | 400 + user-friendly message     |
-| Rate limit exceeded    | 429 + backoff hint              |
-| Round expired          | 410 + prompt to start new round |
-| Player not found       | 404 + suggest search            |
-| Token invalid          | 401 + session refresh           |
-| **DB corruption**      | 500 + crash (unrecoverable)     |
-| **Missing env config** | Crash at startup (fail fast)    |
+| Failure Mode        | Response                        |
+| ------------------- | ------------------------------- |
+| Invalid user input  | 400 + user-friendly message     |
+| Rate limit exceeded | 429 + backoff hint              |
+| Round expired       | 410 + prompt to start new round |
+| Player not found    | 404 + suggest search            |
+| Token invalid       | 401 + session refresh           |
+| **DB corruption**   | 500 + crash (unrecoverable)     |
+| Missing env config  | Crash at startup (fail fast)    |
+
+### 6.4 Health & Monitoring
+
+- **Health Check**: `/api/health` monitors DB connectivity
+- **Security Headers**: Standardized headers via middleware
+- **Rate Limiting**: Enforced on all public endpoints
 
 ---
 
@@ -360,20 +380,20 @@ logError("useGameSession", "Failed to load player", err);
 
 ## Appendix A: Directory Purpose Reference
 
-| Directory          | Purpose                 | Owner  |
-| ------------------ | ----------------------- | ------ |
-| `pages/`           | Route definitions       | Client |
-| `components/`      | Reusable UI             | Client |
-| `composables/`     | Reactive state & logic  | Client |
-| `utils/`           | Pure utilities          | Client |
-| `assets/css/`      | Global styles           | Client |
-| `layouts/`         | Page wrappers           | Client |
-| `server/api/`      | HTTP endpoints          | Server |
-| `server/services/` | Business logic          | Server |
-| `server/utils/`    | Server utilities        | Server |
-| `server/db/`       | Database access         | Server |
-| `server/scraper/`  | Data ingestion          | Server |
-| `types/`           | Shared TypeScript types | Both   |
+| Directory          | Purpose                                          | Owner  |
+| ------------------ | ------------------------------------------------ | ------ |
+| `pages/`           | Route definitions                                | Client |
+| `components/`      | Reusable UI                                      | Client |
+| `composables/`     | Reactive state & logic                           | Client |
+| `utils/`           | Pure utilities                                   | Client |
+| `assets/css/`      | Global styles                                    | Client |
+| `layouts/`         | Page wrappers                                    | Client |
+| `server/api/`      | HTTP endpoints                                   | Server |
+| `server/services/` | Business logic (`player.ts`, `session.ts`, etc.) | Server |
+| `server/utils/`    | Server utilities (`errors.ts`, `scoring.ts`)     | Server |
+| `server/db/`       | Database access                                  | Server |
+| `server/scraper/`  | Data ingestion                                   | Server |
+| `types/`           | Shared TypeScript types                          | Both   |
 
 ---
 
@@ -390,7 +410,9 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 ## Changelog
 
-| Date       | Change                                       |
-| ---------- | -------------------------------------------- |
-| 2026-01-09 | Updated: Resolved all major tech debt issues |
-| 2026-01-07 | Initial architecture document created        |
+| Date       | Change                                          |
+| ---------- | ----------------------------------------------- |
+| 2026-01-09 | Updated: Resolved all major tech debt issues    |
+| 2026-01-10 | Added Service Layer, AppError, Security Headers |
+| 2026-01-09 | Updated: Resolved all major tech debt issues    |
+| 2026-01-07 | Initial architecture document created           |
