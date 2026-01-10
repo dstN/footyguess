@@ -59,8 +59,10 @@ export function useTransferTimeline(player: Ref<Player | null>) {
           ? "Free agent"
           : transfer.from_club || "Unknown club";
 
+      // Show loan type if it's a loan, otherwise show fee
+      const loanType = formatLoanType(transfer.transfer_type);
       const baseDescription =
-        formatFee(transfer.fee) ?? transfer.transfer_type ?? "Undisclosed";
+        loanType ?? formatFee(transfer.fee) ?? "Undisclosed";
       const hideDescription =
         toLabel === "Free agent" ||
         fromLabel === "Free agent" ||
@@ -90,4 +92,16 @@ function formatFee(fee?: string | number | null) {
   return new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 0,
   }).format(numeric);
+}
+
+function formatLoanType(type?: string | null): string | null {
+  if (!type) return null;
+  switch (type) {
+    case "ACTIVE_LOAN_TRANSFER":
+      return "Loan";
+    case "RETURNED_FROM_PREVIOUS_LOAN":
+      return "End of loan";
+    default:
+      return null;
+  }
 }
