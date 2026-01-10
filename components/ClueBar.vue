@@ -58,17 +58,29 @@
         </div>
       </div>
     </div>
-    <div class="flex justify-center md:hidden">
+    <div class="flex flex-col justify-center gap-2 md:hidden">
       <UButton
         icon="i-lucide-sparkles"
         color="primary"
         variant="solid"
         size="sm"
-        class="cursor-pointer w-full justify-center"
+        class="w-full cursor-pointer justify-center"
         :disabled="tipButtonDisabled"
         @click="$emit('reveal-clue')"
       >
         Get a tip
+      </UButton>
+
+      <UButton
+        icon="i-lucide-flag-triangle-right"
+        color="white"
+        variant="ghost"
+        size="sm"
+        class="w-full cursor-pointer justify-center text-slate-400 hover:text-white"
+        :disabled="tipButtonDisabled"
+        @click="$emit('give-up')"
+      >
+        Give up
       </UButton>
     </div>
   </div>
@@ -89,5 +101,6 @@ defineProps<{
 
 defineEmits<{
   (e: "reveal-clue"): void;
+  (e: "give-up"): void;
 }>();
 </script>

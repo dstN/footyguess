@@ -75,8 +75,10 @@ export function getRoundWithPlayer(roundId: string) {
   if (!round) return undefined;
 
   const player = db
-    .prepare(`SELECT id, name FROM players WHERE id = ?`)
-    .get(round.player_id) as { id: number; name: string } | undefined;
+    .prepare(`SELECT id, name, tm_url FROM players WHERE id = ?`)
+    .get(round.player_id) as
+    | { id: number; name: string; tm_url: string | null }
+    | undefined;
 
   return { round, player };
 }

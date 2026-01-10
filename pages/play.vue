@@ -16,6 +16,7 @@
         @cancel-new-player="cancelNewPlayer"
         @request-new-player="requestNewPlayer"
         @reveal-clue="revealNextClue"
+        @give-up="giveUp"
         @update:confirmResetOpen="(val) => (confirmResetOpen = val)"
       />
 
@@ -33,6 +34,7 @@
           :hidden-clue-labels="hiddenClueLabels"
           :tip-button-disabled="tipButtonDisabled"
           @reveal-clue="revealNextClue"
+          @give-up="giveUp"
         />
 
         <TransferTimelineCard
@@ -139,6 +141,7 @@ const {
   submitGuessViaEnter,
   onSubmit,
   clearGuess,
+  giveUp,
 } = usePlayGame();
 
 const isDev = import.meta.dev;

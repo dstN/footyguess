@@ -8,10 +8,10 @@
       icon="i-lucide-trophy"
       :color="buttonColor"
       variant="ghost"
-      class="cursor-pointer [&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
+      class="cursor-pointer"
       @click="openModal"
     >
-      Highscores
+      <span class="hidden md:inline">Highscores</span>
     </UButton>
 
     <template #body>

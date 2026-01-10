@@ -3,9 +3,7 @@
     class="flex flex-col gap-4"
     role="banner"
   >
-    <div
-      class="flex items-center justify-between gap-2"
-    >
+    <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <UBadge
           color="primary"
@@ -80,7 +78,7 @@
     </div>
 
     <div
-      class="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      class="hidden flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:flex"
     >
       <div class="space-y-1">
         <h1
@@ -94,6 +92,16 @@
       </div>
 
       <div class="flex flex-wrap justify-end gap-2">
+        <UButton
+          icon="i-lucide-flag-triangle-right"
+          color="white"
+          variant="ghost"
+          class="cursor-pointer"
+          :disabled="tipButtonDisabled"
+          @click="$emit('give-up')"
+        >
+          Give up
+        </UButton>
         <UButton
           icon="i-lucide-sparkles"
           color="primary"
@@ -136,6 +144,7 @@ defineEmits<{
   (e: "cancel-new-player"): void;
   (e: "request-new-player"): void;
   (e: "reveal-clue"): void;
+  (e: "give-up"): void;
   (e: "update:confirmResetOpen", value: boolean): void;
 }>();
 </script>

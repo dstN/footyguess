@@ -374,9 +374,16 @@ links
    - Full-screen modals
 
 3. **Performance on Mobile**
+
    - Reduce initial bundle for slow networks
    - Optimize images (if any added)
    - Test on low-end devices
+
+4. **Footer Improvements**
+   - Improve current Footer Links
+   - maybe Add social links
+   - ? privacy policy link
+   - ? terms of service link
 
 ---
 
@@ -451,6 +458,31 @@ links
    - Daily/weekly leaderboards
    - Filter by difficulty tier
    - Player profile pages
+
+---
+
+### 3.6 SEO Optimizations
+
+**Priority**: P3 | **Effort**: Small | **Category**: SEO
+
+**Current State**: Basic meta tags, no sitemap
+
+**Improvements**:
+
+1. **Meta Tags**
+
+   - Dynamic title and description
+   - OpenGraph tags for social sharing
+   - Canonical URLs
+
+2. **Sitemap Generation**
+
+   - Generate sitemap.xml
+   - Submit to search engines
+
+3. **Robots.txt**
+   - Properly configured
+   - Dynamic rules for different environments
 
 ---
 

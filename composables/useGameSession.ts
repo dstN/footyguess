@@ -44,6 +44,26 @@ export function useGameSession() {
    * Ensures a session ID exists, creating or loading from storage
    * @returns {string} The current or newly created session ID
    */
+  /**
+   * Resets the session ID to a new random value
+   */
+  function resetSessionId() {
+    const generated = crypto.randomUUID();
+    sessionId.value = generated;
+    if (import.meta.client) {
+      try {
+        localStorage.setItem("footyguess_session_id", generated);
+      } catch (error) {
+        console.warn("[useGameSession] localStorage write failed:", error);
+      }
+    }
+    return generated;
+  }
+
+  /**
+   * Ensures a session ID exists, creating or loading from storage
+   * @returns {string} The current or newly created session ID
+   */
   function ensureSessionId() {
     if (sessionId.value) return sessionId.value;
     if (import.meta.client) {
@@ -58,16 +78,7 @@ export function useGameSession() {
         console.warn("[useGameSession] localStorage read failed:", error);
       }
     }
-    const generated = crypto.randomUUID();
-    sessionId.value = generated;
-    if (import.meta.client) {
-      try {
-        localStorage.setItem("footyguess_session_id", generated);
-      } catch (error) {
-        console.warn("[useGameSession] localStorage write failed:", error);
-      }
-    }
-    return generated;
+    return resetSessionId();
   }
 
   /**
@@ -131,6 +142,7 @@ export function useGameSession() {
     errorMessage,
     isError,
     ensureSessionId,
+    resetSessionId,
     loadPlayer,
   };
 }

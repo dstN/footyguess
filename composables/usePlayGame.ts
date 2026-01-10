@@ -45,6 +45,7 @@ export function usePlayGame() {
     errorMessage,
     isError,
     loadPlayer: loadPlayerSession,
+    resetSessionId,
   } = useGameSession();
 
   // === Streak Management ===
@@ -183,6 +184,29 @@ export function usePlayGame() {
     });
   }
 
+  // === Surrender ===
+  async function giveUp() {
+    if (!player.value || !round.value) return;
+    isLoading.value = true;
+    try {
+      const res = await $fetch<{
+        ok: boolean;
+        playerName: string;
+        playerTmUrl: string | null;
+      }>("/api/surrender", {
+        method: "POST",
+        body: { roundId: round.value.id, token: round.value.token },
+      });
+
+      persistLastPlayer(res.playerName);
+      router.push({ path: "/won", query: { surrendered: "true" } });
+    } catch (e) {
+      handleGuessError("Failed to surrender round.");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // === Guess Submission ===
   const { submitGuess, onSubmit, submitGuessViaEnter } = useGuessSubmission(
     player,
@@ -241,11 +265,15 @@ export function usePlayGame() {
     confirmResetOpen,
     loadPlayer,
     requestNewPlayer,
-    confirmNewPlayer,
+    confirmNewPlayer: () => {
+      resetSessionId();
+      confirmNewPlayer();
+    },
     cancelNewPlayer,
 
     // Guess
     submitGuessViaEnter,
     onSubmit,
+    giveUp,
   };
 }

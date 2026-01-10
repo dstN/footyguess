@@ -4,12 +4,12 @@
   >
     <div class="flex flex-col items-center gap-3">
       <UIcon
-        name="i-lucide-party-popper"
+        :name="icon"
         class="text-primary-200 text-4xl"
       />
-      <h1 class="text-3xl font-bold text-white">You cracked the code!</h1>
+      <h1 class="text-3xl font-bold text-white">{{ title }}</h1>
       <p class="text-slate-300">
-        Keep the run going or drop your score on the board.
+        {{ subtitle }}
       </p>
       <div class="flex items-center gap-2 text-sm text-slate-200">
         <UBadge
@@ -27,7 +27,7 @@
         v-if="lastPlayer"
         class="text-sm text-slate-400"
       >
-        Last win:
+        {{ lastPlayerLabel }}
         <a
           v-if="lastPlayerTmUrl"
           :href="lastPlayerTmUrl"
@@ -62,10 +62,22 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  streak: number;
-  bestStreak: number;
-  lastPlayer: string | null;
-  lastPlayerTmUrl: string | null;
-}>();
+withDefaults(
+  defineProps<{
+    streak: number;
+    bestStreak: number;
+    lastPlayer: string | null;
+    lastPlayerTmUrl: string | null;
+    title?: string;
+    subtitle?: string;
+    icon?: string;
+    lastPlayerLabel?: string;
+  }>(),
+  {
+    title: "You cracked the code!",
+    subtitle: "Keep the run going or drop your score on the board.",
+    icon: "i-lucide-party-popper",
+    lastPlayerLabel: "Last win:",
+  },
+);
 </script>

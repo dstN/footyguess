@@ -9,10 +9,14 @@
       :color="buttonColor"
       :variant="buttonVariant"
       :size="buttonSize"
-      :class="`cursor-pointer ${buttonClass} [&>span:first-child]:hidden [&>span:first-child]:md:inline-flex`"
+      :class="`cursor-pointer ${buttonClass}`"
       @click="openModal"
     >
-      <span v-if="showLabel">{{ buttonLabel }}</span>
+      <span
+        v-if="showLabel"
+        class="hidden md:inline"
+        >{{ buttonLabel }}</span
+      >
     </UButton>
 
     <template #body>

@@ -1,6 +1,35 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [1.1.0] - 2026-01-10
+
+### Game Integrity & Polish
+
+This release introduces significant game integrity features to prevent exploits
+and improve the user experience for surrendered games.
+
+### Added
+
+- **Feature: Give Up (Surrender)**: Added a button to gracefully exit a round.
+  - Surrendering marks the round as a loss (Score 0) and resets the streak.
+  - UI correctly displays "You gave up!" with a white flag icon.
+- **Refresh Exploit Prevention**: Refreshing the page during an active game now
+  reloads the _current_ round instead of skipping to a new player.
+- **New Game Reset**: The "New Game" button in the modal now forces a complete
+  session reset (new Session ID), preventing state pollution.
+
+### Fixed
+
+- **Messy Win Detection**: Fixed logic to correctly identify wins where
+  incorrect guesses were made (negative malice penalty), displaying "Nice save!
+  But the wrong guess reset your streak."
+- **Surrender Icon**: Fixed an issue where the victory icon (party popper)
+  persisted on surrender screens by forcing a distinct flag icon via query
+  parameters.
+- **Mobile Footer**: Polished the footer on mobile devices to show clean,
+  icon-only buttons (`i-lucide-trophy`, `i-lucide-coffee`,
+  `i-lucide-help-circle`), preventing text wrapping.
+- **Server Error (500)**: Fixed a schema mismatch in the `surrender` API
+  endpoint and added missing fields to queries.
 
 ## [1.0.0] - 2026-01-10
 

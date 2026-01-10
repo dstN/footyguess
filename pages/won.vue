@@ -6,6 +6,10 @@
         :best-streak="bestStreak"
         :last-player="lastPlayer"
         :last-player-tm-url="lastPlayerTmUrl"
+        :title="victoryTitle"
+        :subtitle="victorySubtitle"
+        :icon="victoryIcon"
+        :last-player-label="lastPlayerLabel"
       />
 
       <div class="grid gap-4 md:grid-cols-2">
@@ -35,13 +39,13 @@
         <UButton
           color="primary"
           variant="ghost"
-          icon="i-lucide-heart"
-          class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
+          icon="i-lucide-coffee"
+          class="cursor-pointer"
           to="https://ko-fi.com/dstn"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Buy me a coffee
+          <span class="hidden md:inline">Buy me a coffee</span>
         </UButton>
         <HelpModal
           button-label="How to Play"
@@ -55,6 +59,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
@@ -75,6 +80,37 @@ const {
   displaySubmittedTypes,
   submit,
 } = useWonState();
+
+const route = useRoute();
+const isSurrender = computed(() => {
+  return route.query.surrendered === "true" || lastScore.value?.score === 0;
+});
+
+const victoryTitle = computed(() => {
+  if (isSurrender.value) return "You gave up!";
+  return "You cracked the code!";
+});
+
+const victorySubtitle = computed(() => {
+  if (isSurrender.value) {
+    return "Your streak was reset. Start a new run or check your total score.";
+  }
+  // If malice penalty < 0, it means wrong guesses occurred, resetting the streak
+  if ((lastScore.value?.malicePenalty ?? 0) < 0) {
+    return "Nice save! But the wrong guess reset your streak.";
+  }
+  return "Keep the run going or drop your score on the board.";
+});
+
+const victoryIcon = computed(() => {
+  if (isSurrender.value) return "i-lucide-flag-triangle-right";
+  return "i-lucide-party-popper";
+});
+
+const lastPlayerLabel = computed(() => {
+  if (isSurrender.value) return "The player was:";
+  return "Last win:";
+});
 
 async function handleSubmit(type: "round" | "total" | "streak") {
   const success = await submit(type);
