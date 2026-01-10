@@ -2,9 +2,18 @@ import { defineEventHandler, getQuery, createError, sendError } from "h3";
 import db from "../db/connection.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
+  // Rate limit: 60 requests per 60 seconds per IP (status polling)
+  const rateError = enforceRateLimit(event, {
+    key: "requestStatus",
+    windowMs: 60_000,
+    max: 60,
+  });
+  if (rateError) return sendError(event, rateError);
+
   try {
     const query = getQuery(event);
     const parsed = parseSchema(

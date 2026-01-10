@@ -1,6 +1,7 @@
-import { defineEventHandler, getQuery, createError } from "h3";
+import { defineEventHandler, getQuery, createError, sendError } from "h3";
 import { parseSchema } from "../utils/validate";
 import { logError } from "../utils/logger";
+import { enforceRateLimit } from "../utils/rate-limit";
 import { object, optional, string, maxLength, pipe, picklist } from "valibot";
 import db from "../db/connection";
 
@@ -20,6 +21,14 @@ interface PlayerSearchResult {
 }
 
 export default defineEventHandler(async (event) => {
+  // Rate limit: 30 requests per 60 seconds per IP
+  const rateError = enforceRateLimit(event, {
+    key: "leaderboard",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (rateError) return sendError(event, rateError);
+
   try {
     const query = getQuery(event);
     const parsed = parseSchema(

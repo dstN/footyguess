@@ -8,9 +8,18 @@ import { parseSchema } from "../utils/validate.ts";
 import { parsePlayerData } from "../utils/player-parser.ts";
 import { logError } from "../utils/logger.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { object, string, minLength, maxLength, optional, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
+  // Rate limit: 30 requests per 60 seconds per IP
+  const rateError = enforceRateLimit(event, {
+    key: "getPlayer",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (rateError) return sendError(event, rateError);
+
   try {
     const query = getQuery(event);
     const parsed = parseSchema(

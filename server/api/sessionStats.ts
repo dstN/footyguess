@@ -3,9 +3,18 @@ import db from "../db/connection.ts";
 import { getStreakBonusMultiplier } from "../utils/scoring.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
+  // Rate limit: 30 requests per 60 seconds per IP
+  const rateError = enforceRateLimit(event, {
+    key: "sessionStats",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (rateError) return sendError(event, rateError);
+
   try {
     const query = getQuery(event);
     const parsed = parseSchema(

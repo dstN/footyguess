@@ -14,9 +14,18 @@ import { parseSchema } from "../utils/validate";
 import { parsePlayerData } from "../utils/player-parser";
 import { logError } from "../utils/logger";
 import { successResponse, errorResponse } from "../utils/response";
+import { enforceRateLimit } from "../utils/rate-limit";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
+  // Rate limit: 20 requests per 60 seconds per IP (game starts are limited)
+  const rateError = enforceRateLimit(event, {
+    key: "randomPlayer",
+    windowMs: 60_000,
+    max: 20,
+  });
+  if (rateError) return sendError(event, rateError);
+
   try {
     const query = getQuery(event);
     const parsed = parseSchema(
