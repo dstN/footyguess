@@ -1,8 +1,8 @@
 import { defineEventHandler, getQuery, createError, sendError } from "h3";
-import db from "../db/connection.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { logError } from "../utils/logger.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
+import { getRequestStatus } from "../services/request.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -37,34 +37,15 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    const row = db
-      .prepare(
-        `SELECT id, url, status, player_id, error FROM requested_players WHERE id = ?`,
-      )
-      .get(id) as
-      | {
-          id: number;
-          url: string;
-          status: string;
-          player_id: number | null;
-          error: string | null;
-        }
-      | undefined;
-
-    if (!row) {
+    const status = getRequestStatus(id);
+    if (!status) {
       return sendError(
         event,
         createError({ statusCode: 404, statusMessage: "Request not found" }),
       );
     }
 
-    return {
-      id: row.id,
-      url: row.url,
-      status: row.status,
-      playerId: row.player_id,
-      error: row.error,
-    };
+    return status;
   } catch (error) {
     logError("requestStatus error", error);
     return sendError(

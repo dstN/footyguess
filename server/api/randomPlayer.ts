@@ -1,20 +1,12 @@
 import { createError, defineEventHandler, getQuery, sendError } from "h3";
 import { randomUUID } from "node:crypto";
 import db from "../db/connection.ts";
-import type { Player, Transfer, PlayerStats } from "~/types/player";
-import {
-  computeDifficulty,
-  INTL_WEIGHTS,
-  INTL_HARD_THRESHOLD,
-  TOP5_HARD_THRESHOLD,
-  TOP5_LEAGUES,
-} from "../utils/difficulty";
-import { createRoundToken, generateSessionId } from "../utils/tokens";
-import { parseSchema } from "../utils/validate";
-import { parsePlayerData } from "../utils/player-parser";
-import { logError } from "../utils/logger";
-import { successResponse, errorResponse } from "../utils/response";
-import { enforceRateLimit } from "../utils/rate-limit";
+import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
+import { parseSchema } from "../utils/validate.ts";
+import { logError } from "../utils/logger.ts";
+import { errorResponse } from "../utils/response.ts";
+import { enforceRateLimit } from "../utils/rate-limit.ts";
+import { getRandomPlayer } from "../services/player.ts";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
@@ -45,134 +37,9 @@ export default defineEventHandler(async (event) => {
     const sessionFromQuery = parsed.data.sessionId ?? null;
     const sessionId = sessionFromQuery || generateSessionId();
 
-    const intlCases = Object.entries(INTL_WEIGHTS)
-      .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
-      .join(" ");
-    const intlSum = `SUM(CASE c.id ${intlCases} ELSE 0 END)`;
-    const top5Ids = TOP5_LEAGUES.map((id) => `'${id}'`).join(", ");
-    const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
-
-    const filterClause = hardMode
-      ? ""
-      : `
-      WHERE p.id IN (
-        SELECT ps.player_id
-        FROM player_stats ps
-        JOIN competitions c ON ps.competition_id = c.id
-        GROUP BY ps.player_id
-        HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
-          OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
-      )
-    `;
-
-    // Get count once outside loop
-    const countRow = db
-      .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
-      .get() as { count: number } | undefined;
-    const totalCount = countRow?.count ?? 0;
-
-    function getRandomPlayer() {
-      if (totalCount <= 0) return undefined;
-      const offset = Math.floor(Math.random() * totalCount);
-
-      return db
-        .prepare(
-          `
-        SELECT
-          p.*,
-          c.name AS currentClub
-        FROM players p
-        LEFT JOIN clubs c ON p.current_club_id = c.id
-        ${filterClause}
-        LIMIT 1 OFFSET ?
-      `,
-        )
-        .get(offset) as Player | undefined;
-    }
-
-    let base: Player | undefined;
-    let transfers: Transfer[] = [];
-    let stats: PlayerStats[] = [];
-    let difficulty;
-    let attempts = 0;
-
-    while (attempts < 5) {
-      base = getRandomPlayer();
-
-      if (!base) break;
-
-      try {
-        base = parsePlayerData(base);
-      } catch (error) {
-        logError(`Invalid JSON for player ${base.id}`, error);
-        attempts += 1;
-        continue;
-      }
-
-      transfers = db
-        .prepare(
-          `
-      SELECT
-        t.season,
-        t.transfer_date,
-        t.fee,
-        t.transfer_type,
-        t.upcoming,
-        fc.id AS from_club_id,
-        fc.name AS from_club,
-        tc.id AS to_club_id,
-        tc.name AS to_club
-      FROM transfers t
-      LEFT JOIN clubs fc ON t.from_club_id = fc.id
-      LEFT JOIN clubs tc ON t.to_club_id = tc.id
-      WHERE
-        t.player_id = ?
-        AND (
-          fc.name IS NULL OR fc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.'
-        )
-        AND (
-          tc.name IS NULL OR tc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.'
-        )
-      ORDER BY t.transfer_date DESC
-    `,
-        )
-        .all(base.id) as Transfer[];
-
-      stats = db
-        .prepare(
-          `
-        SELECT
-          ps.appearances,
-          ps.goals,
-          ps.assists,
-          ps.own_goals,
-          ps.subbed_on,
-          ps.subbed_off,
-          ps.yellow_cards,
-          ps.yellow_red_cards,
-          ps.red_cards,
-          ps.penalties,
-          ps.minutes_played,
-          ps.average_minutes_per_match,
-          c.id AS competition_id,
-          c.name AS competition
-        FROM player_stats ps
-        JOIN competitions c ON ps.competition_id = c.id
-        WHERE ps.player_id = ?
-        ORDER BY ps.appearances DESC
-      `,
-        )
-        .all(base.id) as PlayerStats[];
-
-      difficulty = computeDifficulty(stats, { forceUltra: hardMode });
-
-      if (hardMode || difficulty.tier !== "ultra") {
-        break;
-      }
-      attempts += 1;
-    }
-
-    if (!base || (!hardMode && difficulty?.tier === "ultra")) {
+    // Use player service
+    const playerData = getRandomPlayer(hardMode);
+    if (!playerData) {
       return errorResponse(
         404,
         "No matching player found for selected difficulty",
@@ -180,15 +47,16 @@ export default defineEventHandler(async (event) => {
       );
     }
 
+    // Create session and round (still needs direct DB for atomicity)
     db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
 
     const roundId = randomUUID();
-    const expiresAt = Date.now() + 1000 * 60 * 30; // 30 minutes
+    const expiresAt = Date.now() + 1000 * 60 * 30;
     db.prepare(
       `INSERT INTO rounds (id, player_id, session_id, clues_used, started_at, expires_at, max_clues_allowed) VALUES (?, ?, ?, 0, ?, ?, 10)`,
     ).run(
       roundId,
-      base.id,
+      playerData.id,
       sessionId,
       Math.floor(Date.now() / 1000),
       Math.floor(expiresAt / 1000),
@@ -196,16 +64,13 @@ export default defineEventHandler(async (event) => {
 
     const token = createRoundToken({
       roundId,
-      playerId: base.id,
+      playerId: playerData.id,
       sessionId,
       exp: expiresAt,
     });
 
     return {
-      ...base,
-      transfers,
-      stats,
-      difficulty,
+      ...playerData,
       round: {
         id: roundId,
         token,
