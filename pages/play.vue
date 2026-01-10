@@ -80,12 +80,12 @@
           color="primary"
           variant="ghost"
           icon="i-lucide-coffee"
-          class="[&>span:first-child]:hidden [&>span:first-child]:md:inline-flex"
+          class="cursor-pointer"
           to="https://ko-fi.com/dstn"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Buy me a coffee
+          <span class="hidden md:inline">Buy me a coffee</span>
         </UButton>
         <HelpModal
           button-label="How to Play"
