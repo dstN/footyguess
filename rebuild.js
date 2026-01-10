@@ -1,15 +1,13 @@
 // This script is meant to be run ONCE by Plesk to fix dependencies.
-// 1. Upload this file as 'rebuild.js' to httpdocs
-// 2. Set Plesk Startup File to: rebuild.js
-// 3. Restart App
-// 4. Check Logs
-// 5. Change Startup File back to .output/server/index.mjs
+// CommonJS version for maximum compatibility
 
-import { execSync } from "child_process";
-import fs from "fs";
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
 // Helper to log to file
-const logFile = "../rebuild_log.txt"; // in httpdocs root
+const logFile = path.resolve(__dirname, "../rebuild_log.txt");
+
 function log(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
   console.log(msg);
@@ -19,38 +17,66 @@ function log(msg) {
 }
 
 log("-----------------------------------------");
-log("STARTING DEPENDENCY REBUILD");
+log("STARTING DEPENDENCY REBUILD (CJS)");
 log("-----------------------------------------");
 
 try {
-  // Go to the server directory where package.json is
-  const serverDir = ".output/server";
+  // Go to the server directory
+  // Assuming this script is running from httpdocs/.output/rebuild.js
+  // We want to go to httpdocs/.output/server
+  const serverDir = path.join(__dirname, "server");
+
   if (!fs.existsSync(serverDir)) {
-    log("ERROR: .output/server directory not found!");
-    process.exit(1);
+    log(`ERROR: Directory not found: ${serverDir}`);
+    // Try resolving relative to CWD just in case
+    const altDir = path.resolve("./.output/server");
+    if (fs.existsSync(altDir)) {
+      process.chdir(altDir);
+      log(`Recovered: Changed directory to: ${process.cwd()}`);
+    } else {
+      process.exit(1);
+    }
+  } else {
+    process.chdir(serverDir);
+    log(`Changed directory to: ${process.cwd()}`);
   }
 
-  process.chdir(serverDir);
-  log(`Changed directory to: ${process.cwd()}`);
+  // Determine npm path based on current node executable
+  const nodePath = process.execPath; // e.g., /opt/plesk/node/20/bin/node
+  const binDir = path.dirname(nodePath);
+  let npmPath = path.join(binDir, "npm");
 
-  log("Running 'npm install --omit=dev'...");
-  // Using --omit=dev to speed it up and avoid needing dev modules
-  // Redirect stderr to stdout to see errors in main log
-  const output = execSync("npm install --omit=dev", { encoding: "utf8" });
+  log(`Node binary: ${nodePath}`);
+  log(`Inferred npm path: ${npmPath}`);
+
+  // Verify npm exists there
+  if (!fs.existsSync(npmPath)) {
+    log("Warning: npm not found at inferred path. Trying global 'npm'...");
+    npmPath = "npm"; // Fallback
+  }
+
+  log(`Running '${npmPath} install --omit=dev'...`);
+
+  // Use the absolute path to npm
+  const output = execSync(`${npmPath} install --omit=dev`, {
+    encoding: "utf8",
+  });
   log(output);
 
   log("-----------------------------------------");
   log("✅ REBUILD COMPLETE SUCCESS");
   log("-----------------------------------------");
-  log("NOW: Change Startup File back to .output/server/index.mjs");
 } catch (error) {
   log("-----------------------------------------");
   log("❌ REBUILD FAILED");
   log(error.message);
   if (error.stdout) log("STDOUT: " + error.stdout);
   if (error.stderr) log("STDERR: " + error.stderr);
+
+  // Log env for debugging
+  log("PATH env: " + process.env.PATH);
   log("-----------------------------------------");
 }
 
-// Keep process alive so Plesk sees it as "running" long enough to read logs
+// Keep process alive
 setInterval(() => {}, 10000);
