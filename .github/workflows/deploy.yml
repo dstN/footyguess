@@ -23,7 +23,9 @@ jobs:
         run: npm test
 
       - name: Build Application
-        run: npm run build
+        run: |
+          npm run build
+          cp rebuild.js .output/
 
       - name: Deploy via SCP (Password)
         uses: appleboy/scp-action@v0.1.7
