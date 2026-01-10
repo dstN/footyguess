@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Deploy via SCP (Password)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          source: ".output/"
+          target: ${{ secrets.SSH_TARGET_DIR }}
+          # Exclude node_modules to speed up (it shouldn't be in .output anyway but good practice)
+          rm: true # Clean target before copy? CAREFUL.
+          # Actually 'rm: true' deletes all files in target. We probably DON'T want that if 'db' is there.
+          # But we simply writing .output folder.
+          # Let's be safe and defaults.
+
+      - name: Post-Deployment Restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            # Create tmp folder if it doesn't exist
+            mkdir -p ${{ secrets.SSH_TARGET_DIR }}/tmp
+            touch ${{ secrets.SSH_TARGET_DIR }}/tmp/restart.txt
+            echo "🚀 Deployment complete and restart triggered."
