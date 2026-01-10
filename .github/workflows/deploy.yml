@@ -25,7 +25,6 @@ jobs:
       - name: Build Application
         run: |
           npm run build
-          cp rebuild.js .output/
           cp plesk_entry.js .output/app.js
 
       - name: Deploy via SCP (Password)
