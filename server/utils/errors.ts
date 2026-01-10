@@ -80,11 +80,12 @@ export function handleApiError(
   context: string,
 ) {
   if (error instanceof AppError) {
-    logError(error.code, error.message, error, error.details);
+    logError(error.message, error, error.code);
     return errorResponse(error.statusCode, error.message, event, error.details);
   }
 
-  // Unknown error
-  logError(context, "Unexpected error", error);
+  // Unknown error - wrap if needed
+  const err = error instanceof Error ? error : new Error(String(error));
+  logError("Unexpected error", err, context);
   return errorResponse(500, "Internal server error", event);
 }
