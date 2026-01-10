@@ -8,38 +8,48 @@
 import { execSync } from "child_process";
 import fs from "fs";
 
-console.log("-----------------------------------------");
-console.log("STARTING DEPENDENCY REBUILD");
-console.log("-----------------------------------------");
+// Helper to log to file
+const logFile = "../rebuild_log.txt"; // in httpdocs root
+function log(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  console.log(msg);
+  try {
+    fs.appendFileSync(logFile, line);
+  } catch (e) {}
+}
+
+log("-----------------------------------------");
+log("STARTING DEPENDENCY REBUILD");
+log("-----------------------------------------");
 
 try {
   // Go to the server directory where package.json is
   const serverDir = ".output/server";
   if (!fs.existsSync(serverDir)) {
-    console.error("ERROR: .output/server directory not found!");
+    log("ERROR: .output/server directory not found!");
     process.exit(1);
   }
 
   process.chdir(serverDir);
-  console.log(`Changed directory to: ${process.cwd()}`);
+  log(`Changed directory to: ${process.cwd()}`);
 
-  console.log("Running 'npm install --omit=dev'...");
+  log("Running 'npm install --omit=dev'...");
   // Using --omit=dev to speed it up and avoid needing dev modules
   // Redirect stderr to stdout to see errors in main log
   const output = execSync("npm install --omit=dev", { encoding: "utf8" });
-  console.log(output);
+  log(output);
 
-  console.log("-----------------------------------------");
-  console.log("✅ REBUILD COMPLETE SUCCESS");
-  console.log("-----------------------------------------");
-  console.log("NOW: Change Startup File back to .output/server/index.mjs");
+  log("-----------------------------------------");
+  log("✅ REBUILD COMPLETE SUCCESS");
+  log("-----------------------------------------");
+  log("NOW: Change Startup File back to .output/server/index.mjs");
 } catch (error) {
-  console.error("-----------------------------------------");
-  console.error("❌ REBUILD FAILED");
-  console.error(error.message);
-  if (error.stdout) console.log("STDOUT:", error.stdout);
-  if (error.stderr) console.error("STDERR:", error.stderr);
-  console.error("-----------------------------------------");
+  log("-----------------------------------------");
+  log("❌ REBUILD FAILED");
+  log(error.message);
+  if (error.stdout) log("STDOUT: " + error.stdout);
+  if (error.stderr) log("STDERR: " + error.stderr);
+  log("-----------------------------------------");
 }
 
 // Keep process alive so Plesk sees it as "running" long enough to read logs
