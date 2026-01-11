@@ -1,8 +1,8 @@
-import { createError, defineEventHandler, readBody, sendError } from "h3";
+import { defineEventHandler, readBody } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
-import { successResponse, errorResponse } from "../utils/response.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
+import { errorResponse } from "../utils/response.ts";
 import {
   verifyAndValidateRound,
   getRound,
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
       windowMs: 10_000,
       max: 20,
     });
-    if (ipRateError) return sendError(event, ipRateError);
+    if (ipRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Verify token and validate round
     const { sessionId } = verifyAndValidateRound(
@@ -59,32 +59,28 @@ export default defineEventHandler(async (event) => {
       max: 10,
       sessionId,
     });
-    if (sessionRateError) return sendError(event, sessionRateError);
+    if (sessionRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return errorResponse(404, "Round not found", event);
+      throw Errors.notFound("Round", parsed.data.roundId);
     }
 
     // Validate round ownership
     if (!validateRoundOwnership(round, sessionId)) {
-      return errorResponse(
-        401,
-        "Unauthorized - round does not belong to this session",
-        event,
-      );
+      throw Errors.unauthorized("Round does not belong to this session");
     }
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return errorResponse(410, "Round expired", event);
+      throw new AppError(410, "Round expired", "ROUND_EXPIRED");
     }
 
     // Get player data
     const roundData = getRoundWithPlayer(round.id);
     if (!roundData?.player) {
-      return errorResponse(404, "Player not found", event);
+      throw Errors.notFound("Player");
     }
 
     const { player } = roundData;
@@ -116,10 +112,6 @@ export default defineEventHandler(async (event) => {
       difficulty: result.difficulty,
     };
   } catch (error) {
-    logError("guess error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to submit guess",
-    });
+    return handleApiError(event, error, "guess");
   }
 });

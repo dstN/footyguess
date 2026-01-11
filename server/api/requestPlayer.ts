@@ -1,9 +1,9 @@
-import { defineEventHandler, readBody, createError, sendError } from "h3";
+import { defineEventHandler, readBody } from "h3";
 import { spawn } from "child_process";
 import db from "../db/connection.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 import { enqueueScrapeJob } from "../scraper/queue.ts";
 
@@ -62,29 +62,17 @@ export default defineEventHandler(async (event) => {
       body,
     );
     if (!parsed.ok) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
-      );
+      throw Errors.badRequest("Invalid payload");
     }
 
     const rawUrl = parsed.data.url.trim();
     if (!rawUrl) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Missing url" }),
-      );
+      throw Errors.badRequest("Missing url");
     }
 
     const url = normalizeUrl(rawUrl);
     if (!url) {
-      return sendError(
-        event,
-        createError({
-          statusCode: 400,
-          statusMessage: "Invalid Transfermarkt URL",
-        }),
-      );
+      throw Errors.badRequest("Invalid Transfermarkt URL");
     }
 
     const rateError = enforceRateLimit(event, {
@@ -92,7 +80,7 @@ export default defineEventHandler(async (event) => {
       windowMs: 5 * 60_000,
       max: 5,
     });
-    if (rateError) return sendError(event, rateError);
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     const tmId = getTmId(url);
     const nowSeconds = Math.floor(Date.now() / 1000);
@@ -157,13 +145,6 @@ export default defineEventHandler(async (event) => {
       url,
     };
   } catch (error) {
-    logError("requestPlayer error", error);
-    return sendError(
-      event,
-      createError({
-        statusCode: 500,
-        statusMessage: "Failed to request player",
-      }),
-    );
+    return handleApiError(event, error, "requestPlayer");
   }
 });

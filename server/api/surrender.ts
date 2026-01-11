@@ -1,8 +1,8 @@
-import { defineEventHandler, readBody, createError, sendError } from "h3";
+import { defineEventHandler, readBody } from "h3";
 import db from "../db/connection.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
 import {
   verifyAndValidateRound,
   getRound,
@@ -28,10 +28,7 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Invalid request" }),
-      );
+      throw Errors.badRequest("Invalid request");
     }
 
     // Rate limit
@@ -40,7 +37,7 @@ export default defineEventHandler(async (event) => {
       windowMs: 60_000,
       max: 10,
     });
-    if (rateError) return sendError(event, rateError);
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     const { sessionId } = verifyAndValidateRound(
       parsed.data.token,
@@ -49,32 +46,20 @@ export default defineEventHandler(async (event) => {
 
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return sendError(
-        event,
-        createError({ statusCode: 404, statusMessage: "Round not found" }),
-      );
+      throw Errors.notFound("Round", parsed.data.roundId);
     }
 
     if (!validateRoundOwnership(round, sessionId)) {
-      return sendError(
-        event,
-        createError({ statusCode: 401, statusMessage: "Unauthorized" }),
-      );
+      throw Errors.unauthorized();
     }
 
     if (isRoundExpired(round)) {
-      return sendError(
-        event,
-        createError({ statusCode: 410, statusMessage: "Round expired" }),
-      );
+      throw new AppError(410, "Round expired", "ROUND_EXPIRED");
     }
 
     const roundData = getRoundWithPlayer(round.id);
     if (!roundData?.player) {
-      return sendError(
-        event,
-        createError({ statusCode: 404, statusMessage: "Player not found" }),
-      );
+      throw Errors.notFound("Player");
     }
 
     // Mark as completed with 0 score
@@ -93,10 +78,6 @@ export default defineEventHandler(async (event) => {
       playerTmUrl: roundData.player.tm_url,
     };
   } catch (error) {
-    logError("surrender error", error);
-    return sendError(
-      event,
-      createError({ statusCode: 500, statusMessage: "Failed to surrender" }),
-    );
+    return handleApiError(event, error, "surrender");
   }
 });

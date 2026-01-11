@@ -1,24 +1,23 @@
-import { createError, defineEventHandler, getQuery, sendError } from "h3";
+import { defineEventHandler, getQuery } from "h3";
 import { randomUUID } from "node:crypto";
 import db from "../db/connection.ts";
 import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
+import { AppError, handleApiError } from "../utils/errors.ts";
 import { errorResponse } from "../utils/response.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { getPlayerByName } from "../services/player.ts";
 import { object, string, minLength, maxLength, optional, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  // Rate limit: 30 requests per 60 seconds per IP
-  const rateError = enforceRateLimit(event, {
-    key: "getPlayer",
-    windowMs: 60_000,
-    max: 30,
-  });
-  if (rateError) return sendError(event, rateError);
-
   try {
+    // Rate limit: 30 requests per 60 seconds per IP
+    const rateError = enforceRateLimit(event, {
+      key: "getPlayer",
+      windowMs: 60_000,
+      max: 30,
+    });
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
     const query = getQuery(event);
     const parsed = parseSchema(
       object({
@@ -76,10 +75,6 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error) {
-    logError("getPlayer error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to load player",
-    });
+    return handleApiError(event, error, "getPlayer");
   }
 });

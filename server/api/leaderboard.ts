@@ -1,7 +1,7 @@
-import { defineEventHandler, getQuery, createError, sendError } from "h3";
+import { defineEventHandler, getQuery } from "h3";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
 import {
   getLeaderboard,
   searchPlayersForLeaderboard,
@@ -10,15 +10,15 @@ import {
 import { object, optional, string, maxLength, pipe, picklist } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  // Rate limit: 30 requests per 60 seconds per IP
-  const rateError = enforceRateLimit(event, {
-    key: "leaderboard",
-    windowMs: 60_000,
-    max: 30,
-  });
-  if (rateError) return sendError(event, rateError);
-
   try {
+    // Rate limit: 30 requests per 60 seconds per IP
+    const rateError = enforceRateLimit(event, {
+      key: "leaderboard",
+      windowMs: 60_000,
+      max: 30,
+    });
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
+
     const query = getQuery(event);
     const parsed = parseSchema(
       object({
@@ -31,10 +31,7 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Invalid query parameters",
-      });
+      throw Errors.badRequest("Invalid query parameters");
     }
 
     const type = (parsed.data.type || "all") as LeaderboardType;
@@ -51,10 +48,6 @@ export default defineEventHandler(async (event) => {
 
     return getLeaderboard(type, limit, playerId);
   } catch (error) {
-    logError("leaderboard error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch leaderboard",
-    });
+    return handleApiError(event, error, "leaderboard");
   }
 });

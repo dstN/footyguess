@@ -1,20 +1,20 @@
-import { defineEventHandler, getQuery, createError, sendError } from "h3";
+import { defineEventHandler, getQuery } from "h3";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { getRequestStatus } from "../services/request.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
 import { object, string, minLength, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  // Rate limit: 60 requests per 60 seconds per IP (status polling)
-  const rateError = enforceRateLimit(event, {
-    key: "requestStatus",
-    windowMs: 60_000,
-    max: 60,
-  });
-  if (rateError) return sendError(event, rateError);
-
   try {
+    // Rate limit: 60 requests per 60 seconds per IP (status polling)
+    const rateError = enforceRateLimit(event, {
+      key: "requestStatus",
+      windowMs: 60_000,
+      max: 60,
+    });
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
+
     const query = getQuery(event);
     const parsed = parseSchema(
       object({
@@ -23,37 +23,21 @@ export default defineEventHandler(async (event) => {
       query,
     );
     if (!parsed.ok) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Invalid query" }),
-      );
+      throw Errors.badRequest("Invalid query");
     }
 
     const id = Number(parsed.data.id);
     if (!Number.isFinite(id)) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Missing request id" }),
-      );
+      throw Errors.badRequest("Missing request id");
     }
 
     const status = getRequestStatus(id);
     if (!status) {
-      return sendError(
-        event,
-        createError({ statusCode: 404, statusMessage: "Request not found" }),
-      );
+      throw Errors.notFound("Request", id);
     }
 
     return status;
   } catch (error) {
-    logError("requestStatus error", error);
-    return sendError(
-      event,
-      createError({
-        statusCode: 500,
-        statusMessage: "Failed to fetch request",
-      }),
-    );
+    return handleApiError(event, error, "requestStatus");
   }
 });

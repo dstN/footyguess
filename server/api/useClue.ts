@@ -1,8 +1,8 @@
-import { defineEventHandler, readBody, createError, sendError } from "h3";
+import { defineEventHandler, readBody } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
-import { successResponse, errorResponse } from "../utils/response.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
+import { errorResponse } from "../utils/response.ts";
 import {
   verifyAndValidateRound,
   getRound,
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
       windowMs: 10_000,
       max: 15,
     });
-    if (ipRateError) return sendError(event, ipRateError);
+    if (ipRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Verify token and validate round
     const { sessionId } = verifyAndValidateRound(
@@ -56,31 +56,27 @@ export default defineEventHandler(async (event) => {
       max: 5,
       sessionId,
     });
-    if (sessionRateError) return sendError(event, sessionRateError);
+    if (sessionRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Get round data
     const round = getRound(parsed.data.roundId);
     if (!round) {
-      return errorResponse(404, "Round not found", event);
+      throw Errors.notFound("Round", parsed.data.roundId);
     }
 
     // Validate round ownership
     if (!validateRoundOwnership(round, sessionId)) {
-      return errorResponse(
-        401,
-        "Unauthorized - round does not belong to this session",
-        event,
-      );
+      throw Errors.unauthorized("Round does not belong to this session");
     }
 
     // Check if round expired
     if (isRoundExpired(round)) {
-      return errorResponse(410, "Round expired", event);
+      throw new AppError(410, "Round expired", "ROUND_EXPIRED");
     }
 
     // Check clue limit
     if (hasReachedClueLimit(round.clues_used, round.max_clues_allowed ?? 0)) {
-      return errorResponse(429, "Clue limit reached", event);
+      throw new AppError(429, "Clue limit reached", "CLUE_LIMIT_REACHED");
     }
 
     // Record clue usage
@@ -91,10 +87,6 @@ export default defineEventHandler(async (event) => {
       cluesRemaining: result.cluesRemaining,
     };
   } catch (error) {
-    logError("useClue error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to record clue",
-    });
+    return handleApiError(event, error, "useClue");
   }
 });

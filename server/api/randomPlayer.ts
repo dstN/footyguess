@@ -1,24 +1,24 @@
-import { createError, defineEventHandler, getQuery, sendError } from "h3";
+import { defineEventHandler, getQuery } from "h3";
 import { randomUUID } from "node:crypto";
 import db from "../db/connection.ts";
 import { createRoundToken, generateSessionId } from "../utils/tokens.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
+import { AppError, handleApiError } from "../utils/errors.ts";
 import { errorResponse } from "../utils/response.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { getRandomPlayer, getPlayerById } from "../services/player.ts";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
 
 export default defineEventHandler(async (event) => {
-  // Rate limit: 20 requests per 60 seconds per IP (game starts are limited)
-  const rateError = enforceRateLimit(event, {
-    key: "randomPlayer",
-    windowMs: 60_000,
-    max: 20,
-  });
-  if (rateError) return sendError(event, rateError);
-
   try {
+    // Rate limit: 20 requests per 60 seconds per IP (game starts are limited)
+    const rateError = enforceRateLimit(event, {
+      key: "randomPlayer",
+      windowMs: 60_000,
+      max: 20,
+    });
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
+
     const query = getQuery(event);
     const parsed = parseSchema(
       object({
@@ -130,10 +130,6 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error) {
-    logError("randomPlayer error", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to get random player",
-    });
+    return handleApiError(event, error, "randomPlayer");
   }
 });
