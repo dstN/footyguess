@@ -74,24 +74,24 @@ const VALIDATION_RULES: ValidationRule[] = [
     route: "/api/requestPlayer",
     methods: ["POST"],
     validate: (data) => {
-      if (!data.playerName || typeof data.playerName !== "string") {
-        return "Field 'playerName' is required and must be a string";
+      if (!data.url || typeof data.url !== "string") {
+        return "Field 'url' is required and must be a string";
       }
-      if (data.playerName.length < 1) {
-        return "Player name must not be empty";
+      if (data.url.length < 1) {
+        return "URL must not be empty";
       }
-      if (data.playerName.length > 256) {
-        return "Player name must not exceed 256 characters";
+      if (data.url.length > 1024) {
+        return "URL must not exceed 1024 characters";
       }
       return true;
     },
   },
   {
     route: "/api/sessionStats",
-    methods: ["POST"],
+    methods: ["GET"],
     validate: (data) => {
       if (!data.sessionId || typeof data.sessionId !== "string") {
-        return "Field 'sessionId' is required and must be a string";
+        return "Query parameter 'sessionId' is required and must be a string";
       }
       return true;
     },

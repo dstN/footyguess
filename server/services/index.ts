@@ -6,3 +6,7 @@
 export * from "./round.ts";
 export * from "./guess.ts";
 export * from "./clue.ts";
+export * from "./player.ts";
+export * from "./session.ts";
+export * from "./leaderboard.ts";
+export * from "./request.ts";
