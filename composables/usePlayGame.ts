@@ -208,7 +208,8 @@ export function usePlayGame() {
     formState.guess = "";
     clearSearch();
     isError.value = true;
-    const remaining = 5 - (wrongGuessCount ?? 0);
+    // 6th wrong guess triggers abort, so remaining = 6 - count
+    const remaining = 6 - (wrongGuessCount ?? 0);
     errorMessage.value =
       remaining <= 2
         ? `Wrong! Only ${remaining} guess${remaining === 1 ? "" : "es"} left before round loss!`

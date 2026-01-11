@@ -162,10 +162,10 @@ export function processGuess(
   const nextStreak = correct ? (sessionRow?.streak ?? 0) + 1 : 0;
   const nextBest = Math.max(sessionRow?.best_streak ?? 0, nextStreak);
 
-  // Award points even on wrong guess, but with malice penalty applied
-  const earnedScore = breakdown.finalScore;
-  const earnedBase = breakdown.preStreak;
-  const earnedTime = breakdown.timeScore;
+  // Only award points on correct guess
+  const earnedScore = correct ? breakdown.finalScore : 0;
+  const earnedBase = correct ? breakdown.preStreak : 0;
+  const earnedTime = correct ? breakdown.timeScore : 0;
 
   // Update session and scores atomically
   const writeScore = db.transaction(() => {
