@@ -55,7 +55,9 @@ async function findTmIdViaDuckDuckGo(
               const url = new URL(href, window.location.href);
               if (
                 url.protocol === "https:" &&
-                ["www.transfermarkt.com", "transfermarkt.com"].includes(url.hostname)
+                ["www.transfermarkt.com", "transfermarkt.com"].includes(
+                  url.hostname,
+                )
               ) {
                 // Extract tm_id from URL pathname: /spieler/{id}
                 const match = url.pathname.match(/\/spieler\/(\d+)/);
