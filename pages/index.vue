@@ -134,7 +134,7 @@
                   />
                   Difficulty
                 </span>
-                <span class="text-slate-400">1× to 2× multiplier</span>
+                <span class="text-slate-400">1× to 4× multiplier</span>
               </div>
 
               <div
@@ -186,9 +186,7 @@
                   />
                   Wrong Guesses
                 </span>
-                <span class="text-red-400"
-                  >Max 5 (-10% each), 6th = loss</span
-                >
+                <span class="text-red-400">Max 5 (-10% each), 6th = loss</span>
               </div>
             </div>
 
