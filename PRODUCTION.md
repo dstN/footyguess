@@ -1,7 +1,7 @@
 # Production Readiness Plan
 
-> **Status**: Production Ready ✅ **Last Updated**: 2026-01-10 **Version**:
-> 1.2.0
+> **Status**: Production Ready ✅ **Last Updated**: 2026-01-11 **Version**:
+> 1.2.1
 
 This document outlines the production deployment status and requirements for
 FootyGuess.

@@ -1,6 +1,6 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-10 **Scope**: FootyGuess
+> **Status**: Living Document **Last Updated**: 2026-01-11 **Scope**: FootyGuess
 > Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
@@ -25,37 +25,34 @@ All improvements should follow the guidelines in
 
 ## 1. Code Stability
 
-### 1.1 Service Layer Completion ✅ DONE
+### 1.1 Service Layer Completion 🟡 PARTIALLY DONE
 
 **Priority**: P1 | **Effort**: Large | **Category**: Architecture
 
-Currently, several API routes contain direct database access, violating the
-service layer pattern defined in ARCHITECTURE.md.
+Service layer has been created but some API routes still contain direct database
+access.
 
-**Current State**:
-
-- `guess.ts`, `useClue.ts` correctly use services
-- 8 other API routes have direct DB access
-
-**Improvement**: Create dedicated service modules:
+**Current State** (as of 2026-01-11):
 
 ```
 server/services/
-├── clue.ts          # ✅ Exists
-├── guess.ts         # ✅ Exists
-├── round.ts         # ✅ Exists
-├── player.ts        # ❌ Create: getPlayer, searchPlayers, randomPlayer
-├── leaderboard.ts   # ❌ Create: getLeaderboard, submitScore
-├── session.ts       # ❌ Create: getSessionStats
-└── request.ts       # ❌ Create: requestPlayer, getRequestStatus
+├── clue.ts          # ✅ Exists - useClue
+├── guess.ts         # ✅ Exists - processGuess
+├── round.ts         # ✅ Exists - verifyAndValidateRound, getRound
+├── player.ts        # ✅ Exists - getPlayer, searchPlayers, getRandomPlayer
+├── leaderboard.ts   # ✅ Exists - getLeaderboard (read only)
+├── session.ts       # ✅ Exists - getSessionStats
+└── request.ts       # ✅ Exists - getRequestStatus
 ```
 
-**Benefits**:
+**Still Bypasses Service Layer**:
 
-- Consistent error handling
-- Easier unit testing
-- Clear separation of concerns
-- Reusable business logic
+- `submitScore.ts` - ~170 lines of direct DB queries
+- `randomPlayer.ts` - mixed service + direct DB access
+- `requestPlayer.ts` - scrape logic inline
+
+**Remaining Work**: Extract leaderboard write operations and scrape request
+creation into services.
 
 ---
 
@@ -718,17 +715,17 @@ links
 
 ---
 
-## Status Summary (Reconciliation Audit 2026-01-10)
+## Status Summary (Reconciliation Audit 2026-01-11)
 
 | Section                 | Done  | Partial | Not Done |
 | ----------------------- | ----- | ------- | -------- |
-| 1. Code Stability       | 4     | 0       | 0        |
+| 1. Code Stability       | 3     | 1       | 0        |
 | 2. Game Logic           | 0     | 0       | 4        |
-| 3. Frontend/UX          | 0     | 2       | 4        |
+| 3. Frontend/UX          | 1     | 2       | 3        |
 | 4. Developer Experience | 0     | 1       | 2        |
 | 5. Performance          | 0     | 0       | 3        |
 | 6. Future Features      | 0     | 0       | 3        |
-| **Total**               | **4** | **3**   | **16**   |
+| **Total**               | **4** | **4**   | **15**   |
 
 ---
 
@@ -737,7 +734,7 @@ links
 | Priority | Category     | Items                                    | Status         |
 | -------- | ------------ | ---------------------------------------- | -------------- |
 | **P0**   | Testing      | Scoring tests                            | ✅ DONE        |
-| **P1**   | Architecture | Service layer, TypeScript strictness     | ✅ DONE        |
+| **P1**   | Architecture | Service layer, TypeScript strictness     | 🟡 Partial     |
 | **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
 | **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
 | **P2**   | UX           | Accessibility, mobile, game persistence  | 🟡 Partial     |
@@ -762,7 +759,6 @@ When implementing any improvement:
 
 ## Changelog
 
-| Date       | Change                                                  |
-| ---------- | ------------------------------------------------------- |
-| 2026-01-10 | Reconciliation audit: added status markers to all items |
-| 2026-01-09 | Initial improvements document                           |
+| Date       | Change                                         |
+| ---------- | ---------------------------------------------- |
+| 2026-01-11 | Reconciliation: Corrected service layer status |

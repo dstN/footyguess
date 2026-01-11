@@ -61,16 +61,6 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 │  ┌─────────────────────────┴───────────────────────────┐    │
 │  │                    server/db/                       │    │
 │  │         SQLite + WAL mode + Auto-Cleanup            │    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │   server/    │  │   server/    │  │   server/    │       │
-│  │    api/      │  │  services/   │  │    utils/    │       │
-│  │ (endpoints)  │  │  (business)  │  │  (shared)    │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-│                            │                                │
-│                     better-sqlite3                          │
-│  ┌─────────────────────────┴───────────────────────────┐    │
-│  │                    server/db/                       │    │
-│  │         SQLite + WAL mode + Auto-Cleanup            │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                            │                                │
 │                     Security Layer                          │
@@ -412,7 +402,7 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 | Date       | Change                                          |
 | ---------- | ----------------------------------------------- |
-| 2026-01-09 | Updated: Resolved all major tech debt issues    |
+| 2026-01-11 | Fixed duplicate diagram in §2.1                 |
 | 2026-01-10 | Added Service Layer, AppError, Security Headers |
 | 2026-01-09 | Updated: Resolved all major tech debt issues    |
 | 2026-01-07 | Initial architecture document created           |
