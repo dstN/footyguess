@@ -10,7 +10,25 @@ import { enqueueScrapeJob } from "../scraper/queue.ts";
 function normalizeUrl(url: string) {
   try {
     const parsed = new URL(url);
-    if (!parsed.hostname.includes("transfermarkt.")) return null;
+    // Security: Explicit allowlist of valid Transfermarkt domains
+    const allowedHosts = [
+      "www.transfermarkt.com",
+      "www.transfermarkt.de",
+      "www.transfermarkt.co.uk",
+      "www.transfermarkt.es",
+      "www.transfermarkt.fr",
+      "www.transfermarkt.it",
+      "www.transfermarkt.nl",
+      "www.transfermarkt.at",
+      "www.transfermarkt.ch",
+      "www.transfermarkt.pl",
+      "www.transfermarkt.pt",
+      "www.transfermarkt.be",
+      "www.transfermarkt.us",
+    ];
+    if (!allowedHosts.includes(parsed.hostname)) return null;
+    // Only allow HTTPS
+    if (parsed.protocol !== "https:") return null;
     parsed.hash = "";
     return parsed.toString();
   } catch {
@@ -29,9 +47,9 @@ function kickProcessor() {
   if (isProcessing) return;
   isProcessing = true;
   try {
-    const proc = spawn("tsx", ["server/scraper/queue-worker.ts"], {
+    const proc = spawn("npx", ["tsx", "server/scraper/queue-worker.ts"], {
       stdio: "inherit",
-      shell: true,
+      // Security: Do not use shell:true to prevent command injection
     });
     proc.on("error", (err) => {
       console.error(

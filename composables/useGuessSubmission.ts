@@ -126,7 +126,7 @@ export function useGuessSubmission(
         // 6th wrong guess triggers abort, so remaining = MAX_WRONG_GUESSES + 1 - count
         const remaining = 6 - (res.wrongGuessCount ?? 0);
         announceToScreenReader(
-          `Incorrect guess. ${remaining} guess${remaining === 1 ? '' : 'es'} remaining.`,
+          `Incorrect guess. ${remaining} guess${remaining === 1 ? "" : "es"} remaining.`,
           "assertive",
         );
         onIncorrectGuess(res.wrongGuessCount);
