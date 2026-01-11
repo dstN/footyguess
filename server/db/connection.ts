@@ -19,14 +19,6 @@ try {
 db.function("regexp", (pattern: string, value: unknown) => {
   try {
     if (typeof value !== "string") return 0;
-    // Security: Only allow pre-defined patterns to prevent ReDoS attacks
-    const allowedPatterns = [
-      "U\\d{1,2}|Yth\\.|Jgd\\.", // Youth team filter
-    ];
-    if (!allowedPatterns.includes(pattern)) {
-      console.warn("[db] Blocked disallowed REGEXP pattern:", pattern);
-      return 0;
-    }
     const regex = new RegExp(pattern, "i");
     return regex.test(value) ? 1 : 0;
   } catch (error) {
