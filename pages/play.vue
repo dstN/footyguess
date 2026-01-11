@@ -33,6 +33,7 @@
           :revealed-clues="revealedClues"
           :hidden-clue-labels="hiddenClueLabels"
           :tip-button-disabled="tipButtonDisabled"
+          :is-loading="isLoading"
           @reveal-clue="revealNextClue"
           @give-up="giveUp"
         />

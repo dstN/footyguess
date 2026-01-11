@@ -77,7 +77,7 @@
         variant="ghost"
         size="sm"
         class="w-full cursor-pointer justify-center text-slate-400 hover:text-white"
-        :disabled="tipButtonDisabled"
+        :disabled="isLoading"
         @click="$emit('give-up')"
       >
         Give up
@@ -97,6 +97,7 @@ defineProps<{
   revealedClues: Clue[];
   hiddenClueLabels: string[];
   tipButtonDisabled: boolean;
+  isLoading?: boolean;
 }>();
 
 defineEmits<{
