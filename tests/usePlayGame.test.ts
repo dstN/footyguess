@@ -105,7 +105,10 @@ describe("usePlayGame", () => {
       data: { guess: samplePlayer.name },
     } as any);
 
-    expect(routerPushMock).toHaveBeenCalledWith("/won");
+    expect(routerPushMock).toHaveBeenCalledWith({
+      path: "/won",
+      query: { reason: "win" },
+    });
     expect(isError.value).toBe(false);
     expect(fetchMock).toHaveBeenCalled();
   });

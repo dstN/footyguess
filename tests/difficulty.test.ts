@@ -45,7 +45,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats);
 
       expect(result.tier).toBe("medium");
-      expect(result.multiplier).toBe(1.25);
+      expect(result.multiplier).toBe(2); // v1.3.0: medium = 2x
     });
 
     it("returns hard tier for 45-60 weighted international apps", () => {
@@ -54,7 +54,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats);
 
       expect(result.tier).toBe("hard");
-      expect(result.multiplier).toBe(1.5);
+      expect(result.multiplier).toBe(3); // v1.3.0: hard = 3x
     });
 
     it("returns ultra tier for <45 weighted international apps", () => {
@@ -63,7 +63,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats);
 
       expect(result.tier).toBe("ultra");
-      expect(result.multiplier).toBe(2);
+      expect(result.multiplier).toBe(4); // v1.3.0: ultra = 4x
     });
   });
 
@@ -93,7 +93,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats);
 
       expect(result.tier).toBe("hard");
-      expect(result.multiplier).toBe(1.5);
+      expect(result.multiplier).toBe(3); // v1.3.0: hard = 3x
     });
 
     it("returns ultra tier for <100 top 5 league apps", () => {
@@ -101,7 +101,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats);
 
       expect(result.tier).toBe("ultra");
-      expect(result.multiplier).toBe(2);
+      expect(result.multiplier).toBe(4); // v1.3.0: ultra = 4x
     });
   });
 
@@ -193,7 +193,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty(stats, { forceUltra: true });
 
       expect(result.tier).toBe("ultra");
-      expect(result.multiplier).toBe(2);
+      expect(result.multiplier).toBe(4); // v1.3.0: ultra = 4x
     });
 
     it("prevents downgrade rules from applying", () => {
@@ -229,7 +229,7 @@ describe("computeDifficulty", () => {
       const result = computeDifficulty([]);
 
       expect(result.tier).toBe("ultra");
-      expect(result.multiplier).toBe(2);
+      expect(result.multiplier).toBe(4); // v1.3.0: ultra = 4x
       expect(result.totalAppearances).toBe(0);
     });
 

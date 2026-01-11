@@ -7,9 +7,11 @@ process.env.NODE_ENV = "test";
 
 export const routerPushMock = vi.fn();
 export const toastAddMock = vi.fn();
+export const routeQueryMock = ref<Record<string, string>>({});
 
 vi.mock("#imports", () => ({
-  useRouter: () => ({ push: routerPushMock }),
+  useRouter: () => ({ push: routerPushMock, replace: vi.fn() }),
+  useRoute: () => ({ query: routeQueryMock.value }),
   useToast: () => ({ add: toastAddMock }),
   inject: () => undefined,
   onMounted: () => {},
@@ -18,7 +20,8 @@ vi.mock("#imports", () => ({
 
 // Define a type for the test globals
 interface TestGlobals {
-  useRouter: () => { push: typeof routerPushMock };
+  useRouter: () => { push: typeof routerPushMock; replace: () => void };
+  useRoute: () => { query: Record<string, string> };
   useToast: () => { add: typeof toastAddMock };
   inject: () => undefined;
   onMounted: () => void;
@@ -34,7 +37,8 @@ interface TestGlobals {
 
 // Expose globals so auto-imported composables (without explicit imports) work in tests.
 const testGlobals = globalThis as typeof globalThis & TestGlobals;
-testGlobals.useRouter = () => ({ push: routerPushMock });
+testGlobals.useRouter = () => ({ push: routerPushMock, replace: vi.fn() });
+testGlobals.useRoute = () => ({ query: routeQueryMock.value });
 testGlobals.useToast = () => ({ add: toastAddMock });
 testGlobals.inject = () => undefined;
 testGlobals.onMounted = () => {};
@@ -69,4 +73,5 @@ testGlobals.localStorage = {
 beforeEach(() => {
   routerPushMock.mockReset();
   toastAddMock.mockReset();
+  routeQueryMock.value = {};
 });

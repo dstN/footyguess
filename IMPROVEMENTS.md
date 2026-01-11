@@ -192,6 +192,17 @@ describe('calculateScore', () => {
 - Centralize `$fetch` mock in test setup
 - Add negative test cases (error paths)
 
+### Recent Test Fixes (v1.4.0)
+
+A quick summary of the test updates applied to align the test-suite with recent game logic changes:
+
+- **Added** a `useRoute` mock to the global test setup to provide `route.query` access for route-aware composables (tests/setup.ts).
+- **Updated** difficulty multiplier expectations in `tests/difficulty.test.ts` to reflect new multipliers (1×, 2×, 3×, 4×).
+- **Updated** scoring expectations and fixtures in `tests/scoring.test.ts` to match the v1.3.0 multipliers and v1.4.0 malice penalty (-10% per wrong guess).
+- **Adjusted** `tests/usePlayGame.test.ts` to expect router pushes with the new object form including `query: { reason: 'win' }`.
+- These fixes restored full test green status (all tests passing locally).
+
+
 ---
 
 ## 2. Game Logic Enhancements

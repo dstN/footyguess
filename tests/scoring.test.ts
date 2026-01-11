@@ -7,12 +7,12 @@ import {
 } from "~/server/utils/scoring";
 import type { Difficulty } from "~/server/utils/difficulty";
 
-// Standard difficulty fixtures
+// Standard difficulty fixtures (v1.3.0 multipliers: 1, 2, 3, 4)
 const easyDifficulty: Difficulty = {
   basis: "international",
   totalAppearances: 100,
   tier: "easy",
-  multiplier: 1.0,
+  multiplier: 1,
   basePoints: 100,
   cluePenalty: 10,
 };
@@ -21,7 +21,7 @@ const mediumDifficulty: Difficulty = {
   basis: "international",
   totalAppearances: 70,
   tier: "medium",
-  multiplier: 1.25,
+  multiplier: 2,
   basePoints: 100,
   cluePenalty: 10,
 };
@@ -30,7 +30,7 @@ const hardDifficulty: Difficulty = {
   basis: "international",
   totalAppearances: 50,
   tier: "hard",
-  multiplier: 1.5,
+  multiplier: 3,
   basePoints: 100,
   cluePenalty: 10,
 };
@@ -39,7 +39,7 @@ const ultraDifficulty: Difficulty = {
   basis: "international",
   totalAppearances: 30,
   tier: "ultra",
-  multiplier: 2.0,
+  multiplier: 4,
   basePoints: 100,
   cluePenalty: 10,
 };
@@ -135,10 +135,10 @@ describe("calculateScore", () => {
       const hard = calculateScore(hardDifficulty, 0, 0);
       const ultra = calculateScore(ultraDifficulty, 0, 0);
 
-      expect(easy.preStreak).toBe(100);
-      expect(medium.preStreak).toBe(125);
-      expect(hard.preStreak).toBe(150);
-      expect(ultra.preStreak).toBe(200);
+      expect(easy.preStreak).toBe(100); // 100 * 1.0 = 100
+      expect(medium.preStreak).toBe(200); // 100 * 2.0 = 200
+      expect(hard.preStreak).toBe(300); // 100 * 3.0 = 300
+      expect(ultra.preStreak).toBe(400); // 100 * 4.0 = 400
     });
   });
 
@@ -206,7 +206,7 @@ describe("calculateScore", () => {
   });
 
   describe("malice penalty", () => {
-    it("deducts 2% per missed guess", () => {
+    it("deducts 10% per missed guess (v1.4.0)", () => {
       const noMiss = calculateScore(easyDifficulty, 0, 0, { missedGuesses: 0 });
       const oneMiss = calculateScore(easyDifficulty, 0, 0, {
         missedGuesses: 1,
@@ -216,8 +216,8 @@ describe("calculateScore", () => {
       });
 
       expect(noMiss.malicePenalty).toBeCloseTo(0);
-      expect(oneMiss.malicePenalty).toBe(-0.02);
-      expect(fiveMiss.malicePenalty).toBe(-0.1);
+      expect(oneMiss.malicePenalty).toBe(-0.1); // v1.4.0: -10% per guess
+      expect(fiveMiss.malicePenalty).toBe(-0.5); // 5 * -10% = -50%
     });
 
     it("caps malice penalty at -50%", () => {
@@ -231,25 +231,25 @@ describe("calculateScore", () => {
 
   describe("combined formula", () => {
     it("correctly combines all factors", () => {
-      // Medium difficulty, 2 clues, streak of 10, 60s guess, 1 miss
+      // Medium difficulty (v1.3.0: 2x), 2 clues, streak of 10, 60s guess, 1 miss
       const result = calculateScore(mediumDifficulty, 2, 10, {
         elapsedSeconds: 60,
         missedGuesses: 1,
       });
 
-      // Base: 100 * 1.25 = 125
-      // After clues: 125 - 20 = 105
+      // Base: 100 * 2 = 200 (v1.3.0: medium = 2x)
+      // After clues: 200 - 20 = 180
       // Time bonus at 60s: ~0.607, so multiplier ~1.607
-      // timeScore: ~169
+      // timeScore: ~289
       // Streak: 10 -> +5%
-      // Malice: 1 miss -> -2%
+      // Malice: 1 miss -> -10% (v1.4.0)
 
       expect(result.base).toBe(100);
-      expect(result.multiplier).toBe(1.25);
-      expect(result.preStreak).toBe(105);
+      expect(result.multiplier).toBe(2); // v1.3.0: medium = 2x
+      expect(result.preStreak).toBe(180); // 100*2 - 2*10
       expect(result.cluesUsed).toBe(2);
       expect(result.streakBonus).toBe(0.05);
-      expect(result.malicePenalty).toBe(-0.02);
+      expect(result.malicePenalty).toBe(-0.1); // v1.4.0: -10% per guess
       expect(result.finalScore).toBeGreaterThan(100);
     });
 
