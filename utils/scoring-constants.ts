@@ -66,10 +66,18 @@ export const TIME_BONUS = {
 
 /**
  * Malice penalty (wrong guesses)
+ * Updated v1.4.0: Changed from -2% to -10% per wrong guess
+ * Max 5 wrong guesses allowed before round abort
  */
 export const MALICE_PENALTY = {
-  /** Penalty per wrong guess */
-  perGuess: 0.02,
-  /** Maximum penalty */
+  /** Penalty per wrong guess (-10% = -0.1) */
+  perGuess: 0.1,
+  /** Maximum penalty (5 wrong guesses × 10% = 50%) */
   max: 0.5,
 } as const;
+
+/**
+ * Maximum wrong guesses allowed before round abort
+ * 6th wrong guess = instant loss (score = 0)
+ */
+export const MAX_WRONG_GUESSES = 5;

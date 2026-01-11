@@ -45,9 +45,10 @@ export function calculateScore(
   const streakBonus = getStreakBonusMultiplier(streak);
   const timeBonus = clampTimeBonus(getTimeBonus(opts.elapsedSeconds));
 
-  // Calculate malice penalty: -2% per missed guess, max -50%
+  // Calculate malice penalty: -10% per missed guess, max -50% (at 5 wrong guesses)
+  // Note: 6th wrong guess triggers round abort (handled in guess service)
   const missedGuesses = opts.missedGuesses ?? 0;
-  const malicePenalty = Math.max(-0.5, -0.02 * missedGuesses);
+  const malicePenalty = Math.max(-0.5, -0.1 * missedGuesses);
 
   // Time bonus is additive: 0.2 = +20%, -0.5 = -50%
   // Apply time bonus to preStreak, minimum is 10% of preStreak or floor
