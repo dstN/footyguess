@@ -99,6 +99,32 @@ export function usePlayGame() {
       : 0,
   );
 
+  // === Difficulty Persistence ===
+  /**
+   * Persist difficulty to localStorage for "New Mystery" continuity
+   */
+  function persistDifficulty(diff: UserSelectedDifficulty) {
+    if (import.meta.client) {
+      localStorage.setItem("footyguess_difficulty", diff);
+    }
+  }
+
+  /**
+   * Load difficulty from localStorage
+   */
+  function loadPersistedDifficulty(): UserSelectedDifficulty | null {
+    if (import.meta.client) {
+      const stored = localStorage.getItem("footyguess_difficulty");
+      if (
+        stored &&
+        ["default", "easy", "medium", "hard", "ultra"].includes(stored)
+      ) {
+        return stored as UserSelectedDifficulty;
+      }
+    }
+    return null;
+  }
+
   // === Player Loading ===
   /**
    * Load player with form reset and clue selection
@@ -107,7 +133,12 @@ export function usePlayGame() {
   async function loadPlayer(options?: LoadPlayerOptions | string) {
     // Handle backwards compatibility: loadPlayer("name") -> loadPlayer({ name: "name" })
     const opts: LoadPlayerOptions =
-      typeof options === "string" ? { name: options } : options ?? {};
+      typeof options === "string" ? { name: options } : (options ?? {});
+
+    // Persist difficulty when explicitly provided
+    if (opts.difficulty) {
+      persistDifficulty(opts.difficulty);
+    }
 
     await loadPlayerSession(opts);
     formState.guess = "";
@@ -167,24 +198,45 @@ export function usePlayGame() {
       color: "primary",
       icon: "i-lucide-party-popper",
     });
-    router.push("/won");
+    router.push({ path: "/won", query: { reason: "win" } });
   }
 
   /**
    * Handle incorrect guess - trigger shake and error message
    */
-  function handleIncorrectGuess() {
+  function handleIncorrectGuess(wrongGuessCount?: number) {
     formState.guess = "";
     clearSearch();
     isError.value = true;
-    errorMessage.value = "Incorrect guess - follow the clues more carefully";
+    const remaining = 5 - (wrongGuessCount ?? 0);
+    errorMessage.value =
+      remaining <= 2
+        ? `Wrong! Only ${remaining} guess${remaining === 1 ? "" : "es"} left before round loss!`
+        : "Incorrect guess - follow the clues more carefully";
     toast.add({
       title: "Wrong player",
-      description: "Try again - follow the clues.",
+      description:
+        remaining <= 2
+          ? `⚠️ ${remaining} guess${remaining === 1 ? "" : "es"} remaining!`
+          : "Try again - follow the clues.",
       color: "error",
       icon: "i-lucide-x-circle",
     });
     triggerShake?.();
+  }
+
+  /**
+   * Handle round abort (too many wrong guesses)
+   */
+  function handleAborted(playerName: string) {
+    persistLastPlayer(playerName);
+    toast.add({
+      title: "Round lost!",
+      description: "Too many wrong guesses. Better luck next time!",
+      color: "error",
+      icon: "i-lucide-skull",
+    });
+    router.push({ path: "/won", query: { reason: "aborted" } });
   }
 
   /**
@@ -216,7 +268,7 @@ export function usePlayGame() {
       });
 
       persistLastPlayer(res.playerName);
-      router.push({ path: "/won", query: { surrendered: "true" } });
+      router.push({ path: "/won", query: { reason: "surrender" } });
     } catch (e) {
       handleGuessError("Failed to surrender round.");
     } finally {
@@ -225,16 +277,18 @@ export function usePlayGame() {
   }
 
   // === Guess Submission ===
-  const { submitGuess, onSubmit, submitGuessViaEnter } = useGuessSubmission(
-    player,
-    round,
-    streak,
-    bestStreak,
-    updateStreak,
-    handleCorrectGuess,
-    handleIncorrectGuess,
-    handleGuessError,
-  );
+  const { submitGuess, onSubmit, submitGuessViaEnter, wrongGuessCount } =
+    useGuessSubmission(
+      player,
+      round,
+      streak,
+      bestStreak,
+      updateStreak,
+      handleCorrectGuess,
+      handleIncorrectGuess,
+      handleGuessError,
+      handleAborted,
+    );
 
   // === Lifecycle ===
   onMounted(async () => {
@@ -257,7 +311,13 @@ export function usePlayGame() {
       // Clear the query param after loading (optional, keeps URL clean)
       router.replace({ query: {} });
     } else {
-      await loadPlayer();
+      // Try to load persisted difficulty (from previous game / "New Mystery")
+      const persistedDifficulty = loadPersistedDifficulty();
+      if (persistedDifficulty) {
+        await loadPlayer({ difficulty: persistedDifficulty });
+      } else {
+        await loadPlayer();
+      }
     }
   });
 
@@ -297,6 +357,12 @@ export function usePlayGame() {
     // Streak
     streak,
     bestStreak,
+
+    // Wrong guess tracking
+    wrongGuessCount,
+
+    // Difficulty persistence
+    loadPersistedDifficulty,
 
     // Player Reset
     confirmResetOpen,

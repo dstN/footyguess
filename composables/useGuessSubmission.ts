@@ -38,10 +38,12 @@ export function useGuessSubmission(
     score: number,
     newStreak: number,
   ) => void,
-  onIncorrectGuess: () => void,
+  onIncorrectGuess: (wrongGuessCount?: number) => void,
   onError: (message: string) => void,
+  onAborted?: (playerName: string) => void,
 ) {
   const isSubmitting = ref(false);
+  const wrongGuessCount = ref(0);
 
   /**
    * Validates and extracts guess value from various input formats
@@ -76,6 +78,9 @@ export function useGuessSubmission(
         bestStreak: number;
         playerName: string;
         difficulty: Player["difficulty"];
+        aborted?: boolean;
+        abortReason?: string;
+        wrongGuessCount?: number;
       }>("/api/guess", {
         method: "POST",
         body: {
@@ -90,6 +95,21 @@ export function useGuessSubmission(
       bestStreak.value = res.bestStreak;
       onStreakUpdate(res.streak, res.bestStreak);
 
+      // Track wrong guess count
+      if (res.wrongGuessCount !== undefined) {
+        wrongGuessCount.value = res.wrongGuessCount;
+      }
+
+      // Handle round abort (too many wrong guesses)
+      if (res.aborted) {
+        announceToScreenReader(
+          `Round lost! Too many wrong guesses. The player was ${res.playerName}`,
+          "assertive",
+        );
+        onAborted?.(res.playerName);
+        return;
+      }
+
       if (res.correct) {
         announceToScreenReader(
           `Correct! You guessed ${res.playerName}. Score: ${res.score}`,
@@ -103,8 +123,11 @@ export function useGuessSubmission(
           res.streak,
         );
       } else {
-        announceToScreenReader("Incorrect guess. Try again.", "assertive");
-        onIncorrectGuess();
+        announceToScreenReader(
+          `Incorrect guess. ${5 - (res.wrongGuessCount ?? 0)} guesses remaining.`,
+          "assertive",
+        );
+        onIncorrectGuess(res.wrongGuessCount);
       }
     } catch (err) {
       const message =
@@ -142,6 +165,7 @@ export function useGuessSubmission(
 
   return {
     isSubmitting,
+    wrongGuessCount,
     submitGuess,
     onSubmit,
     submitGuessViaEnter,

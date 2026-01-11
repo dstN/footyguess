@@ -100,7 +100,7 @@ export function useGameSession() {
 
     // Handle backwards compatibility: loadPlayer("name") -> loadPlayer({ name: "name" })
     const opts: LoadPlayerOptions =
-      typeof options === "string" ? { name: options } : options ?? {};
+      typeof options === "string" ? { name: options } : (options ?? {});
 
     try {
       const sid = ensureSessionId();
