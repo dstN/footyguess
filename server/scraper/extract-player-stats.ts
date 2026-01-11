@@ -61,6 +61,7 @@ function buildStatsUrl(profileUrl: string): string {
 function getCellText(cellHtml: string): string {
   return cellHtml
     .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .trim();
