@@ -49,14 +49,26 @@ async function findTmIdViaDuckDuckGo(
         const links = item.querySelectorAll("a");
         for (const link of Array.from(links)) {
           const href = link.getAttribute("href");
-          if (href && href.startsWith("https://www.transfermarkt.com")) {
-            // Extract tm_id from URL: /spieler/{id}
-            const match = href.match(/\/spieler\/(\d+)/);
-            if (match && match[1]) {
-              return {
-                tmId: parseInt(match[1]),
-                url: href,
-              };
+          if (href) {
+            try {
+              // Parse URL safely and validate hostname/protocol
+              const url = new URL(href, window.location.href);
+              if (
+                url.protocol === "https:" &&
+                ["www.transfermarkt.com", "transfermarkt.com"].includes(url.hostname)
+              ) {
+                // Extract tm_id from URL pathname: /spieler/{id}
+                const match = url.pathname.match(/\/spieler\/(\d+)/);
+                if (match && match[1]) {
+                  return {
+                    tmId: parseInt(match[1]),
+                    url: url.toString(),
+                  };
+                }
+              }
+            } catch (error) {
+              // Skip malformed URLs
+              continue;
             }
           }
         }
