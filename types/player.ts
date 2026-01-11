@@ -1,7 +1,33 @@
 /**
- * Difficulty tier levels
+ * Difficulty tier levels (computed from player stats)
  */
 export type DifficultyTier = "easy" | "medium" | "hard" | "ultra";
+
+/**
+ * User-selected difficulty option before starting a game
+ * "default" randomly selects from easy, medium, or hard (excludes ultra)
+ */
+export type UserSelectedDifficulty =
+  | "default"
+  | "easy"
+  | "medium"
+  | "hard"
+  | "ultra";
+
+/**
+ * Game mode types - scaffold for future extensibility
+ * Currently only 'classic' is implemented
+ * Future modes could include: 'time-attack', 'career', 'daily-challenge'
+ */
+export type GameMode = "classic";
+
+/**
+ * Game configuration passed when starting a new game
+ */
+export interface GameConfig {
+  difficulty: UserSelectedDifficulty;
+  mode: GameMode;
+}
 
 /**
  * Difficulty information for a player

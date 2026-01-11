@@ -95,8 +95,10 @@ function sumWeightedInternational(stats: StatRow[]) {
  * @returns Object containing tier name and point multiplier
  *
  * @example
- * getTier("international", 70) // => { tier: 'medium', multiplier: 1.25 }
- * getTier("top5", 250) // => { tier: 'medium', multiplier: 1.25 }
+ * getTier("international", 70) // => { tier: 'medium', multiplier: 2 }
+ * getTier("top5", 250) // => { tier: 'medium', multiplier: 2 }
+ *
+ * Multipliers (updated v1.3.0): Easy=1, Medium=2, Hard=3, Ultra=4
  */
 function getTier(
   basis: DifficultyBasis,
@@ -104,20 +106,20 @@ function getTier(
 ): { tier: DifficultyTier; multiplier: number } {
   if (basis === "international") {
     if (totalApps > 80) return { tier: "easy", multiplier: 1 };
-    if (totalApps >= 60) return { tier: "medium", multiplier: 1.25 };
+    if (totalApps >= 60) return { tier: "medium", multiplier: 2 };
     if (totalApps >= INTL_HARD_THRESHOLD) {
-      return { tier: "hard", multiplier: 1.5 };
+      return { tier: "hard", multiplier: 3 };
     }
-    return { tier: "ultra", multiplier: 2 };
+    return { tier: "ultra", multiplier: 4 };
   }
 
   // top 5 leagues
   if (totalApps > 400) return { tier: "easy", multiplier: 1 };
-  if (totalApps >= 200) return { tier: "medium", multiplier: 1.25 };
+  if (totalApps >= 200) return { tier: "medium", multiplier: 2 };
   if (totalApps >= TOP5_HARD_THRESHOLD) {
-    return { tier: "hard", multiplier: 1.5 };
+    return { tier: "hard", multiplier: 3 };
   }
-  return { tier: "ultra", multiplier: 2 };
+  return { tier: "ultra", multiplier: 4 };
 }
 
 /**
@@ -187,7 +189,7 @@ export function computeDifficulty(
   }
 
   let tier = opts.forceUltra
-    ? { tier: "ultra" as const, multiplier: 2 }
+    ? { tier: "ultra" as const, multiplier: 4 }
     : chosen.tier;
 
   // If a player is flagged easy purely by league apps but has little/no top European experience,
@@ -198,7 +200,7 @@ export function computeDifficulty(
     tier.tier === "easy" &&
     intlApps < 50
   ) {
-    tier = { tier: "medium", multiplier: 1.25 };
+    tier = { tier: "medium", multiplier: 2 };
   }
 
   // If a player is flagged medium by league apps but has minimal international experience,
@@ -209,7 +211,7 @@ export function computeDifficulty(
     tier.tier === "medium" &&
     intlApps < 35
   ) {
-    tier = { tier: "hard", multiplier: 1.5 };
+    tier = { tier: "hard", multiplier: 3 };
   }
 
   // If a player is flagged easy by international apps but has minimal top5 league experience,
@@ -220,7 +222,7 @@ export function computeDifficulty(
     tier.tier === "easy" &&
     top5Apps < TOP5_EASY_MIN
   ) {
-    tier = { tier: "medium", multiplier: 1.25 };
+    tier = { tier: "medium", multiplier: 2 };
   }
 
   // If a player is flagged medium by international apps but has very minimal top5 league experience,
@@ -231,7 +233,7 @@ export function computeDifficulty(
     tier.tier === "medium" &&
     top5Apps < TOP5_MEDIUM_MIN
   ) {
-    tier = { tier: "hard", multiplier: 1.5 };
+    tier = { tier: "hard", multiplier: 3 };
   }
 
   // Allow ultra tier even in normal mode; forceUltra still overrides.

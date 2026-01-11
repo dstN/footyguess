@@ -15,12 +15,14 @@ export const CLUE_PENALTY = 10;
 
 /**
  * Difficulty multipliers by tier
+ * Updated v1.3.0: Changed from (1.0, 1.25, 1.5, 2.0) to (1, 2, 3, 4)
+ * for more meaningful scoring differentiation between tiers
  */
 export const DIFFICULTY_MULTIPLIERS = {
-  easy: 1.0,
-  medium: 1.25,
-  hard: 1.5,
-  ultra: 2.0,
+  easy: 1,
+  medium: 2,
+  hard: 3,
+  ultra: 4,
 } as const;
 
 /**
@@ -28,9 +30,9 @@ export const DIFFICULTY_MULTIPLIERS = {
  */
 export const MAX_POINTS_BY_TIER = {
   easy: 100,
-  medium: 125,
-  hard: 150,
-  ultra: 200,
+  medium: 200,
+  hard: 300,
+  ultra: 400,
 } as const;
 
 /**
