@@ -100,11 +100,38 @@ export function searchPlayers(query: string, limit: number = 10): string[] {
 }
 
 /**
- * Get a random player, optionally filtered by difficulty
+ * Options for getting a random player
+ */
+interface GetRandomPlayerOptions {
+  /**
+   * Filter by specific difficulty tier
+   * If provided, only returns players matching this tier
+   */
+  tierFilter?: Difficulty["tier"];
+}
+
+/**
+ * Get a random player, optionally filtered by difficulty tier
+ *
+ * @param options - Configuration options
+ * @param options.tierFilter - Optional tier to filter by (easy/medium/hard/ultra)
+ * @returns Player with full details, or null if none found
+ *
+ * @example
+ * // Get any player (excluding ultra by default)
+ * getRandomPlayer()
+ *
+ * // Get only hard difficulty players
+ * getRandomPlayer({ tierFilter: 'hard' })
+ *
+ * // Get ultra difficulty players
+ * getRandomPlayer({ tierFilter: 'ultra' })
  */
 export function getRandomPlayer(
-  hardMode: boolean = false,
+  options: GetRandomPlayerOptions = {},
 ): PlayerWithDetails | null {
+  const { tierFilter } = options;
+
   const intlCases = Object.entries(INTL_WEIGHTS)
     .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
     .join(" ");
@@ -112,9 +139,11 @@ export function getRandomPlayer(
   const top5Ids = TOP5_LEAGUES.map((id) => `'${id}'`).join(", ");
   const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
 
-  const filterClause = hardMode
-    ? ""
-    : `WHERE p.id IN (
+  // Build filter clause based on tier filter
+  let filterClause: string;
+  if (tierFilter === "ultra") {
+    // Ultra: players that don't meet hard thresholds
+    filterClause = `WHERE p.id NOT IN (
         SELECT ps.player_id
         FROM player_stats ps
         JOIN competitions c ON ps.competition_id = c.id
@@ -122,6 +151,28 @@ export function getRandomPlayer(
         HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
            OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
       )`;
+  } else if (tierFilter) {
+    // Specific tier: filter to players meeting hard threshold (non-ultra pool)
+    // Then we'll verify exact tier in the retry loop
+    filterClause = `WHERE p.id IN (
+        SELECT ps.player_id
+        FROM player_stats ps
+        JOIN competitions c ON ps.competition_id = c.id
+        GROUP BY ps.player_id
+        HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
+           OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
+      )`;
+  } else {
+    // Default: exclude ultra (backwards compatible behavior)
+    filterClause = `WHERE p.id IN (
+        SELECT ps.player_id
+        FROM player_stats ps
+        JOIN competitions c ON ps.competition_id = c.id
+        GROUP BY ps.player_id
+        HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
+           OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
+      )`;
+  }
 
   const countRow = db
     .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)
@@ -130,8 +181,11 @@ export function getRandomPlayer(
 
   if (totalCount <= 0) return null;
 
+  // Increase attempts when filtering by specific tier
+  const maxAttempts = tierFilter ? 15 : 5;
   let attempts = 0;
-  while (attempts < 5) {
+
+  while (attempts < maxAttempts) {
     const offset = Math.floor(Math.random() * totalCount);
     const player = db
       .prepare(
@@ -150,8 +204,17 @@ export function getRandomPlayer(
 
     try {
       const enriched = enrichPlayer(player);
-      if (hardMode || enriched.difficulty.tier !== "ultra") {
-        return enriched;
+
+      // Check if tier matches filter (if specified)
+      if (tierFilter) {
+        if (enriched.difficulty.tier === tierFilter) {
+          return enriched;
+        }
+      } else {
+        // Default behavior: exclude ultra
+        if (enriched.difficulty.tier !== "ultra") {
+          return enriched;
+        }
       }
     } catch {
       // Invalid player data, try another
@@ -162,7 +225,6 @@ export function getRandomPlayer(
 
   return null;
 }
-
 // --- Internal helpers ---
 
 function enrichPlayer(player: Player): PlayerWithDetails {

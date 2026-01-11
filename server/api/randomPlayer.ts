@@ -8,6 +8,16 @@ import { errorResponse } from "../utils/response.ts";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { getRandomPlayer, getPlayerById } from "../services/player.ts";
 import { object, optional, picklist, string, maxLength, pipe } from "valibot";
+import type { DifficultyTier, UserSelectedDifficulty } from "~/types/player";
+
+/**
+ * Resolve "default" difficulty to a random tier from easy, medium, hard
+ * @returns Random tier excluding ultra
+ */
+function resolveDefaultDifficulty(): DifficultyTier {
+  const tiers: DifficultyTier[] = ["easy", "medium", "hard"];
+  return tiers[Math.floor(Math.random() * tiers.length)] as DifficultyTier;
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -22,7 +32,12 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     const parsed = parseSchema(
       object({
+        // Legacy mode param (backwards compatibility)
         mode: optional(picklist(["hard", "normal"])),
+        // New difficulty param
+        difficulty: optional(
+          picklist(["default", "easy", "medium", "hard", "ultra"]),
+        ),
         sessionId: optional(pipe(string(), maxLength(128))),
       }),
       query,
@@ -33,7 +48,22 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const hardMode = parsed.data.mode === "hard";
+    // Resolve difficulty: new param takes precedence, fallback to legacy mode
+    let tierFilter: DifficultyTier | undefined;
+    const userDifficulty = parsed.data.difficulty as
+      | UserSelectedDifficulty
+      | undefined;
+
+    if (userDifficulty) {
+      tierFilter =
+        userDifficulty === "default"
+          ? resolveDefaultDifficulty()
+          : userDifficulty;
+    } else if (parsed.data.mode === "hard") {
+      // Legacy: mode=hard means ultra
+      tierFilter = "ultra";
+    }
+
     const sessionFromQuery = parsed.data.sessionId ?? null;
     const sessionId = sessionFromQuery || generateSessionId();
 
@@ -88,7 +118,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Start New Round (if no active round found)
-    const playerData = getRandomPlayer(hardMode);
+    const playerData = getRandomPlayer({ tierFilter });
     if (!playerData) {
       return errorResponse(
         404,
