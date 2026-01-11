@@ -1,6 +1,6 @@
 import { computed, inject, onMounted, reactive, ref } from "vue";
 import type { FormSubmitEvent } from "@nuxt/ui";
-import type { Player } from "~/types/player";
+import type { Player, UserSelectedDifficulty } from "~/types/player";
 import type { GuessFormState, GuessFormOutput } from "~/types/forms";
 import { GuessFormSchema } from "~/types/forms";
 import { useGameSession } from "~/composables/useGameSession";
@@ -10,6 +10,16 @@ import { useClueReveal } from "~/composables/useClueReveal";
 import { usePlayerReset } from "~/composables/usePlayerReset";
 import { usePlayerSearch } from "~/composables/usePlayerSearch";
 import { useTransferTimeline } from "~/composables/useTransferTimeline";
+
+/**
+ * Options for loading a player in the game
+ */
+interface LoadPlayerOptions {
+  /** Player name (for specific player) */
+  name?: string;
+  /** Difficulty filter for random player */
+  difficulty?: UserSelectedDifficulty;
+}
 
 /**
  * Main game composable that orchestrates all game logic
@@ -32,6 +42,7 @@ import { useTransferTimeline } from "~/composables/useTransferTimeline";
  */
 export function usePlayGame() {
   const router = useRouter();
+  const route = useRoute();
   const toast = useToast();
   const triggerShake = inject<() => void>("triggerShake");
 
@@ -44,6 +55,7 @@ export function usePlayGame() {
     isLoading,
     errorMessage,
     isError,
+    selectedDifficulty,
     loadPlayer: loadPlayerSession,
     resetSessionId,
   } = useGameSession();
@@ -90,9 +102,14 @@ export function usePlayGame() {
   // === Player Loading ===
   /**
    * Load player with form reset and clue selection
+   * @param options - Either player name string or options object with name/difficulty
    */
-  async function loadPlayer(name?: string) {
-    await loadPlayerSession(name);
+  async function loadPlayer(options?: LoadPlayerOptions | string) {
+    // Handle backwards compatibility: loadPlayer("name") -> loadPlayer({ name: "name" })
+    const opts: LoadPlayerOptions =
+      typeof options === "string" ? { name: options } : options ?? {};
+
+    await loadPlayerSession(opts);
     formState.guess = "";
     clearSearch();
     selectRandomClues();
@@ -222,7 +239,26 @@ export function usePlayGame() {
   // === Lifecycle ===
   onMounted(async () => {
     loadStreakFromStorage();
-    await loadPlayer();
+
+    // Check for difficulty from query param (from index.vue navigation)
+    const queryDifficulty = route.query.difficulty as
+      | UserSelectedDifficulty
+      | undefined;
+    const validDifficulties: UserSelectedDifficulty[] = [
+      "default",
+      "easy",
+      "medium",
+      "hard",
+      "ultra",
+    ];
+
+    if (queryDifficulty && validDifficulties.includes(queryDifficulty)) {
+      await loadPlayer({ difficulty: queryDifficulty });
+      // Clear the query param after loading (optional, keeps URL clean)
+      router.replace({ query: {} });
+    } else {
+      await loadPlayer();
+    }
   });
 
   // === Public API ===
@@ -242,6 +278,7 @@ export function usePlayGame() {
     isError,
     difficulty,
     maxBasePoints,
+    selectedDifficulty,
 
     // Clues
     revealedClues,
@@ -265,9 +302,9 @@ export function usePlayGame() {
     confirmResetOpen,
     loadPlayer,
     requestNewPlayer,
-    confirmNewPlayer: () => {
+    confirmNewPlayer: (difficulty?: UserSelectedDifficulty) => {
       resetSessionId();
-      confirmNewPlayer();
+      confirmNewPlayer(difficulty);
     },
     cancelNewPlayer,
 

@@ -1,7 +1,7 @@
 import { ref, onMounted } from "vue";
 import { logError } from "~/utils/client-logger";
 import { createTimeoutSignal } from "~/utils/fetch";
-import type { Player } from "~/types/player";
+import type { Player, UserSelectedDifficulty } from "~/types/player";
 
 /**
  * Round/Session state interface
@@ -21,14 +21,25 @@ interface RoundState {
 }
 
 /**
+ * Options for loading a player
+ */
+interface LoadPlayerOptions {
+  /** Player name for specific player load (optional) */
+  name?: string;
+  /** User-selected difficulty for random player (optional) */
+  difficulty?: UserSelectedDifficulty;
+}
+
+/**
  * Manages game session and round state
  * Handles session ID persistence and player loading
  *
  * @example
  * ```ts
  * const { sessionId, round, player, isLoading, loadPlayer } = useGameSession();
- * await loadPlayer(); // Load random player
- * await loadPlayer("Harry Kane"); // Load specific player
+ * await loadPlayer(); // Load random player with default difficulty
+ * await loadPlayer({ difficulty: 'hard' }); // Load random hard player
+ * await loadPlayer({ name: "Harry Kane" }); // Load specific player
  * ```
  */
 export function useGameSession() {
@@ -39,11 +50,8 @@ export function useGameSession() {
   const isLoading = ref(false);
   const errorMessage = ref("");
   const isError = ref(false);
+  const selectedDifficulty = ref<UserSelectedDifficulty>("default");
 
-  /**
-   * Ensures a session ID exists, creating or loading from storage
-   * @returns {string} The current or newly created session ID
-   */
   /**
    * Resets the session ID to a new random value
    */
@@ -83,18 +91,33 @@ export function useGameSession() {
 
   /**
    * Loads a player from the server
-   * @param {string} [name] - Optional player name to load. If undefined, loads random player
+   * @param {LoadPlayerOptions | string} [options] - Either options object or player name (for backwards compatibility)
    */
-  async function loadPlayer(name?: string) {
+  async function loadPlayer(options?: LoadPlayerOptions | string) {
     isLoading.value = true;
     errorMessage.value = "";
     isError.value = false;
 
+    // Handle backwards compatibility: loadPlayer("name") -> loadPlayer({ name: "name" })
+    const opts: LoadPlayerOptions =
+      typeof options === "string" ? { name: options } : options ?? {};
+
     try {
       const sid = ensureSessionId();
-      const endpoint = name
-        ? `/api/getPlayer?name=${encodeURIComponent(name)}&sessionId=${encodeURIComponent(sid)}`
-        : `/api/randomPlayer?sessionId=${encodeURIComponent(sid)}`;
+      let endpoint: string;
+
+      if (opts.name) {
+        // Load specific player by name
+        endpoint = `/api/getPlayer?name=${encodeURIComponent(opts.name)}&sessionId=${encodeURIComponent(sid)}`;
+      } else {
+        // Load random player with optional difficulty filter
+        const params = new URLSearchParams({ sessionId: sid });
+        if (opts.difficulty) {
+          params.set("difficulty", opts.difficulty);
+          selectedDifficulty.value = opts.difficulty;
+        }
+        endpoint = `/api/randomPlayer?${params.toString()}`;
+      }
 
       const response = await $fetch<
         {
@@ -141,6 +164,7 @@ export function useGameSession() {
     isLoading,
     errorMessage,
     isError,
+    selectedDifficulty,
     ensureSessionId,
     resetSessionId,
     loadPlayer,

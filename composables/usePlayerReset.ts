@@ -1,4 +1,13 @@
 import { ref, type Ref } from "vue";
+import type { UserSelectedDifficulty } from "~/types/player";
+
+/**
+ * Options for loading a player
+ */
+interface LoadPlayerOptions {
+  name?: string;
+  difficulty?: UserSelectedDifficulty;
+}
 
 /**
  * Manages player reset flow with streak confirmation
@@ -13,7 +22,7 @@ import { ref, type Ref } from "vue";
 export function usePlayerReset(
   streak: Ref<number>,
   resetStreak: () => void,
-  loadPlayer: (name?: string) => Promise<void>,
+  loadPlayer: (options?: LoadPlayerOptions | string) => Promise<void>,
 ) {
   const confirmOpen = ref(false);
   const pendingName = ref<string | undefined>(undefined);
@@ -33,13 +42,24 @@ export function usePlayerReset(
   }
 
   /**
-   * Confirm new player request
-   * Resets streak and loads the pending player
+   * Confirm new player request with optional difficulty selection
+   * Resets streak and loads a new player
+   * @param difficulty - Optional difficulty to use for the new player
    */
-  function confirm() {
+  function confirm(difficulty?: UserSelectedDifficulty) {
     resetStreak();
     confirmOpen.value = false;
-    loadPlayer(pendingName.value);
+
+    // Build options based on pending name and selected difficulty
+    const options: LoadPlayerOptions = {};
+    if (pendingName.value) {
+      options.name = pendingName.value;
+    }
+    if (difficulty) {
+      options.difficulty = difficulty;
+    }
+
+    loadPlayer(Object.keys(options).length > 0 ? options : undefined);
     pendingName.value = undefined;
   }
 
