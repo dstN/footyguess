@@ -284,9 +284,75 @@ logError("useGameSession", "Failed to load player", err);
 
 ---
 
-## 7. Performance & Scalability Posture
+## 7. Difficulty & Scoring System
 
-### 7.1 Current Priorities
+### 7.1 Difficulty Selection Flow
+
+```text
+User clicks "Play Game" (index.vue)
+         │
+         ▼
+┌─────────────────────────────┐
+│   DifficultySelector Modal  │
+│  ○ Default (random E/M/H)   │
+│  ○ Easy    – 1× (100 pts)   │
+│  ○ Medium  – 2× (200 pts)   │
+│  ○ Hard    – 3× (300 pts)   │
+│  ○ Ultra   – 4× (400 pts)   │
+└─────────────────────────────┘
+         │
+         ▼
+Navigate to /play?difficulty=X
+         │
+         ▼
+usePlayGame reads query param
+         │
+         ▼
+loadPlayer({ difficulty: X })
+         │
+         ▼
+API /api/randomPlayer?difficulty=X
+         │
+         ▼
+getRandomPlayer({ tierFilter: X })
+```
+
+### 7.2 Difficulty Types
+
+| Type                     | Values                                    | Purpose                   |
+| ------------------------ | ----------------------------------------- | ------------------------- |
+| `DifficultyTier`         | `'easy' \| 'medium' \| 'hard' \| 'ultra'` | Computed tier from stats  |
+| `UserSelectedDifficulty` | Same + `'default'`                        | User selection at UI      |
+| `GameMode`               | `'classic'` (future: more modes)          | Game mode scaffold        |
+
+### 7.3 Scoring Multipliers (v1.3.0)
+
+| Tier   | Multiplier | Max Base Score | Notes                              |
+| ------ | ---------- | -------------- | ---------------------------------- |
+| Easy   | 1×         | 100 pts        | Famous players (high appearances)  |
+| Medium | 2×         | 200 pts        | Recognizable players               |
+| Hard   | 3×         | 300 pts        | Obscure players                    |
+| Ultra  | 4×         | 400 pts        | Very obscure (not in Default pool) |
+
+**"Default" difficulty**: Randomly selects Easy, Medium, or Hard (excludes
+Ultra).
+
+### 7.4 Key Files
+
+| File                               | Responsibility                          |
+| ---------------------------------- | --------------------------------------- |
+| `types/player.ts`                  | Type definitions                        |
+| `utils/scoring-constants.ts`       | Client-side constants (display)         |
+| `server/utils/difficulty.ts`       | Server-side tier calculation            |
+| `server/services/player.ts`        | `getRandomPlayer()` with tier filter    |
+| `components/DifficultySelector.vue` | UI modal for difficulty selection       |
+| `composables/useGameSession.ts`    | Passes difficulty to API                |
+
+---
+
+## 8. Performance & Scalability Posture
+
+### 8.1 Current Priorities
 
 - **Client bundle size** — Vite chunking enabled, vendor split
 - **DB query efficiency** — Indexes on frequently queried columns
@@ -294,7 +360,7 @@ logError("useGameSession", "Failed to load player", err);
 - **WAL mode** — SQLite configured for concurrent reads
 - **Robustness** — Client side timeouts, dead letter queues, and session cleanup
 
-### 7.2 Deferred Concerns
+### 8.2 Deferred Concerns
 
 | Concern                    | Status             | Reference         |
 | -------------------------- | ------------------ | ----------------- |
@@ -303,9 +369,9 @@ logError("useGameSession", "Failed to load player", err);
 
 ---
 
-## 8. Known Tensions & Open Issues
+## 9. Known Tensions & Open Issues
 
-### 8.1 Intentional Technical Debt
+### 9.1 Intentional Technical Debt
 
 | Issue                             | Category    | Decision                                                              |
 | --------------------------------- | ----------- | --------------------------------------------------------------------- |
@@ -315,9 +381,9 @@ logError("useGameSession", "Failed to load player", err);
 
 ---
 
-## 9. Anti-Patterns & Guardrails
+## 10. Anti-Patterns & Guardrails
 
-### 9.1 Forbidden Patterns
+### 10.1 Forbidden Patterns
 
 | Pattern                                       | Why It's Forbidden                |
 | --------------------------------------------- | --------------------------------- |
@@ -329,7 +395,7 @@ logError("useGameSession", "Failed to load player", err);
 | Committing `.env` files                       | Credential exposure               |
 | `// @ts-ignore` without justification comment | Silent type hole                  |
 
-### 9.2 Allowed With Justification
+### 10.2 Allowed With Justification
 
 | Pattern                      | When Acceptable                                                  |
 | ---------------------------- | ---------------------------------------------------------------- |
@@ -340,7 +406,7 @@ logError("useGameSession", "Failed to load player", err);
 
 ---
 
-## 10. Decision Rules
+## 11. Decision Rules
 
 ### Quick Reference
 
@@ -402,6 +468,7 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 | Date       | Change                                          |
 | ---------- | ----------------------------------------------- |
+| 2026-01-12 | Added §7 Difficulty & Scoring System            |
 | 2026-01-11 | Fixed duplicate diagram in §2.1                 |
 | 2026-01-10 | Added Service Layer, AppError, Security Headers |
 | 2026-01-09 | Updated: Resolved all major tech debt issues    |

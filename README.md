@@ -10,6 +10,16 @@ football players. Each round presents a mystery player from a database of real
 career data. You reveal clues incrementally—nationality, position, career stats,
 transfer timeline—and submit guesses until you identify the player correctly.
 
+**Choose your difficulty before each game:**
+
+| Difficulty | Multiplier | Max Base Score | Description                         |
+| ---------- | ---------- | -------------- | ----------------------------------- |
+| Default    | 1×–3×      | 100–300 pts    | Random: Easy, Medium, or Hard       |
+| Easy       | 1×         | 100 pts        | Famous players (high appearances)   |
+| Medium     | 2×         | 200 pts        | Recognizable players                |
+| Hard       | 3×         | 300 pts        | Obscure players                     |
+| Ultra      | 4×         | 400 pts        | Very obscure players                |
+
 The scoring system rewards speed, accuracy, and using fewer clues. A persistent
 streak system tracks consecutive correct guesses across sessions. All game state
 is validated server-side with rate limiting and secure headers.

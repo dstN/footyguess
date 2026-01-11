@@ -1,29 +1,74 @@
 # Changelog
 
+## [1.3.0] - 2026-01-12
+
+### Difficulty Selection System
+
+This release introduces user-selectable difficulty and significantly revised
+scoring multipliers for more meaningful score differentiation.
+
+### Added
+
+- **Difficulty Selector Modal**: New `DifficultySelector.vue` component shown
+  before starting a game (from index.vue "Play Game") or loading a new player
+  (from play.vue "New Game").
+- **Difficulty Options**: Default (random Easy/Medium/Hard), Easy (1×), Medium
+  (2×), Hard (3×), Ultra (4×).
+- **UserSelectedDifficulty Type**: New type union for user-facing difficulty
+  options: `'default' | 'easy' | 'medium' | 'hard' | 'ultra'`.
+- **GameMode Type**: Scaffold type for future game mode extensibility (currently
+  only `'classic'`).
+- **API Difficulty Parameter**: `/api/randomPlayer` now accepts `?difficulty=X`
+  query parameter to filter players by tier.
+
+### Changed
+
+- **Scoring Multipliers**: Revised from (1×, 1.25×, 1.5×, 2×) to (1×, 2×, 3×,
+  4×) for more impactful difficulty rewards.
+- **Maximum Points**: Updated max points per tier to 100/200/300/400 (was
+  100/125/150/200).
+- **useGameSession**: Now accepts difficulty option when loading players.
+- **usePlayerReset**: Confirm function now accepts optional difficulty
+  parameter.
+- **Player Service**: `getRandomPlayer()` refactored to accept `tierFilter`
+  option instead of boolean `hardMode`.
+- **PlayHeader**: Two-step flow for "New Game" — confirm streak reset, then
+  select difficulty.
+
+### Technical Notes
+
+- Backwards compatible: Legacy `?mode=hard` still works (maps to `ultra`).
+- "Default" difficulty randomly selects from Easy/Medium/Hard (excludes Ultra).
+- DifficultySelector exposes `open()`/`close()` methods for programmatic
+  control.
+
+---
+
 ## [1.2.2] - 2026-01-12
 
 ### Architecture & Reliability
 
-This release completes the service layer refactoring and standardizes error handling
-across all API routes.
+This release completes the service layer refactoring and standardizes error
+handling across all API routes.
 
 ### Fixed
 
-- **Validation Middleware**: Fixed schema mismatches in `requestPlayer` (expected
-  `playerName` but endpoint uses `url`) and `sessionStats` (was POST but endpoint
-  is GET).
-- **Service Exports**: Added missing exports for `player`, `session`, `leaderboard`,
-  and `request` services from `services/index.ts`.
+- **Validation Middleware**: Fixed schema mismatches in `requestPlayer`
+  (expected `playerName` but endpoint uses `url`) and `sessionStats` (was POST
+  but endpoint is GET).
+- **Service Exports**: Added missing exports for `player`, `session`,
+  `leaderboard`, and `request` services from `services/index.ts`.
 
 ### Changed
 
 - **submitScore.ts**: Refactored to use leaderboard service functions instead of
-  direct DB queries. Extracted ~170 lines of database logic into reusable service
-  functions.
-- **Error Handling**: Standardized all API routes to use `AppError` + `handleApiError()`
-  pattern, replacing inconsistent `sendError`/`createError` usage.
-- **Session Cleanup**: Added periodic session cleanup every 6 hours in production
-  (previously only ran at startup).
+  direct DB queries. Extracted ~170 lines of database logic into reusable
+  service functions.
+- **Error Handling**: Standardized all API routes to use `AppError` +
+  `handleApiError()` pattern, replacing inconsistent `sendError`/`createError`
+  usage.
+- **Session Cleanup**: Added periodic session cleanup every 6 hours in
+  production (previously only ran at startup).
 
 ### Added
 

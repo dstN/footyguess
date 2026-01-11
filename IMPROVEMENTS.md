@@ -250,16 +250,31 @@ describe('calculateScore', () => {
 
 ---
 
-### 2.3 Difficulty System Enhancements ❌ NOT DONE
+### 2.3 Difficulty Selection System ✅ DONE (v1.3.0)
 
-**Priority**: P3 | **Effort**: Medium | **Category**: Game Logic
+**Priority**: P1 | **Effort**: Medium | **Category**: Game Logic
 
-**Current System**:
+**Implementation**:
 
-- Based on international + top-5 league appearances
-- Four tiers: Easy, Medium, Hard, Ultra
+- User-selectable difficulty before game start
+- Options: Default (random E/M/H), Easy, Medium, Hard, Ultra
+- New multipliers: 1×, 2×, 3×, 4× (was 1×, 1.25×, 1.5×, 2×)
+- Max base scores: 100, 200, 300, 400 pts
 
-**Potential Improvements**:
+**Files Changed**:
+
+- `types/player.ts` - Added `UserSelectedDifficulty`, `GameMode` types
+- `utils/scoring-constants.ts` - Updated multipliers
+- `server/utils/difficulty.ts` - Updated multipliers
+- `server/services/player.ts` - `getRandomPlayer({ tierFilter })`
+- `server/api/randomPlayer.ts` - `?difficulty=X` query param
+- `components/DifficultySelector.vue` - New modal component
+- `components/PlayHeader.vue` - Two-step new game flow
+- `composables/useGameSession.ts` - Difficulty option in loadPlayer
+- `composables/usePlayGame.ts` - Query param handling
+- `composables/usePlayerReset.ts` - Difficulty param in confirm
+
+**Future Enhancements** (P3):
 
 1. **Additional Difficulty Factors**
 
