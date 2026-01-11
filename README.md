@@ -12,13 +12,13 @@ transfer timeline—and submit guesses until you identify the player correctly.
 
 **Choose your difficulty before each game:**
 
-| Difficulty | Multiplier | Max Base Score | Description                         |
-| ---------- | ---------- | -------------- | ----------------------------------- |
-| Default    | 1×–3×      | 100–300 pts    | Random: Easy, Medium, or Hard       |
-| Easy       | 1×         | 100 pts        | Famous players (high appearances)   |
-| Medium     | 2×         | 200 pts        | Recognizable players                |
-| Hard       | 3×         | 300 pts        | Obscure players                     |
-| Ultra      | 4×         | 400 pts        | Very obscure players                |
+| Difficulty | Multiplier | Max Base Score | Description                       |
+| ---------- | ---------- | -------------- | --------------------------------- |
+| Default    | 1×–3×      | 100–300 pts    | Random: Easy, Medium, or Hard     |
+| Easy       | 1×         | 100 pts        | Famous players (high appearances) |
+| Medium     | 2×         | 200 pts        | Recognizable players              |
+| Hard       | 3×         | 300 pts        | Obscure players                   |
+| Ultra      | 4×         | 400 pts        | Very obscure players              |
 
 The scoring system rewards speed, accuracy, and using fewer clues. A persistent
 streak system tracks consecutive correct guesses across sessions. All game state
@@ -78,16 +78,17 @@ footyguess/
 - **[Nuxt UI 4](https://ui.nuxt.com/)** — Component library
 - **[SQLite](https://www.sqlite.org/)** + better-sqlite3 — Embedded database
 - **[Valibot](https://valibot.dev/)** — Runtime validation
-- **[Vitest](https://vitest.dev/)** / **[Playwright](https://playwright.dev/)** — Testing
+- **[Vitest](https://vitest.dev/)** / **[Playwright](https://playwright.dev/)**
+  — Testing
 
 ## Documentation
 
-| Document                              | Purpose                                |
-| ------------------------------------- | -------------------------------------- |
-| [ARCHITECTURE.md](ARCHITECTURE.md)    | System design, conventions, decisions  |
-| [PRODUCTION.md](PRODUCTION.md)        | Deployment and operations guide        |
-| [IMPROVEMENTS.md](IMPROVEMENTS.md)    | Roadmap and improvement tracking       |
-| [CHANGELOG.md](CHANGELOG.md)          | Version history                        |
+| Document                           | Purpose                               |
+| ---------------------------------- | ------------------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, conventions, decisions |
+| [PRODUCTION.md](PRODUCTION.md)     | Deployment and operations guide       |
+| [IMPROVEMENTS.md](IMPROVEMENTS.md) | Roadmap and improvement tracking      |
+| [CHANGELOG.md](CHANGELOG.md)       | Version history                       |
 
 ## Data Population
 

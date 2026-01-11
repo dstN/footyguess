@@ -295,7 +295,41 @@ describe('calculateScore', () => {
 
 ---
 
-### 2.4 Streak System Enhancements ❌ NOT DONE
+### 2.4 Loss Mechanics & Wrong Guess Penalty ✅ DONE (v1.4.0)
+
+**Priority**: P1 | **Effort**: Medium | **Category**: Game Logic
+
+**Implementation**:
+
+- Wrong guess penalty increased from -2% to -10% per guess
+- Maximum 5 wrong guesses allowed (6th = instant loss)
+- Three distinct loss states: win, surrender, aborted
+- Difficulty persistence across rounds via localStorage
+
+**Files Changed**:
+
+- `utils/scoring-constants.ts` - `MAX_WRONG_GUESSES = 5`, updated malice penalty
+- `server/utils/scoring.ts` - Updated malice calculation
+- `server/services/guess.ts` - Abort logic for 6th wrong guess
+- `server/api/guess.ts` - Returns abort fields
+- `composables/useGuessSubmission.ts` - `onAborted` callback, abort handling
+- `composables/usePlayGame.ts` - Difficulty persistence, abort handling
+- `components/PlayHeader.vue` - Fixed give-up disabled state
+- `pages/won.vue` - Distinct UI for win/surrender/aborted
+- `components/HelpModal.vue` - Updated wrong guess documentation
+- `pages/index.vue` - Updated scoring row
+- `components/VictoryCard.vue` - Difficulty persistence on "New mystery"
+
+**Fixes Addressed**:
+
+1. ✅ Difficulty lost on "New Mystery" navigation
+2. ✅ Give-up blocked after revealing all clues
+3. ✅ Wrong guess penalty too lenient (-2%)
+4. ✅ No distinct losing state for surrender vs. abort
+
+---
+
+### 2.5 Streak System Enhancements ❌ NOT DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: Game Logic
 
@@ -426,13 +460,18 @@ links
 
 ---
 
-### 3.4 Game State Persistence ❌ NOT DONE
+### 3.4 Game State Persistence 🟡 PARTIALLY DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: UX
 
-**Current State**: Session persists, but in-progress game may be lost on refresh
+**Current State**: Session persists, difficulty persists across rounds (v1.4.0)
 
-**Improvements**:
+**Completed** (v1.4.0):
+
+- ✅ Difficulty selection persists in localStorage
+- ✅ "New mystery" reads difficulty from localStorage
+
+**Remaining Improvements**:
 
 1. **Resume Interrupted Game**
 
@@ -728,17 +767,17 @@ links
 
 ---
 
-## Status Summary (Reconciliation Audit 2026-01-11)
+## Status Summary (Reconciliation Audit 2026-01-13)
 
 | Section                 | Done  | Partial | Not Done |
 | ----------------------- | ----- | ------- | -------- |
-| 1. Code Stability       | 3     | 1       | 0        |
-| 2. Game Logic           | 0     | 0       | 4        |
-| 3. Frontend/UX          | 1     | 2       | 3        |
+| 1. Code Stability       | 4     | 0       | 0        |
+| 2. Game Logic           | 2     | 0       | 3        |
+| 3. Frontend/UX          | 1     | 3       | 2        |
 | 4. Developer Experience | 0     | 1       | 2        |
 | 5. Performance          | 0     | 0       | 3        |
 | 6. Future Features      | 0     | 0       | 3        |
-| **Total**               | **4** | **4**   | **15**   |
+| **Total**               | **7** | **4**   | **13**   |
 
 ---
 

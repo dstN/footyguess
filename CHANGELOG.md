@@ -1,5 +1,61 @@
 # Changelog
 
+## [1.4.0] - 2026-01-13
+
+### Loss Mechanics & Difficulty Persistence
+
+This release corrects several gameplay flaws related to losing conditions,
+difficulty persistence, and wrong-guess penalties.
+
+### Fixed
+
+- **Difficulty Lost on "New Mystery"**: User-selected difficulty now persists
+  across rounds. The choice is stored in localStorage and re-applied when
+  starting new games via "New mystery" button on victory/loss screen.
+- **Give-Up Blocked After All Clues**: The "Give Up" button was incorrectly
+  disabled when all clues were revealed. Now only disabled during API loading.
+- **Wrong Guess Penalty Rework**: Changed from -2% per wrong guess to a more
+  impactful system:
+  - Each wrong guess applies **-10%** penalty (was -2%)
+  - Maximum **5 wrong guesses** allowed (-50% max penalty)
+  - **6th wrong guess = instant loss** (aborted, score 0, streak reset)
+
+### Added
+
+- **MAX_WRONG_GUESSES Constant**: New constant `MAX_WRONG_GUESSES = 5` exported
+  from `utils/scoring-constants.ts` for consistent client/server usage.
+- **Abort API Response**: `/api/guess` now returns `aborted`, `abortReason`, and
+  `wrongGuessCount` fields when a round is aborted due to too many wrong
+  guesses.
+- **Distinct Loss States**: The `/won` page now handles three distinct outcomes:
+  - **Win** (`?reason=win`): Green checkmark, points displayed
+  - **Surrender** (`?reason=surrender`): White flag icon, "You gave up"
+  - **Aborted** (`?reason=aborted`): Red X icon, "Game Over - Too many guesses"
+- **onAborted Callback**: New callback in `useGuessSubmission` for handling
+  abort scenarios.
+
+### Changed
+
+- **PlayHeader.vue**: Give-up button disabled state now uses `isLoading` prop
+  instead of `tipButtonDisabled`.
+- **VictoryCard.vue**: "New mystery" button now reads difficulty from
+  localStorage and navigates with query parameter.
+- **won.vue**: Complete rewrite with outcome-specific titles, subtitles, icons,
+  and SEO meta tags.
+- **HelpModal.vue**: Updated "Malice Penalty" section to "Wrong Guess Penalty"
+  with MAX_WRONG_GUESSES import and abort warning.
+- **index.vue**: Updated scoring row to show "Max 5 (-10% each), 6th = loss".
+
+### Technical Notes
+
+- Difficulty is stored in localStorage under key `footyguess_difficulty`.
+- The `wrongGuessCount` is tracked server-side per round and returned in guess
+  API responses.
+- Abort logic is handled in `server/services/guess.ts` before normal guess
+  processing.
+
+---
+
 ## [1.3.0] - 2026-01-12
 
 ### Difficulty Selection System

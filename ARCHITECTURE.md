@@ -319,11 +319,11 @@ getRandomPlayer({ tierFilter: X })
 
 ### 7.2 Difficulty Types
 
-| Type                     | Values                                    | Purpose                   |
-| ------------------------ | ----------------------------------------- | ------------------------- |
-| `DifficultyTier`         | `'easy' \| 'medium' \| 'hard' \| 'ultra'` | Computed tier from stats  |
-| `UserSelectedDifficulty` | Same + `'default'`                        | User selection at UI      |
-| `GameMode`               | `'classic'` (future: more modes)          | Game mode scaffold        |
+| Type                     | Values                                    | Purpose                  |
+| ------------------------ | ----------------------------------------- | ------------------------ |
+| `DifficultyTier`         | `'easy' \| 'medium' \| 'hard' \| 'ultra'` | Computed tier from stats |
+| `UserSelectedDifficulty` | Same + `'default'`                        | User selection at UI     |
+| `GameMode`               | `'classic'` (future: more modes)          | Game mode scaffold       |
 
 ### 7.3 Scoring Multipliers (v1.3.0)
 
@@ -337,16 +337,78 @@ getRandomPlayer({ tierFilter: X })
 **"Default" difficulty**: Randomly selects Easy, Medium, or Hard (excludes
 Ultra).
 
-### 7.4 Key Files
+### 7.4 Loss Conditions (v1.4.0)
 
-| File                               | Responsibility                          |
-| ---------------------------------- | --------------------------------------- |
-| `types/player.ts`                  | Type definitions                        |
-| `utils/scoring-constants.ts`       | Client-side constants (display)         |
-| `server/utils/difficulty.ts`       | Server-side tier calculation            |
-| `server/services/player.ts`        | `getRandomPlayer()` with tier filter    |
-| `components/DifficultySelector.vue` | UI modal for difficulty selection       |
-| `composables/useGameSession.ts`    | Passes difficulty to API                |
+A round can end in three distinct outcomes:
+
+| Outcome       | Trigger                       | Score | Streak           | UI Treatment            |
+| ------------- | ----------------------------- | ----- | ---------------- | ----------------------- |
+| **Win**       | Correct guess                 | ≥ 1   | Incremented      | Green checkmark, points |
+| **Surrender** | User clicks "Give Up"         | 0     | Reset to 0       | White flag icon         |
+| **Aborted**   | 6th wrong guess (max reached) | 0     | Reset to 0       | Red X icon, "Game Over" |
+
+**Wrong Guess Penalty**:
+
+- Each wrong guess applies a `-10%` penalty (malice)
+- Maximum 5 wrong guesses allowed (-50% total)
+- 6th wrong guess triggers instant abort (loss with score 0)
+- Penalty is applied to final score before multipliers
+
+```text
+User submits guess
+        │
+        ▼
+  Is it correct?
+     │      │
+    Yes     No
+     │      │
+     ▼      ▼
+   Win    Count < 5?
+          │      │
+         Yes     No (6th guess)
+          │      │
+          ▼      ▼
+   -10% penalty  ABORT
+        │        (score=0, streak reset)
+        ▼
+   Continue game
+```
+
+### 7.5 Difficulty Persistence (v1.4.0)
+
+User-selected difficulty persists across rounds within a session:
+
+```text
+User selects difficulty → stored in localStorage
+                              ↓
+                    key: "footyguess_difficulty"
+                    value: "easy"|"medium"|"hard"|"ultra"|"default"
+                              ↓
+         VictoryCard "New mystery" → reads from localStorage
+                              ↓
+            usePlayGame reads from localStorage if no query param
+```
+
+**Persistence Rules**:
+
+- Difficulty is written to localStorage when user selects it
+- On `/play` mount: if `?difficulty` query param exists, use it; else read from
+  localStorage
+- "New mystery" button reads from localStorage and navigates with query param
+- Explicit difficulty selection always overwrites localStorage
+
+### 7.6 Key Files
+
+| File                                | Responsibility                       |
+| ----------------------------------- | ------------------------------------ |
+| `types/player.ts`                   | Type definitions                     |
+| `utils/scoring-constants.ts`        | Client-side constants (display)      |
+| `server/utils/difficulty.ts`        | Server-side tier calculation         |
+| `server/services/player.ts`         | `getRandomPlayer()` with tier filter |
+| `server/services/guess.ts`          | Wrong guess counting, abort logic    |
+| `components/DifficultySelector.vue` | UI modal for difficulty selection    |
+| `composables/useGameSession.ts`     | Passes difficulty to API             |
+| `composables/useGuessSubmission.ts` | Handles abort response from API      |
 
 ---
 
@@ -466,10 +528,11 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 ## Changelog
 
-| Date       | Change                                          |
-| ---------- | ----------------------------------------------- |
-| 2026-01-12 | Added §7 Difficulty & Scoring System            |
-| 2026-01-11 | Fixed duplicate diagram in §2.1                 |
-| 2026-01-10 | Added Service Layer, AppError, Security Headers |
-| 2026-01-09 | Updated: Resolved all major tech debt issues    |
-| 2026-01-07 | Initial architecture document created           |
+| Date       | Change                                            |
+| ---------- | ------------------------------------------------- |
+| 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
+| 2026-01-12 | Added §7 Difficulty & Scoring System              |
+| 2026-01-11 | Fixed duplicate diagram in §2.1                   |
+| 2026-01-10 | Added Service Layer, AppError, Security Headers   |
+| 2026-01-09 | Updated: Resolved all major tech debt issues      |
+| 2026-01-07 | Initial architecture document created             |
