@@ -82,48 +82,118 @@ const {
   submit,
 } = useWonState();
 
-useSeoMeta({
-  title: "Victory - FootyGuess",
-  ogTitle: "I cracked the code on FootyGuess!",
-  description:
-    "Check your score, submit to the leaderboard, and keep your streak going!",
-  ogDescription:
-    "See how you scored and compete on the FootyGuess leaderboard.",
-});
-
 useHead({
   link: [{ rel: "canonical", href: "https://footyguess.yinside.de/won" }],
 });
 
 const route = useRoute();
-const isSurrender = computed(() => {
-  return route.query.surrendered === "true" || lastScore.value?.score === 0;
+
+/**
+ * Outcome reason from query param
+ * - 'win': correct guess
+ * - 'surrender': gave up
+ * - 'aborted': too many wrong guesses (6th wrong guess)
+ */
+type OutcomeReason = "win" | "surrender" | "aborted";
+
+const outcomeReason = computed<OutcomeReason>(() => {
+  const reason = route.query.reason as string | undefined;
+  if (reason === "surrender" || route.query.surrendered === "true") {
+    return "surrender";
+  }
+  if (reason === "aborted") {
+    return "aborted";
+  }
+  // Legacy fallback: check if score is 0 (indicates loss)
+  if (lastScore.value?.score === 0) {
+    return "aborted";
+  }
+  return "win";
+});
+
+const isLoss = computed(
+  () =>
+    outcomeReason.value === "surrender" || outcomeReason.value === "aborted",
+);
+
+const pageTitle = computed(() => {
+  switch (outcomeReason.value) {
+    case "surrender":
+      return "Gave Up - FootyGuess";
+    case "aborted":
+      return "Round Lost - FootyGuess";
+    default:
+      return "Victory - FootyGuess";
+  }
 });
 
 const victoryTitle = computed(() => {
-  if (isSurrender.value) return "You gave up!";
-  return "You cracked the code!";
+  switch (outcomeReason.value) {
+    case "surrender":
+      return "You gave up!";
+    case "aborted":
+      return "Round lost!";
+    default:
+      return "You cracked the code!";
+  }
 });
 
 const victorySubtitle = computed(() => {
-  if (isSurrender.value) {
-    return "Your streak was reset. Start a new run or check your total score.";
+  switch (outcomeReason.value) {
+    case "surrender":
+      return "Your streak was reset. Start a new run or check your total score.";
+    case "aborted":
+      return "Too many wrong guesses. Your streak was reset.";
+    default:
+      // If malice penalty < 0, it means wrong guesses occurred, resetting the streak
+      if ((lastScore.value?.malicePenalty ?? 0) < 0) {
+        return "Nice save! But the wrong guess reset your streak.";
+      }
+      return "Keep the run going or drop your score on the board.";
   }
-  // If malice penalty < 0, it means wrong guesses occurred, resetting the streak
-  if ((lastScore.value?.malicePenalty ?? 0) < 0) {
-    return "Nice save! But the wrong guess reset your streak.";
-  }
-  return "Keep the run going or drop your score on the board.";
 });
 
 const victoryIcon = computed(() => {
-  if (isSurrender.value) return "i-lucide-flag-triangle-right";
-  return "i-lucide-party-popper";
+  switch (outcomeReason.value) {
+    case "surrender":
+      return "i-lucide-flag-triangle-right";
+    case "aborted":
+      return "i-lucide-skull";
+    default:
+      return "i-lucide-party-popper";
+  }
 });
 
 const lastPlayerLabel = computed(() => {
-  if (isSurrender.value) return "The player was:";
+  if (isLoss.value) return "The player was:";
   return "Last win:";
+});
+
+// Update SEO meta dynamically based on outcome
+useSeoMeta({
+  title: pageTitle,
+  ogTitle: computed(() => {
+    switch (outcomeReason.value) {
+      case "surrender":
+        return "I gave up on FootyGuess!";
+      case "aborted":
+        return "I lost a round on FootyGuess!";
+      default:
+        return "I cracked the code on FootyGuess!";
+    }
+  }),
+  description: computed(() => {
+    if (isLoss.value) {
+      return "Try again! Can you guess the mystery player from their transfer history?";
+    }
+    return "Check your score, submit to the leaderboard, and keep your streak going!";
+  }),
+  ogDescription: computed(() => {
+    if (isLoss.value) {
+      return "Try again! Can you guess the mystery player?";
+    }
+    return "See how you scored and compete on the FootyGuess leaderboard.";
+  }),
 });
 
 async function handleSubmit(type: "round" | "total" | "streak") {
