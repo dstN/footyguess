@@ -110,7 +110,7 @@
           color="white"
           variant="ghost"
           class="cursor-pointer"
-          :disabled="tipButtonDisabled"
+          :disabled="isLoading"
           @click="$emit('give-up')"
         >
           Give up
