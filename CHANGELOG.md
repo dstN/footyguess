@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.2.2] - 2026-01-12
+
+### Architecture & Reliability
+
+This release completes the service layer refactoring and standardizes error handling
+across all API routes.
+
+### Fixed
+
+- **Validation Middleware**: Fixed schema mismatches in `requestPlayer` (expected
+  `playerName` but endpoint uses `url`) and `sessionStats` (was POST but endpoint
+  is GET).
+- **Service Exports**: Added missing exports for `player`, `session`, `leaderboard`,
+  and `request` services from `services/index.ts`.
+
+### Changed
+
+- **submitScore.ts**: Refactored to use leaderboard service functions instead of
+  direct DB queries. Extracted ~170 lines of database logic into reusable service
+  functions.
+- **Error Handling**: Standardized all API routes to use `AppError` + `handleApiError()`
+  pattern, replacing inconsistent `sendError`/`createError` usage.
+- **Session Cleanup**: Added periodic session cleanup every 6 hours in production
+  (previously only ran at startup).
+
+### Added
+
+- **Leaderboard Service Functions**: Added `getSessionForScoring()`,
+  `updateSessionNickname()`, `getLastRoundScore()`, `getPlayerName()`,
+  `getExistingEntry()`, `getSessionBestStreak()`, `getSessionTotalScore()`,
+  `upsertLeaderboardEntry()`, and `getEntryValue()` to the leaderboard service.
+
+---
+
 ## [1.2.1] - 2026-01-10
 
 ### Accessibility & Performance

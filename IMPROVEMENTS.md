@@ -1,6 +1,6 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-11 **Scope**: FootyGuess
+> **Status**: Living Document **Last Updated**: 2026-01-12 **Scope**: FootyGuess
 > Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
@@ -25,34 +25,32 @@ All improvements should follow the guidelines in
 
 ## 1. Code Stability
 
-### 1.1 Service Layer Completion 🟡 PARTIALLY DONE
+### 1.1 Service Layer Completion ✅ DONE
 
 **Priority**: P1 | **Effort**: Large | **Category**: Architecture
 
-Service layer has been created but some API routes still contain direct database
-access.
+Service layer is now complete. All API routes delegate business logic to service
+functions.
 
-**Current State** (as of 2026-01-11):
+**Current State** (as of 2026-01-12):
 
 ```
 server/services/
-├── clue.ts          # ✅ Exists - useClue
-├── guess.ts         # ✅ Exists - processGuess
-├── round.ts         # ✅ Exists - verifyAndValidateRound, getRound
-├── player.ts        # ✅ Exists - getPlayer, searchPlayers, getRandomPlayer
-├── leaderboard.ts   # ✅ Exists - getLeaderboard (read only)
-├── session.ts       # ✅ Exists - getSessionStats
-└── request.ts       # ✅ Exists - getRequestStatus
+├── clue.ts          # ✅ useClue
+├── guess.ts         # ✅ processGuess
+├── round.ts         # ✅ verifyAndValidateRound, getRound
+├── player.ts        # ✅ getPlayer, searchPlayers, getRandomPlayer
+├── leaderboard.ts   # ✅ getLeaderboard, submitScore functions
+├── session.ts       # ✅ getSessionStats
+├── request.ts       # ✅ getRequestStatus
+└── index.ts         # ✅ Exports all services
 ```
 
-**Still Bypasses Service Layer**:
+**Completed Work**:
 
-- `submitScore.ts` - ~170 lines of direct DB queries
-- `randomPlayer.ts` - mixed service + direct DB access
-- `requestPlayer.ts` - scrape logic inline
-
-**Remaining Work**: Extract leaderboard write operations and scrape request
-creation into services.
+- ✅ `submitScore.ts` now uses leaderboard service functions
+- ✅ All services properly exported from `index.ts`
+- ✅ Validation middleware fixed to match actual endpoint schemas
 
 ---
 
