@@ -17,6 +17,12 @@ export interface GuessResult {
   bestStreak: number;
   playerName: string;
   difficulty: Difficulty;
+  /** True if round was aborted due to too many wrong guesses */
+  aborted?: boolean;
+  /** Reason for abort (e.g., 'too_many_wrong_guesses') */
+  abortReason?: string;
+  /** Current count of wrong guesses this round */
+  wrongGuessCount?: number;
 }
 
 /**
@@ -77,6 +83,11 @@ export function getOrCreateSession(sessionId: string): {
 }
 
 /**
+ * Maximum wrong guesses allowed before round abort
+ */
+const MAX_WRONG_GUESSES = 5;
+
+/**
  * Calculate guess score and update session
  */
 export function processGuess(
@@ -100,6 +111,46 @@ export function processGuess(
     .get(roundId) as { count: number };
   // Total wrong guesses: previous wrong + 1 if current is wrong, else just previous
   const totalWrongGuesses = guessHistory.count + (correct ? 0 : 1);
+
+  // Check for round abort: 6th wrong guess = instant loss
+  if (!correct && totalWrongGuesses > MAX_WRONG_GUESSES) {
+    // Record the failed guess with score = 0
+    const abortBreakdown = calculateScore(difficulty, cluesUsed, 0, {
+      elapsedSeconds,
+      missedGuesses: totalWrongGuesses,
+    });
+
+    db.transaction(() => {
+      // Reset streak, don't add any score
+      db.prepare(
+        `UPDATE sessions
+         SET streak = 0,
+             last_round_score = 0,
+             last_round_base = 0,
+             last_round_time_score = 0
+         WHERE id = ?`,
+      ).run(sessionId);
+
+      // Record the abort
+      db.prepare(
+        `INSERT INTO scores (session_id, round_id, score, base_score, time_score, malice_penalty, correct, streak, created_at)
+         VALUES (?, ?, 0, 0, 0, -1, 0, 0, ?)`,
+      ).run(sessionId, roundId, Math.floor(Date.now() / 1000));
+    })();
+
+    return {
+      correct: false,
+      score: 0,
+      breakdown: { ...abortBreakdown, finalScore: 0 },
+      streak: 0,
+      bestStreak: sessionRow?.best_streak ?? 0,
+      playerName,
+      difficulty,
+      aborted: true,
+      abortReason: "too_many_wrong_guesses",
+      wrongGuessCount: totalWrongGuesses,
+    };
+  }
 
   const breakdown = calculateScore(
     difficulty,
@@ -164,6 +215,7 @@ export function processGuess(
     bestStreak: nextBest,
     playerName,
     difficulty,
+    wrongGuessCount: totalWrongGuesses,
   };
 }
 

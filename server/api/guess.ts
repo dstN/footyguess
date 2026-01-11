@@ -112,6 +112,9 @@ export default defineEventHandler(async (event) => {
       sessionId,
       playerName: result.playerName,
       difficulty: result.difficulty,
+      aborted: result.aborted,
+      abortReason: result.abortReason,
+      wrongGuessCount: result.wrongGuessCount,
     };
   } catch (error) {
     return handleApiError(event, error, "guess");
