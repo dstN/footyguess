@@ -41,10 +41,10 @@
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <UButton
-          to="/play"
           color="primary"
           icon="i-lucide-shuffle"
           class="cursor-pointer"
+          @click="handleNewMystery"
         >
           New mystery
         </UButton>
@@ -62,7 +62,11 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import type { UserSelectedDifficulty } from "~/types/player";
+
+const router = useRouter();
+
+const props = withDefaults(
   defineProps<{
     streak: number;
     bestStreak: number;
@@ -80,4 +84,26 @@ withDefaults(
     lastPlayerLabel: "Last win:",
   },
 );
+
+/**
+ * Navigate to /play with persisted difficulty from localStorage
+ * This ensures "New mystery" respects the originally selected difficulty
+ */
+function handleNewMystery() {
+  let difficulty: UserSelectedDifficulty | null = null;
+
+  if (import.meta.client) {
+    const stored = localStorage.getItem("footyguess_difficulty");
+    if (
+      stored &&
+      ["default", "easy", "medium", "hard", "ultra"].includes(stored)
+    ) {
+      difficulty = stored as UserSelectedDifficulty;
+    }
+  }
+
+  // Navigate to /play - the composable will read from localStorage
+  // if no query param, so we just need to trigger the navigation
+  router.push("/play");
+}
 </script>
