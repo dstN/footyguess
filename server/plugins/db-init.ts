@@ -4,6 +4,9 @@ import { initSchema } from "../db/schema.ts";
 import { runFullCleanup } from "../utils/session-cleanup";
 import { logInfo } from "../utils/logger";
 
+// Cleanup interval: run every 6 hours (in milliseconds)
+const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 // Ensure all tables exist (including new scoring tables) when the server boots.
 export default defineNitroPlugin(() => {
   initSchema();
@@ -28,5 +31,24 @@ export default defineNitroPlugin(() => {
         stats,
       );
     }
+
+    // Schedule periodic cleanup every 6 hours
+    setInterval(() => {
+      try {
+        const periodicStats = runFullCleanup();
+        if (periodicStats.sessions > 0 || periodicStats.expiredRounds > 0) {
+          logInfo(
+            `Periodic cleanup: ${periodicStats.sessions} sessions, ${periodicStats.rounds + periodicStats.expiredRounds} rounds`,
+            "session-cleanup",
+            periodicStats,
+          );
+        }
+      } catch (error) {
+        // Log but don't crash - cleanup is non-critical
+        console.error("[session-cleanup] Periodic cleanup failed:", error);
+      }
+    }, CLEANUP_INTERVAL_MS);
+
+    logInfo("Scheduled session cleanup every 6 hours", "db-init");
   }
 });
