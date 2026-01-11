@@ -250,8 +250,8 @@
               </p>
             </div>
 
-            <!-- Malice Penalty -->
-            <div class="rounded-lg border border-slate-700/50 bg-white/5 p-3">
+            <!-- Malice Penalty / Wrong Guesses -->
+            <div class="rounded-lg border border-red-700/50 bg-red-900/10 p-3">
               <h4
                 class="mb-2 flex items-center gap-2 text-sm font-medium text-white"
               >
@@ -259,47 +259,56 @@
                   name="i-lucide-zap"
                   class="h-4 w-4 text-red-400"
                 />
-                Malice Penalty
+                Wrong Guess Penalty
               </h4>
               <p class="mb-3 text-xs text-slate-400">
-                Each wrong guess incurs a penalty:
+                Be careful! Wrong guesses have serious consequences:
               </p>
               <div class="space-y-2 text-xs text-slate-300">
                 <div class="rounded bg-black/30 p-2">
-                  <p class="mb-1 font-medium text-slate-200">How it works:</p>
+                  <p class="mb-1 font-medium text-slate-200">
+                    Maximum {{ MAX_WRONG_GUESSES }} wrong guesses allowed
+                  </p>
                   <p class="text-slate-400">
                     <span class="text-red-400"
                       >-{{ Math.round(MALICE_PENALTY.perGuess * 100) }}%
                       penalty</span
                     >
-                    per wrong guess, up to a maximum of
+                    per wrong guess (total
                     <span class="text-red-400"
                       >-{{ Math.round(MALICE_PENALTY.max * 100) }}%</span
                     >
-                    after
-                    {{
-                      Math.round(MALICE_PENALTY.max / MALICE_PENALTY.perGuess)
-                    }}
-                    wrong guesses.
+                    at {{ MAX_WRONG_GUESSES }} wrong).
                   </p>
                 </div>
                 <div class="text-slate-400">
-                  <p class="mb-1">Examples:</p>
+                  <p class="mb-1">Penalty breakdown:</p>
                   <div class="ml-2 space-y-0.5 text-slate-500">
-                    <div>1st wrong guess: -2%</div>
-                    <div>5th wrong guess: -10%</div>
-                    <div>10th wrong guess: -20%</div>
-                    <div>25+ wrong guesses: -50% (capped)</div>
+                    <div>1st wrong guess: -10%</div>
+                    <div>2nd wrong guess: -20%</div>
+                    <div>3rd wrong guess: -30%</div>
+                    <div>4th wrong guess: -40%</div>
+                    <div>5th wrong guess: -50% (max penalty)</div>
                   </div>
+                </div>
+                <div
+                  class="rounded border border-red-500/30 bg-red-500/10 p-2 text-red-300"
+                >
+                  <p class="mb-1 font-medium">⚠️ 6th wrong guess = Round lost!</p>
+                  <p class="text-red-400/80">
+                    If you make a 6th wrong guess, the round is immediately
+                    aborted with a score of 0.
+                  </p>
                 </div>
                 <div class="border-t border-slate-700/50 pt-2 text-slate-400">
                   <p class="mb-1">Important notes:</p>
                   <ul class="ml-2 list-disc space-y-0.5">
-                    <li>
-                      You still earn points on wrong guesses (just reduced)
-                    </li>
                     <li>Your streak resets to 0 on any wrong guess</li>
-                    <li>You can make multiple guesses per round</li>
+                    <li>
+                      You can still win with reduced score after 1-5 wrong
+                      guesses
+                    </li>
+                    <li>Give up any time if you're unsure</li>
                   </ul>
                 </div>
               </div>
@@ -358,6 +367,7 @@ import {
   TIME_BONUS,
   CLUE_PENALTY,
   MALICE_PENALTY,
+  MAX_WRONG_GUESSES,
 } from "~/utils/scoring-constants";
 
 const props = withDefaults(
