@@ -92,7 +92,11 @@ export default defineEventHandler(async (event) => {
       streak = last.streak ?? null;
       playerName = getPlayerName(playerId);
 
-      const existingPlayerEntry = getExistingEntry(sessionId, "round", playerId);
+      const existingPlayerEntry = getExistingEntry(
+        sessionId,
+        "round",
+        playerId,
+      );
 
       if (existingPlayerEntry) {
         if (value <= existingPlayerEntry.value) {
@@ -169,7 +173,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const finalValue = getEntryValue(sessionId, type as LeaderboardType) ?? value;
+    const finalValue =
+      getEntryValue(sessionId, type as LeaderboardType) ?? value;
     const skipped = existingEntry ? value <= existingEntry.value : false;
 
     return {

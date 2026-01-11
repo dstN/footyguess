@@ -44,7 +44,8 @@ export default defineEventHandler(async (event) => {
       windowMs: 10_000,
       max: 20,
     });
-    if (ipRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
+    if (ipRateError)
+      throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Verify token and validate round
     const { sessionId } = verifyAndValidateRound(
@@ -59,7 +60,8 @@ export default defineEventHandler(async (event) => {
       max: 10,
       sessionId,
     });
-    if (sessionRateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
+    if (sessionRateError)
+      throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
     // Get round data
     const round = getRound(parsed.data.roundId);

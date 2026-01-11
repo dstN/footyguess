@@ -270,7 +270,16 @@ export function upsertLeaderboardEntry(params: {
   playerId?: number;
   existingEntryId?: number;
 }): void {
-  const { sessionId, type, value, baseScore, finalScore, streak, playerId, existingEntryId } = params;
+  const {
+    sessionId,
+    type,
+    value,
+    baseScore,
+    finalScore,
+    streak,
+    playerId,
+    existingEntryId,
+  } = params;
 
   if (existingEntryId) {
     // Update existing entry
