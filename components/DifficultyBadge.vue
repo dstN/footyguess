@@ -44,8 +44,8 @@
           </div>
         </div>
         <div class="border-t border-slate-600 pt-2 text-xs text-slate-400">
-          <div>Easy: 1× • Medium: 1.25×</div>
-          <div>Hard: 1.5× • Ultra: 2×</div>
+          <div>Easy: 1× • Medium: 2×</div>
+          <div>Hard: 3× • Ultra: 4×</div>
         </div>
       </div>
     </template>

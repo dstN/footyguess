@@ -31,16 +31,21 @@
           </div>
 
           <div class="flex flex-col items-start gap-3 sm:items-end">
-            <UButton
-              to="/play"
-              color="primary"
-              size="xl"
-              icon="i-lucide-play"
-              class="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-[0_0_24px_rgba(14,249,174,0.4)] sm:h-20 sm:w-20 sm:flex-col sm:rounded-2xl sm:text-sm"
+            <DifficultySelector
+              ref="difficultySelectorRef"
+              v-model="selectedDifficulty"
+              @confirm="handleDifficultyConfirm"
             >
-              <span class="sm:hidden">Play now</span>
-              <span class="hidden sm:block">Play</span>
-            </UButton>
+              <UButton
+                color="primary"
+                size="xl"
+                icon="i-lucide-play"
+                class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-[0_0_24px_rgba(14,249,174,0.4)] sm:h-20 sm:w-20 sm:flex-col sm:rounded-2xl sm:text-sm"
+              >
+                <span class="sm:hidden">Play now</span>
+                <span class="hidden sm:block">Play</span>
+              </UButton>
+            </DifficultySelector>
           </div>
         </div>
       </UCard>
@@ -225,9 +230,28 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
+import DifficultySelector from "~/components/DifficultySelector.vue";
+import type { UserSelectedDifficulty } from "~/types/player";
+
+const router = useRouter();
+const selectedDifficulty = ref<UserSelectedDifficulty>("default");
+const difficultySelectorRef = ref<InstanceType<
+  typeof DifficultySelector
+> | null>(null);
+
+/**
+ * Handle difficulty selection confirmation - navigate to play with selected difficulty
+ */
+function handleDifficultyConfirm(difficulty: UserSelectedDifficulty) {
+  router.push({
+    path: "/play",
+    query: { difficulty },
+  });
+}
 
 useSeoMeta({
   title: "FootyGuess - Guess the Player from Their Transfer Trail",

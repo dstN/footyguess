@@ -20,6 +20,7 @@
           :best-streak="bestStreak"
           aria-label="Streak information"
         />
+        <!-- Step 1: Confirm streak reset modal -->
         <UModal
           :model-value="confirmResetOpen"
           @update:model-value="$emit('update:confirmResetOpen', $event)"
@@ -64,16 +65,28 @@
                 class="cursor-pointer"
                 @click="
                   () => {
-                    $emit('confirm-new-player');
                     close();
+                    showDifficultySelector();
                   }
                 "
               >
-                Yes, reset &amp; load
+                Yes, reset &amp; choose difficulty
               </UButton>
             </div>
           </template>
         </UModal>
+
+        <!-- Step 2: Difficulty selector modal (shown after confirm) -->
+        <DifficultySelector
+          ref="difficultySelectorRef"
+          v-model="selectedDifficulty"
+          @confirm="handleDifficultyConfirm"
+        >
+          <!-- Hidden trigger - we open programmatically -->
+          <template #default>
+            <span class="hidden" />
+          </template>
+        </DifficultySelector>
       </div>
     </div>
 
@@ -118,8 +131,10 @@
 </template>
 
 <script setup lang="ts">
-import { watch, inject } from "vue";
+import { ref, watch, inject, nextTick } from "vue";
 import StreakBar from "./StreakBar.vue";
+import DifficultySelector from "./DifficultySelector.vue";
+import type { UserSelectedDifficulty } from "~/types/player";
 
 const setModalOpen = inject<(open: boolean) => void>("setModalOpen");
 
@@ -131,6 +146,37 @@ const props = defineProps<{
   confirmResetOpen: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: "confirm-new-player", difficulty: UserSelectedDifficulty): void;
+  (e: "cancel-new-player"): void;
+  (e: "request-new-player"): void;
+  (e: "reveal-clue"): void;
+  (e: "give-up"): void;
+  (e: "update:confirmResetOpen", value: boolean): void;
+}>();
+
+const selectedDifficulty = ref<UserSelectedDifficulty>("default");
+const difficultySelectorRef = ref<InstanceType<
+  typeof DifficultySelector
+> | null>(null);
+
+/**
+ * Show the difficulty selector after user confirms streak reset
+ */
+function showDifficultySelector() {
+  // Give the confirm modal time to close
+  nextTick(() => {
+    difficultySelectorRef.value?.open();
+  });
+}
+
+/**
+ * Handle difficulty selection - emit with selected difficulty
+ */
+function handleDifficultyConfirm(difficulty: UserSelectedDifficulty) {
+  emit("confirm-new-player", difficulty);
+}
+
 // Notify layout when confirm modal opens/closes
 watch(
   () => props.confirmResetOpen,
@@ -138,13 +184,4 @@ watch(
     setModalOpen?.(open);
   },
 );
-
-defineEmits<{
-  (e: "confirm-new-player"): void;
-  (e: "cancel-new-player"): void;
-  (e: "request-new-player"): void;
-  (e: "reveal-clue"): void;
-  (e: "give-up"): void;
-  (e: "update:confirmResetOpen", value: boolean): void;
-}>();
 </script>
