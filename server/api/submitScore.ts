@@ -1,8 +1,19 @@
-import { defineEventHandler, readBody, createError, sendError } from "h3";
-import db from "../db/connection.ts";
+import { defineEventHandler, readBody } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
-import { logError } from "../utils/logger.ts";
+import { AppError, Errors, handleApiError } from "../utils/errors.ts";
+import {
+  getSessionForScoring,
+  updateSessionNickname,
+  getLastRoundScore,
+  getPlayerName,
+  getExistingEntry,
+  getSessionBestStreak,
+  getSessionTotalScore,
+  upsertLeaderboardEntry,
+  getEntryValue,
+  type LeaderboardType,
+} from "../services/leaderboard.ts";
 import {
   object,
   optional,
@@ -33,10 +44,7 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!parsed.ok) {
-      return sendError(
-        event,
-        createError({ statusCode: 400, statusMessage: "Invalid payload" }),
-      );
+      throw Errors.badRequest("Invalid payload");
     }
 
     const sessionId = parsed.data.sessionId.trim();
@@ -44,13 +52,7 @@ export default defineEventHandler(async (event) => {
     const type = parsed.data.type as SubmitType;
 
     if (!sessionId || !type) {
-      return sendError(
-        event,
-        createError({
-          statusCode: 400,
-          statusMessage: "Missing sessionId or type",
-        }),
-      );
+      throw Errors.badRequest("Missing sessionId or type");
     }
 
     const rateError = enforceRateLimit(event, {
@@ -59,73 +61,28 @@ export default defineEventHandler(async (event) => {
       max: 10,
       sessionId,
     });
-    if (rateError) return sendError(event, rateError);
+    if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
 
-    const session = db
-      .prepare(
-        `SELECT id, total_score, last_round_score, last_round_base, last_round_time_score FROM sessions WHERE id = ?`,
-      )
-      .get(sessionId) as
-      | {
-          id: string;
-          total_score: number;
-          last_round_score: number | null;
-          last_round_base: number | null;
-          last_round_time_score: number | null;
-        }
-      | undefined;
-
+    const session = getSessionForScoring(sessionId);
     if (!session) {
-      return sendError(
-        event,
-        createError({ statusCode: 404, statusMessage: "Session not found" }),
-      );
+      throw Errors.notFound("Session", sessionId);
     }
 
     if (nickname) {
-      db.prepare(`UPDATE sessions SET nickname = ? WHERE id = ?`).run(
-        nickname,
-        sessionId,
-      );
+      updateSessionNickname(sessionId, nickname);
     }
 
     let value = 0;
     let baseScore: number | null = null;
     let finalScore: number | null = null;
     let streak: number | null = null;
-    let playerId: number | null = null;
+    let playerId: number | undefined;
     let playerName: string | null = null;
 
     if (type === "round") {
-      // Get the last round with player info
-      const last = db
-        .prepare(
-          `
-          SELECT s.score, s.base_score, s.time_score, s.streak, r.player_id
-          FROM scores s
-          JOIN rounds r ON r.id = s.round_id
-          WHERE s.session_id = ?
-          ORDER BY s.id DESC
-          LIMIT 1
-        `,
-        )
-        .get(sessionId) as
-        | {
-            score: number;
-            base_score: number;
-            time_score: number;
-            streak: number;
-            player_id: number;
-          }
-        | undefined;
+      const last = getLastRoundScore(sessionId);
       if (!last) {
-        return sendError(
-          event,
-          createError({
-            statusCode: 400,
-            statusMessage: "No round score available",
-          }),
-        );
+        throw Errors.badRequest("No round score available");
       }
 
       playerId = last.player_id;
@@ -133,22 +90,11 @@ export default defineEventHandler(async (event) => {
       baseScore = last.base_score ?? null;
       finalScore = last.score ?? null;
       streak = last.streak ?? null;
+      playerName = getPlayerName(playerId);
 
-      // Get player name for response
-      const player = db
-        .prepare(`SELECT name FROM players WHERE id = ?`)
-        .get(playerId) as { name: string } | undefined;
-      playerName = player?.name ?? null;
-
-      // Check if we already have a score for this player
-      const existingPlayerEntry = db
-        .prepare(
-          `SELECT id, value FROM leaderboard_entries WHERE session_id = ? AND type = 'round' AND player_id = ?`,
-        )
-        .get(sessionId, playerId) as { id: number; value: number } | undefined;
+      const existingPlayerEntry = getExistingEntry(sessionId, "round", playerId);
 
       if (existingPlayerEntry) {
-        // Already have an entry for this player
         if (value <= existingPlayerEntry.value) {
           return {
             ok: true,
@@ -161,32 +107,26 @@ export default defineEventHandler(async (event) => {
           };
         }
 
-        // Update existing entry with higher score
-        db.prepare(
-          `UPDATE leaderboard_entries SET value = ?, base_score = ?, final_score = ?, streak = ?, nickname = (SELECT nickname FROM sessions WHERE id = ?), created_at = strftime('%s','now')
-           WHERE id = ?`,
-        ).run(
+        upsertLeaderboardEntry({
+          sessionId,
+          type: "round",
           value,
           baseScore,
           finalScore,
           streak,
-          sessionId,
-          existingPlayerEntry.id,
-        );
-      } else {
-        // Insert new entry for this player
-        db.prepare(
-          `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, player_id, created_at)
-           VALUES (?, 'round', ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), ?, strftime('%s','now'))`,
-        ).run(
-          sessionId,
-          value,
-          baseScore,
-          finalScore,
-          streak,
-          sessionId,
           playerId,
-        );
+          existingEntryId: existingPlayerEntry.id,
+        });
+      } else {
+        upsertLeaderboardEntry({
+          sessionId,
+          type: "round",
+          value,
+          baseScore,
+          finalScore,
+          streak,
+          playerId,
+        });
       }
 
       return {
@@ -198,60 +138,38 @@ export default defineEventHandler(async (event) => {
         playerName,
       };
     } else if (type === "total") {
-      if (session?.total_score === null || session?.total_score === undefined) {
-        const row = db
-          .prepare(
-            `SELECT IFNULL(SUM(score),0) AS totalScore FROM scores WHERE session_id = ?`,
-          )
-          .get(sessionId) as { totalScore: number };
-        value = row.totalScore ?? 0;
-      } else {
-        value = session.total_score ?? 0;
-      }
+      value = getSessionTotalScore(sessionId, session?.total_score);
     } else if (type === "streak") {
-      const row = db
-        .prepare(`SELECT best_streak FROM sessions WHERE id = ?`)
-        .get(sessionId) as { best_streak: number } | undefined;
-      value = row?.best_streak ?? 0;
+      value = getSessionBestStreak(sessionId);
       streak = value;
     }
 
-    const existingEntry = db
-      .prepare(
-        `SELECT id, value FROM leaderboard_entries WHERE session_id = ? AND type = ?`,
-      )
-      .get(sessionId, type) as { id: number; value: number } | undefined;
+    const existingEntry = getExistingEntry(sessionId, type as LeaderboardType);
 
     if (existingEntry) {
-      // Update existing entry if new value is higher
       if (value > existingEntry.value) {
-        db.prepare(
-          `UPDATE leaderboard_entries SET value = ?, base_score = ?, final_score = ?, streak = ?, nickname = (SELECT nickname FROM sessions WHERE id = ?), created_at = strftime('%s','now')
-           WHERE id = ?`,
-        ).run(
+        upsertLeaderboardEntry({
+          sessionId,
+          type: type as LeaderboardType,
           value,
           baseScore,
           finalScore,
           streak,
-          sessionId,
-          existingEntry.id,
-        );
+          existingEntryId: existingEntry.id,
+        });
       }
     } else {
-      // Insert new entry
-      db.prepare(
-        `INSERT INTO leaderboard_entries (session_id, type, value, base_score, final_score, streak, nickname, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))`,
-      ).run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
+      upsertLeaderboardEntry({
+        sessionId,
+        type: type as LeaderboardType,
+        value,
+        baseScore,
+        finalScore,
+        streak,
+      });
     }
 
-    const finalEntry = db
-      .prepare(
-        `SELECT value FROM leaderboard_entries WHERE session_id = ? AND type = ?`,
-      )
-      .get(sessionId, type) as { value: number } | undefined;
-
-    const finalValue = finalEntry?.value ?? value;
+    const finalValue = getEntryValue(sessionId, type as LeaderboardType) ?? value;
     const skipped = existingEntry ? value <= existingEntry.value : false;
 
     return {
@@ -262,10 +180,6 @@ export default defineEventHandler(async (event) => {
       skipped,
     };
   } catch (error) {
-    logError("submitScore error", error);
-    return sendError(
-      event,
-      createError({ statusCode: 500, statusMessage: "Failed to submit score" }),
-    );
+    return handleApiError(event, error, "submitScore");
   }
 });
