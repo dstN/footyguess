@@ -39,7 +39,7 @@
                 ? "Round submitted"
                 : "Submit last round score"
             }}</span>
-            <span class="font-mono opacity-80">({{ lastScore?.score }})</span>
+            <span class="font-mono opacity-80">({{ roundPoints }})</span>
           </span>
         </UButton>
         <UButton
@@ -129,5 +129,11 @@ const hasAutoUpdate = computed(
   () =>
     props.submittedTypes.includes("total") ||
     props.submittedTypes.includes("streak"),
+);
+
+const roundPoints = computed(() =>
+  props.lastScore
+    ? Math.round(props.lastScore.baseScore * props.lastScore.timeMultiplier)
+    : 0,
 );
 </script>

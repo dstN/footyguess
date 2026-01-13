@@ -108,6 +108,11 @@ interface GetRandomPlayerOptions {
    * If provided, only returns players matching this tier
    */
   tierFilter?: Difficulty["tier"];
+  /**
+   * Player IDs to exclude from selection
+   * Used to prevent duplicate players within the same session
+   */
+  excludePlayerIds?: number[];
 }
 
 /**
@@ -115,6 +120,7 @@ interface GetRandomPlayerOptions {
  *
  * @param options - Configuration options
  * @param options.tierFilter - Optional tier to filter by (easy/medium/hard/ultra)
+ * @param options.excludePlayerIds - Optional array of player IDs to exclude
  * @returns Player with full details, or null if none found
  *
  * @example
@@ -124,13 +130,13 @@ interface GetRandomPlayerOptions {
  * // Get only hard difficulty players
  * getRandomPlayer({ tierFilter: 'hard' })
  *
- * // Get ultra difficulty players
- * getRandomPlayer({ tierFilter: 'ultra' })
+ * // Exclude already-played players
+ * getRandomPlayer({ excludePlayerIds: [1, 2, 3] })
  */
 export function getRandomPlayer(
   options: GetRandomPlayerOptions = {},
 ): PlayerWithDetails | null {
-  const { tierFilter } = options;
+  const { tierFilter, excludePlayerIds = [] } = options;
 
   const intlCases = Object.entries(INTL_WEIGHTS)
     .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
@@ -173,6 +179,13 @@ export function getRandomPlayer(
            OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
       )`;
   }
+
+  // Add exclusion for already-played players
+  const exclusionClause =
+    excludePlayerIds.length > 0
+      ? ` AND p.id NOT IN (${excludePlayerIds.join(",")})`
+      : "";
+  filterClause += exclusionClause;
 
   const countRow = db
     .prepare(`SELECT COUNT(*) AS count FROM players p ${filterClause}`)

@@ -115,6 +115,7 @@ export function initSchema() {
       last_round_score INTEGER,
       last_round_base INTEGER,
       last_round_time_score INTEGER,
+      difficulty TEXT,
       created_at INTEGER DEFAULT (strftime('%s','now'))
     );
 
@@ -275,6 +276,10 @@ export function initSchema() {
   runMigration(
     `ALTER TABLE sessions ADD COLUMN last_round_time_score INTEGER`,
     "sessions.last_round_time_score",
+  );
+  runMigration(
+    `ALTER TABLE sessions ADD COLUMN difficulty TEXT`,
+    "sessions.difficulty",
   );
   runMigration(
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_players_tm_id ON players(tm_id)`,

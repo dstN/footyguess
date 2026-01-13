@@ -113,7 +113,7 @@ export function enforceRateLimit(event: H3Event, options: RateLimitOptions) {
     event.node.res.setHeader("Retry-After", retryAfterSeconds);
     return createError({
       statusCode: 429,
-      statusMessage: "Too many requests",
+      statusMessage: `Too many requests (${options.key})`,
     });
   }
 

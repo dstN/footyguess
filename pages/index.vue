@@ -31,20 +31,26 @@
           </div>
 
           <div class="flex flex-col items-start gap-3 sm:items-end">
+            <UButton
+              color="primary"
+              size="xl"
+              icon="i-lucide-play"
+              class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-[0_0_24px_rgba(14,249,174,0.4)] sm:h-20 sm:w-20 sm:flex-col sm:rounded-2xl sm:text-sm"
+              @click="handlePlayClick"
+            >
+              <span class="sm:hidden">Play now</span>
+              <span class="hidden sm:block">Play</span>
+            </UButton>
+
+            <!-- Hidden DifficultySelector - opened programmatically -->
             <DifficultySelector
               ref="difficultySelectorRef"
               v-model="selectedDifficulty"
               @confirm="handleDifficultyConfirm"
             >
-              <UButton
-                color="primary"
-                size="xl"
-                icon="i-lucide-play"
-                class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-[0_0_24px_rgba(14,249,174,0.4)] sm:h-20 sm:w-20 sm:flex-col sm:rounded-2xl sm:text-sm"
-              >
-                <span class="sm:hidden">Play now</span>
-                <span class="hidden sm:block">Play</span>
-              </UButton>
+              <template #default>
+                <span class="hidden" />
+              </template>
             </DifficultySelector>
           </div>
         </div>
@@ -227,10 +233,50 @@
       </div>
     </main>
   </ErrorBoundary>
+
+  <!-- Game Continuation Modal -->
+  <UModal
+    v-model:open="showGameChoiceModal"
+    title="Continue Your Run?"
+    :description="`You have an active ${currentStreak}-game streak on ${getDifficultyLabel(persistedDifficulty)} difficulty.`"
+  >
+    <!-- Hidden trigger -->
+    <template #default>
+      <span class="hidden" />
+    </template>
+
+    <template #body>
+      <p class="text-sm text-slate-400">
+        Would you like to continue your current run or start fresh with a new
+        difficulty?
+      </p>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          class="cursor-pointer"
+          @click="chooseNewDifficulty"
+        >
+          New Game
+        </UButton>
+        <UButton
+          color="primary"
+          class="cursor-pointer"
+          icon="i-lucide-play"
+          @click="continueLastGame"
+        >
+          Proceed
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
@@ -243,13 +289,85 @@ const difficultySelectorRef = ref<InstanceType<
   typeof DifficultySelector
 > | null>(null);
 
+// Check for persisted game state
+const persistedDifficulty = computed(() => {
+  if (import.meta.client) {
+    const stored = localStorage.getItem("footyguess_difficulty");
+    if (
+      stored &&
+      ["default", "easy", "medium", "hard", "ultra"].includes(stored)
+    ) {
+      return stored as UserSelectedDifficulty;
+    }
+  }
+  return null;
+});
+
+const currentStreak = computed(() => {
+  if (import.meta.client) {
+    const stored = Number.parseInt(
+      localStorage.getItem("footyguess_streak") || "0",
+      10,
+    );
+    return Number.isFinite(stored) ? stored : 0;
+  }
+  return 0;
+});
+
+// Modal state for game continuation choice
+const showGameChoiceModal = ref(false);
+
 /**
- * Handle difficulty selection confirmation - navigate to play with selected difficulty
+ * Get human-readable difficulty label
  */
-function handleDifficultyConfirm(difficulty: UserSelectedDifficulty) {
+function getDifficultyLabel(difficulty: UserSelectedDifficulty | null): string {
+  if (!difficulty) return "Default";
+  return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+}
+
+/**
+ * Handle play button click - show choice modal if user has active streak
+ */
+function handlePlayClick() {
+  if (currentStreak.value > 0) {
+    showGameChoiceModal.value = true;
+  } else {
+    // No active streak, show difficulty selector directly
+    difficultySelectorRef.value?.open();
+  }
+}
+
+/**
+ * Continue with last game
+ */
+function continueLastGame() {
+  showGameChoiceModal.value = false;
   router.push({
     path: "/play",
-    query: { difficulty },
+    query: { difficulty: persistedDifficulty.value! },
+  });
+}
+
+/**
+ * Choose new difficulty
+ */
+function chooseNewDifficulty() {
+  showGameChoiceModal.value = false;
+  difficultySelectorRef.value?.open();
+}
+
+/**
+ * Handle difficulty selection confirmation - navigate to play with selected difficulty
+ * This is called when user chooses "New Game" - starts fresh session
+ */
+function handleDifficultyConfirm(difficulty: UserSelectedDifficulty) {
+  // Clear persisted session to ensure fresh start
+  if (import.meta.client) {
+    localStorage.removeItem("footyguess_session_id");
+  }
+  router.push({
+    path: "/play",
+    query: { difficulty, newGame: "true" },
   });
 }
 

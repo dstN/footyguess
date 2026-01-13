@@ -118,7 +118,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Start New Round (if no active round found)
-    const playerData = getRandomPlayer({ tierFilter });
+    // Get player IDs already played in this session to avoid duplicates
+    const playedPlayerIds = db
+      .prepare(`SELECT DISTINCT player_id FROM rounds WHERE session_id = ?`)
+      .all(sessionId) as { player_id: number }[];
+    const excludePlayerIds = playedPlayerIds.map((row) => row.player_id);
+
+    const playerData = getRandomPlayer({ tierFilter, excludePlayerIds });
     if (!playerData) {
       return errorResponse(
         404,
@@ -128,7 +134,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create session and round (still needs direct DB for atomicity)
-    db.prepare(`INSERT OR IGNORE INTO sessions (id) VALUES (?)`).run(sessionId);
+    // Store difficulty in session for future leaderboard filtering
+    const sessionDifficulty = parsed.data.difficulty || "default";
+    db.prepare(
+      `INSERT OR IGNORE INTO sessions (id, difficulty) VALUES (?, ?)`,
+    ).run(sessionId, sessionDifficulty);
 
     const roundId = randomUUID();
     const expiresAt = Date.now() + 1000 * 60 * 30;

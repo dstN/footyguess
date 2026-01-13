@@ -64,9 +64,11 @@ export function usePlayGame() {
   const {
     streak,
     bestStreak,
+    streakDifficulty,
     loadStreakFromStorage,
     resetStreak,
     updateStreak,
+    shouldResetStreakForDifficulty,
   } = useGameStreak();
 
   // === Form State ===
@@ -152,7 +154,13 @@ export function usePlayGame() {
     request: requestNewPlayer,
     confirm: confirmNewPlayer,
     cancel: cancelNewPlayer,
-  } = usePlayerReset(streak, resetStreak, loadPlayer);
+  } = usePlayerReset(
+    streak,
+    resetStreak,
+    loadPlayer,
+    selectedDifficulty,
+    shouldResetStreakForDifficulty,
+  );
 
   // === Form Input Handling ===
   /**
@@ -284,6 +292,7 @@ export function usePlayGame() {
       round,
       streak,
       bestStreak,
+      selectedDifficulty,
       updateStreak,
       handleCorrectGuess,
       handleIncorrectGuess,
@@ -299,6 +308,7 @@ export function usePlayGame() {
     const queryDifficulty = route.query.difficulty as
       | UserSelectedDifficulty
       | undefined;
+    const isNewGame = route.query.newGame === "true";
     const validDifficulties: UserSelectedDifficulty[] = [
       "default",
       "easy",
@@ -306,6 +316,14 @@ export function usePlayGame() {
       "hard",
       "ultra",
     ];
+
+    // If explicitly starting a new game, reset everything
+    if (isNewGame) {
+      resetSessionId();
+      resetStreak();
+    }
+    // If continuing streak, do NOT reset anything
+    // (route.query.continueStreak === "true" means keep streak/session)
 
     if (queryDifficulty && validDifficulties.includes(queryDifficulty)) {
       await loadPlayer({ difficulty: queryDifficulty });

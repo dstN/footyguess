@@ -15,7 +15,7 @@ interface LoadPlayerOptions {
  *
  * @example
  * ```ts
- * const { confirmOpen, request, confirm, cancel } = usePlayerReset(streak, resetStreak, loadPlayer);
+ * const { confirmOpen, request, confirm, cancel } = usePlayerReset(streak, resetStreak, loadPlayer, currentDifficulty);
  * request("Messi"); // Shows confirmation if streak > 0, otherwise loads directly
  * ```
  */
@@ -23,6 +23,8 @@ export function usePlayerReset(
   streak: Ref<number>,
   resetStreak: () => void,
   loadPlayer: (options?: LoadPlayerOptions | string) => Promise<void>,
+  currentDifficulty: Ref<UserSelectedDifficulty>,
+  shouldResetStreakForDifficulty?: (difficulty: string) => boolean,
 ) {
   const confirmOpen = ref(false);
   const pendingName = ref<string | undefined>(undefined);
@@ -43,11 +45,17 @@ export function usePlayerReset(
 
   /**
    * Confirm new player request with optional difficulty selection
-   * Resets streak and loads a new player
+   * Resets streak if difficulty changed or if user confirmed streak reset
    * @param difficulty - Optional difficulty to use for the new player
    */
   function confirm(difficulty?: UserSelectedDifficulty) {
-    resetStreak();
+    // Reset streak ONLY if difficulty changed (not just because user has an active streak)
+    const shouldResetDueToDifficulty =
+      difficulty && shouldResetStreakForDifficulty?.(difficulty);
+    if (shouldResetDueToDifficulty) {
+      resetStreak();
+    }
+
     confirmOpen.value = false;
 
     // Build options based on pending name and selected difficulty

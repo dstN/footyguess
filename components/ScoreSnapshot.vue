@@ -38,8 +38,14 @@
             >
           </div>
           <div class="mt-2 border-t border-slate-700/50 pt-2">
-            <div class="flex justify-between">
-              <span class="text-slate-300">Round points</span>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1 text-slate-300">
+                Round points
+                <span
+                  class="rounded bg-slate-800/50 px-1 py-0.5 text-xs text-slate-500"
+                  >submits here</span
+                >
+              </span>
               <span class="font-mono text-slate-200">{{
                 lastBaseWithTime
               }}</span>

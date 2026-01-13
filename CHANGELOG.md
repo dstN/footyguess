@@ -1,13 +1,37 @@
 # Changelog
 
+## [1.4.1] - 2026-01-13
+
+### Bug Fixes & Improvements
+
+#### Fixed
+
+- **Streak Reset in Default Mode**: Streaks no longer reset when random
+  difficulty changes within "default" mode. Now correctly tracks user-selected
+  mode instead of actual tier.
+- **Leaderboard Stale Values**: Streak and Total leaderboards now read live
+  values from sessions table, fixing display discrepancies.
+- **Rate Limiting in Fast Play**: Increased `submitScore` rate limit from 10/min
+  to 30/min to allow fast gameplay.
+
+#### Added
+
+- **No Duplicate Players**: Players no longer repeat within the same session.
+- **Rate Limit Debugging**: Error messages now include the rate limit key (e.g.,
+  `Too many requests (submitScore)`).
+
+#### Changed
+
+- **Removed streak column usage**: The redundant `streak` column in
+  `leaderboard_entries` is no longer written to.
+- **Removed redundant toast**: The "streak reset" toast in `loadPlayer()` was
+  removed as the confirmation modal already handles this.
+
+---
+
 ## [1.4.0] - 2026-01-13
 
 ### Loss Mechanics & Difficulty Persistence
-
-This release corrects several gameplay flaws related to losing conditions,
-difficulty persistence, and wrong-guess penalties.
-
-### Fixed
 
 - **Difficulty Lost on "New Mystery"**: User-selected difficulty now persists
   across rounds. The choice is stored in localStorage and re-applied when

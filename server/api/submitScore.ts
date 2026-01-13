@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     const rateError = enforceRateLimit(event, {
       key: "submitScore",
       windowMs: 60_000,
-      max: 10,
+      max: 30,
       sessionId,
     });
     if (rateError) throw new AppError(429, "Too many requests", "RATE_LIMITED");
@@ -75,7 +75,6 @@ export default defineEventHandler(async (event) => {
     let value = 0;
     let baseScore: number | null = null;
     let finalScore: number | null = null;
-    let streak: number | null = null;
     let playerId: number | undefined;
     let playerName: string | null = null;
 
@@ -89,7 +88,6 @@ export default defineEventHandler(async (event) => {
       value = last.time_score ?? session?.last_round_time_score ?? 0;
       baseScore = last.base_score ?? null;
       finalScore = last.score ?? null;
-      streak = last.streak ?? null;
       playerName = getPlayerName(playerId);
 
       const existingPlayerEntry = getExistingEntry(
@@ -117,7 +115,6 @@ export default defineEventHandler(async (event) => {
           value,
           baseScore,
           finalScore,
-          streak,
           playerId,
           existingEntryId: existingPlayerEntry.id,
         });
@@ -128,7 +125,6 @@ export default defineEventHandler(async (event) => {
           value,
           baseScore,
           finalScore,
-          streak,
           playerId,
         });
       }
@@ -145,7 +141,6 @@ export default defineEventHandler(async (event) => {
       value = getSessionTotalScore(sessionId, session?.total_score);
     } else if (type === "streak") {
       value = getSessionBestStreak(sessionId);
-      streak = value;
     }
 
     const existingEntry = getExistingEntry(sessionId, type as LeaderboardType);
@@ -158,7 +153,6 @@ export default defineEventHandler(async (event) => {
           value,
           baseScore,
           finalScore,
-          streak,
           existingEntryId: existingEntry.id,
         });
       }
@@ -169,7 +163,6 @@ export default defineEventHandler(async (event) => {
         value,
         baseScore,
         finalScore,
-        streak,
       });
     }
 

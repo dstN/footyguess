@@ -101,6 +101,36 @@ function getEntriesByType(type: string, limit: number): LeaderboardEntry[] {
       .all(type, limit) as LeaderboardEntry[];
   }
 
+  // For streak type, join with sessions to get live best_streak value
+  // This ensures the leaderboard always shows the current streak, not a stale cached value
+  if (type === "streak") {
+    return db
+      .prepare(
+        `SELECT le.id, le.nickname, s.best_streak as value, le.type, le.created_at
+         FROM leaderboard_entries le
+         JOIN sessions s ON s.id = le.session_id
+         WHERE le.type = 'streak' AND le.nickname IS NOT NULL
+         ORDER BY s.best_streak DESC
+         LIMIT ?`,
+      )
+      .all(limit) as LeaderboardEntry[];
+  }
+
+  // For total type, join with sessions to get live total_score value
+  // This ensures the leaderboard always shows the current total, not a stale cached value
+  if (type === "total") {
+    return db
+      .prepare(
+        `SELECT le.id, le.nickname, s.total_score as value, le.type, le.created_at
+         FROM leaderboard_entries le
+         JOIN sessions s ON s.id = le.session_id
+         WHERE le.type = 'total' AND le.nickname IS NOT NULL
+         ORDER BY s.total_score DESC
+         LIMIT ?`,
+      )
+      .all(limit) as LeaderboardEntry[];
+  }
+
   return db
     .prepare(
       `SELECT id, nickname, value, type, created_at
@@ -266,7 +296,6 @@ export function upsertLeaderboardEntry(params: {
   value: number;
   baseScore: number | null;
   finalScore: number | null;
-  streak: number | null;
   playerId?: number;
   existingEntryId?: number;
 }): void {
@@ -276,7 +305,6 @@ export function upsertLeaderboardEntry(params: {
     value,
     baseScore,
     finalScore,
-    streak,
     playerId,
     existingEntryId,
   } = params;
@@ -285,25 +313,25 @@ export function upsertLeaderboardEntry(params: {
     // Update existing entry
     db.prepare(
       `UPDATE leaderboard_entries 
-       SET value = ?, base_score = ?, final_score = ?, streak = ?, 
+       SET value = ?, base_score = ?, final_score = ?, 
            nickname = (SELECT nickname FROM sessions WHERE id = ?), 
            created_at = strftime('%s','now')
        WHERE id = ?`,
-    ).run(value, baseScore, finalScore, streak, sessionId, existingEntryId);
+    ).run(value, baseScore, finalScore, sessionId, existingEntryId);
   } else if (type === "round" && playerId !== undefined) {
     // Insert round entry with player_id
     db.prepare(
       `INSERT INTO leaderboard_entries 
-       (session_id, type, value, base_score, final_score, streak, nickname, player_id, created_at)
-       VALUES (?, 'round', ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), ?, strftime('%s','now'))`,
-    ).run(sessionId, value, baseScore, finalScore, streak, sessionId, playerId);
+       (session_id, type, value, base_score, final_score, nickname, player_id, created_at)
+       VALUES (?, 'round', ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), ?, strftime('%s','now'))`,
+    ).run(sessionId, value, baseScore, finalScore, sessionId, playerId);
   } else {
     // Insert total/streak entry
     db.prepare(
       `INSERT INTO leaderboard_entries 
-       (session_id, type, value, base_score, final_score, streak, nickname, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))`,
-    ).run(sessionId, type, value, baseScore, finalScore, streak, sessionId);
+       (session_id, type, value, base_score, final_score, nickname, created_at)
+       VALUES (?, ?, ?, ?, ?, (SELECT nickname FROM sessions WHERE id = ?), strftime('%s','now'))`,
+    ).run(sessionId, type, value, baseScore, finalScore, sessionId);
   }
 }
 

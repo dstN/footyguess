@@ -3,7 +3,7 @@ import { logError } from "~/utils/client-logger";
 import { createTimeoutSignal } from "~/utils/fetch";
 import { announceToScreenReader } from "~/utils/accessibility";
 import type { FormSubmitEvent } from "@nuxt/ui";
-import type { Player } from "~/types/player";
+import type { Player, UserSelectedDifficulty } from "~/types/player";
 import type { GuessFormOutput } from "~/types/forms";
 import type { ScoreBreakdown } from "~/server/utils/scoring";
 
@@ -30,7 +30,12 @@ export function useGuessSubmission(
   round: Ref<RoundState | null>,
   streak: Ref<number>,
   bestStreak: Ref<number>,
-  onStreakUpdate: (streak: number, bestStreak: number) => void,
+  selectedDifficulty: Ref<UserSelectedDifficulty>,
+  onStreakUpdate: (
+    streak: number,
+    bestStreak: number,
+    difficulty?: UserSelectedDifficulty,
+  ) => void,
   onCorrectGuess: (
     playerName: string,
     difficulty: Player["difficulty"],
@@ -93,7 +98,9 @@ export function useGuessSubmission(
 
       streak.value = res.streak;
       bestStreak.value = res.bestStreak;
-      onStreakUpdate(res.streak, res.bestStreak);
+      // Pass the user-selected difficulty (e.g., "default", "hard"), not the actual tier
+      // This prevents streak resets when playing "default" mode with varying random difficulties
+      onStreakUpdate(res.streak, res.bestStreak, selectedDifficulty.value);
 
       // Track wrong guess count
       if (res.wrongGuessCount !== undefined) {
