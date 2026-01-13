@@ -79,4 +79,43 @@ describe("useGameStreak", () => {
     expect(streak.value).toBe(3);
     expect(bestStreak.value).toBe(20);
   });
+
+  it("shouldResetStreakForDifficulty returns false when no streak exists", () => {
+    const { shouldResetStreakForDifficulty } = useGameStreak();
+
+    expect(shouldResetStreakForDifficulty("easy")).toBe(false);
+    expect(shouldResetStreakForDifficulty("hard")).toBe(false);
+  });
+
+  it("shouldResetStreakForDifficulty returns false when difficulty matches", () => {
+    const { updateStreak, shouldResetStreakForDifficulty } = useGameStreak();
+
+    // Build a streak with "easy" difficulty
+    updateStreak(5, 5, "easy");
+
+    expect(shouldResetStreakForDifficulty("easy")).toBe(false);
+  });
+
+  it("shouldResetStreakForDifficulty returns true when difficulty changes", () => {
+    const { updateStreak, shouldResetStreakForDifficulty } = useGameStreak();
+
+    // Build a streak with "easy" difficulty
+    updateStreak(5, 5, "easy");
+
+    // Changing to "hard" should trigger reset
+    expect(shouldResetStreakForDifficulty("hard")).toBe(true);
+  });
+
+  it("shouldResetStreakForDifficulty works with 'default' mode", () => {
+    const { updateStreak, shouldResetStreakForDifficulty } = useGameStreak();
+
+    // Build a streak with "default" mode
+    updateStreak(5, 5, "default");
+
+    // Same mode should NOT reset
+    expect(shouldResetStreakForDifficulty("default")).toBe(false);
+
+    // Different mode SHOULD reset
+    expect(shouldResetStreakForDifficulty("easy")).toBe(true);
+  });
 });
