@@ -12,68 +12,91 @@
           This round
         </p>
         <div class="space-y-2 text-sm">
+          <!-- Base × multiplier -->
           <div class="flex justify-between">
-            <span class="text-slate-400">Base points</span>
-            <span class="font-mono text-slate-200">{{ difficultyBase }}</span>
+            <span class="text-slate-400">Base × multiplier</span>
+            <span class="font-mono text-slate-200">{{ adjustedBase }}</span>
           </div>
+
+          <!-- Streak bonus -->
           <div
-            v-if="cluesUsed > 0"
+            v-if="streakBonusPercent > 0"
             class="flex justify-between"
           >
             <span class="text-slate-400">
-              Clue penalty
-              <span class="text-slate-500">({{ cluesUsed }} clues)</span>
-            </span>
-            <span class="font-mono text-red-400">-{{ cluePenaltyPoints }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">
-              Time bonus
-              <span class="text-slate-500">({{ timeBonusPercent }}%)</span>
-            </span>
-            <span
-              class="font-mono"
-              :class="timeBonus >= 0 ? 'text-emerald-400' : 'text-red-400'"
-              >{{ timeBonus >= 0 ? "+" : "" }}{{ timeBonus }}</span
-            >
-          </div>
-          <div class="mt-2 border-t border-slate-700/50 pt-2">
-            <div class="flex items-center justify-between">
-              <span class="flex items-center gap-1 text-slate-300">
-                Round points
-                <span
-                  class="rounded bg-slate-800/50 px-1 py-0.5 text-xs text-slate-500"
-                  >submits here</span
-                >
-              </span>
-              <span class="font-mono text-slate-200">{{
-                lastBaseWithTime
-              }}</span>
-            </div>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">
               Streak bonus
-              <span class="text-slate-500">({{ streakBonusPercent }}%)</span>
+              <span class="text-slate-500">(+{{ streakBonusPercent }}%)</span>
             </span>
             <span class="text-mew-500 font-mono">+{{ streakBonusPoints }}</span>
           </div>
-          <div
-            v-if="malicePenaltyPercent !== 0"
-            class="flex justify-between"
-          >
+
+          <!-- No-clue bonus OR clue penalty -->
+          <div class="flex justify-between">
             <span class="text-slate-400">
-              Malice penalty
-              <span class="text-slate-500">({{ malicePenaltyPercent }}%)</span>
+              {{ cluesUsed === 0 ? "No clues" : "Clues" }}
+              <span class="text-slate-500">{{
+                cluesUsed === 0
+                  ? "(+10%)"
+                  : `(-${Math.min(30, cluesUsed * 6)}%)`
+              }}</span>
             </span>
-            <span class="font-mono text-red-400">{{
-              malicePenaltyPoints
-            }}</span>
+            <span
+              class="font-mono"
+              :class="cluesUsed === 0 ? 'text-emerald-400' : 'text-red-400'"
+              >{{
+                cluesUsed === 0 ? `+${noClueBonus}` : `-${cluePenalty}`
+              }}</span
+            >
           </div>
+
+          <!-- No-malice bonus OR malice penalty -->
+          <div class="flex justify-between">
+            <span class="text-slate-400">
+              {{ missedGuesses === 0 ? "No wrong guesses" : "Wrong guesses" }}
+              <span class="text-slate-500">{{
+                missedGuesses === 0
+                  ? "(+10%)"
+                  : `(-${Math.min(30, missedGuesses * 6)}%)`
+              }}</span>
+            </span>
+            <span
+              class="font-mono"
+              :class="missedGuesses === 0 ? 'text-emerald-400' : 'text-red-400'"
+              >{{
+                missedGuesses === 0 ? `+${noMaliceBonus}` : `-${malicePenalty}`
+              }}</span
+            >
+          </div>
+
+          <!-- Time bonus/penalty -->
+          <div class="flex justify-between">
+            <span class="text-slate-400">
+              Time
+              <span class="text-slate-500"
+                >({{ timeBonusPercent >= 0 ? "+" : ""
+                }}{{ timeBonusPercent }}%)</span
+              >
+            </span>
+            <span
+              class="font-mono"
+              :class="
+                timeBonusPoints >= 0 ? 'text-emerald-400' : 'text-red-400'
+              "
+              >{{ timeBonusPoints >= 0 ? "+" : "" }}{{ timeBonusPoints }}</span
+            >
+          </div>
+
+          <!-- Final round score -->
           <div
             class="mt-2 flex items-center justify-between border-t border-slate-700/50 pt-2"
           >
-            <span class="font-semibold text-slate-200">Total</span>
+            <span class="flex items-center gap-1 font-semibold text-slate-200">
+              Round score
+              <span
+                class="rounded bg-slate-800/50 px-1 py-0.5 text-xs font-normal text-slate-500"
+                >submits here</span
+              >
+            </span>
             <span
               class="text-primary-400 font-mono text-lg font-bold"
               data-testid="score"
@@ -116,73 +139,75 @@ const props = defineProps<{
     score: number;
     baseScore: number;
     cluesUsed?: number;
+    missedGuesses?: number;
     streak: number;
     streakBonus: number;
-    timeMultiplier: number;
-    malicePenalty: number;
+    streakBonusPoints?: number;
+    noClueBonus?: number;
+    cluePenalty?: number;
+    noMaliceBonus?: number;
+    malicePenalty?: number;
+    timeBonus?: number;
+    timeBonusPoints?: number;
     playerName: string | null;
   } | null;
   totalScore: number;
   bestStreak: number;
 }>();
 
-// Standard clue penalty per clue (matches server/utils/scoring.ts)
-const CLUE_PENALTY = 10;
-
+// Base values
+const adjustedBase = computed(() => props.lastScore?.baseScore ?? 0);
 const cluesUsed = computed(() => props.lastScore?.cluesUsed ?? 0);
+const missedGuesses = computed(() => props.lastScore?.missedGuesses ?? 0);
 
-const cluePenaltyPoints = computed(() => cluesUsed.value * CLUE_PENALTY);
-
-// Calculate original difficulty base by reversing clue penalty
-const difficultyBase = computed(() =>
-  props.lastScore ? props.lastScore.baseScore + cluePenaltyPoints.value : 0,
-);
-
-const lastBaseWithTime = computed(() =>
-  props.lastScore
-    ? Math.round(
-        (props.lastScore.baseScore ?? 0) *
-          (props.lastScore.timeMultiplier ?? 1),
-      )
-    : 0,
-);
-
-const timeBonusPercent = computed(() =>
-  props.lastScore ? Math.round((props.lastScore.timeMultiplier - 1) * 100) : 0,
-);
-
-const timeBonus = computed(() =>
-  props.lastScore
-    ? Math.round(
-        props.lastScore.baseScore * (props.lastScore.timeMultiplier - 1),
-      )
-    : 0,
-);
-
+// Streak bonus
 const streakBonusPercent = computed(() =>
-  props.lastScore ? Math.round(props.lastScore.streakBonus * 100) : 0,
+  props.lastScore ? Math.round((props.lastScore.streakBonus ?? 0) * 100) : 0,
 );
-
 const streakBonusPoints = computed(() => {
-  if (!props.lastScore) return 0;
-  // Streak bonus is applied after time, so: baseWithTime * streakBonus
-  const streakBonus = Math.round(
-    lastBaseWithTime.value * props.lastScore.streakBonus,
-  );
-  return streakBonus;
+  if (props.lastScore?.streakBonusPoints !== undefined) {
+    return props.lastScore.streakBonusPoints;
+  }
+  return Math.round(adjustedBase.value * (props.lastScore?.streakBonus ?? 0));
 });
 
-const malicePenaltyPercent = computed(() =>
-  props.lastScore ? Math.round(props.lastScore.malicePenalty * 100) : 0,
+// Clue bonus/penalty (all additive on adjustedBase)
+const noClueBonus = computed(() => {
+  if (props.lastScore?.noClueBonus !== undefined) {
+    return props.lastScore.noClueBonus;
+  }
+  return cluesUsed.value === 0 ? Math.round(adjustedBase.value * 0.1) : 0;
+});
+const cluePenalty = computed(() => {
+  if (props.lastScore?.cluePenalty !== undefined) {
+    return props.lastScore.cluePenalty;
+  }
+  return cluesUsed.value > 0
+    ? Math.round(adjustedBase.value * 0.1 * cluesUsed.value)
+    : 0;
+});
+
+// Malice bonus/penalty (all additive on adjustedBase)
+const noMaliceBonus = computed(() => {
+  if (props.lastScore?.noMaliceBonus !== undefined) {
+    return props.lastScore.noMaliceBonus;
+  }
+  return missedGuesses.value === 0 ? Math.round(adjustedBase.value * 0.1) : 0;
+});
+const malicePenalty = computed(() => {
+  if (props.lastScore?.malicePenalty !== undefined) {
+    return props.lastScore.malicePenalty;
+  }
+  return missedGuesses.value > 0
+    ? Math.round(adjustedBase.value * 0.1 * missedGuesses.value)
+    : 0;
+});
+
+// Time bonus/penalty
+const timeBonusPercent = computed(() =>
+  props.lastScore?.timeBonus !== undefined
+    ? Math.round(props.lastScore.timeBonus * 100)
+    : 0,
 );
-
-const malicePenaltyPoints = computed(() => {
-  if (!props.lastScore || props.lastScore.malicePenalty === 0) return 0;
-  // Malice penalty is applied to (baseWithTime + streakBonus)
-  const beforePenalty = Math.round(
-    lastBaseWithTime.value * (1 + props.lastScore.streakBonus),
-  );
-  const malice = Math.round(beforePenalty * props.lastScore.malicePenalty);
-  return malice;
-});
+const timeBonusPoints = computed(() => props.lastScore?.timeBonusPoints ?? 0);
 </script>

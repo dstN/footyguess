@@ -88,6 +88,33 @@ export function getOrCreateSession(sessionId: string): {
 const MAX_WRONG_GUESSES = 5;
 
 /**
+ * Grace period: 5s per transfer, capped at 30s (6 transfers)
+ */
+const GRACE_SECONDS_PER_TRANSFER = 5;
+const MAX_GRACE_SECONDS = 30;
+
+/**
+ * Get transfer count for a player (for grace period calculation)
+ */
+function getTransferCount(playerId: number): number {
+  const result = db
+    .prepare(`SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`)
+    .get(playerId) as { count: number };
+  return result?.count ?? 0;
+}
+
+/**
+ * Calculate grace seconds based on transfer count
+ */
+function calculateGraceSeconds(playerId: number): number {
+  const transferCount = getTransferCount(playerId);
+  return Math.min(
+    MAX_GRACE_SECONDS,
+    transferCount * GRACE_SECONDS_PER_TRANSFER,
+  );
+}
+
+/**
  * Calculate guess score and update session
  */
 export function processGuess(
@@ -112,12 +139,16 @@ export function processGuess(
   // Total wrong guesses: previous wrong + 1 if current is wrong, else just previous
   const totalWrongGuesses = guessHistory.count + (correct ? 0 : 1);
 
+  // Calculate grace seconds based on player transfers
+  const graceSeconds = calculateGraceSeconds(playerId);
+
   // Check for round abort: 6th wrong guess = instant loss
   if (!correct && totalWrongGuesses > MAX_WRONG_GUESSES) {
     // Record the failed guess with score = 0
     const abortBreakdown = calculateScore(difficulty, cluesUsed, 0, {
       elapsedSeconds,
       missedGuesses: totalWrongGuesses,
+      graceSeconds,
     });
 
     db.transaction(() => {
@@ -156,7 +187,7 @@ export function processGuess(
     difficulty,
     cluesUsed,
     sessionRow?.streak ?? 0,
-    { elapsedSeconds, missedGuesses: totalWrongGuesses },
+    { elapsedSeconds, missedGuesses: totalWrongGuesses, graceSeconds },
   );
 
   const nextStreak = correct ? (sessionRow?.streak ?? 0) + 1 : 0;
@@ -164,8 +195,10 @@ export function processGuess(
 
   // Only award points on correct guess
   const earnedScore = correct ? breakdown.finalScore : 0;
-  const earnedBase = correct ? breakdown.preStreak : 0;
-  const earnedTime = correct ? breakdown.timeScore : 0;
+  const earnedBase = correct ? breakdown.adjustedBase : 0;
+  const earnedTime = correct
+    ? breakdown.adjustedBase + breakdown.timeBonusPoints
+    : 0;
 
   // Update session and scores atomically
   const writeScore = db.transaction(() => {

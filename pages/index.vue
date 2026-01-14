@@ -98,7 +98,7 @@
                 <h3 class="font-medium text-white">Use Clues Wisely</h3>
                 <p class="text-sm text-slate-400">
                   Click "Get a tip" to reveal random hints like nationality,
-                  position, or stats. Each clue costs 10 points!
+                  position, or stats. Each clue costs 6% of your score!
                 </p>
               </div>
             </div>
@@ -153,7 +153,7 @@
                   />
                   Speed Bonus
                 </span>
-                <span class="text-slate-400">Up to +120%</span>
+                <span class="text-slate-400">+120% to -30%</span>
               </div>
 
               <div
@@ -179,7 +179,7 @@
                   />
                   Clue Penalty
                 </span>
-                <span class="text-red-400">-10 pts each</span>
+                <span class="text-red-400">-6% each (max 5)</span>
               </div>
 
               <div
@@ -192,7 +192,7 @@
                   />
                   Wrong Guesses
                 </span>
-                <span class="text-red-400">Max 5 (-10% each), 6th = loss</span>
+                <span class="text-red-400">-6% each, 6th = loss</span>
               </div>
             </div>
 

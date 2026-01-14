@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
       const activeRound = db
         .prepare(
           `
-        SELECT r.id, r.player_id, r.expires_at, r.clues_used
+        SELECT r.id, r.player_id, r.expires_at, r.clues_used, r.started_at
         FROM rounds r
         LEFT JOIN scores s ON s.round_id = r.id
         WHERE r.session_id = ? 
@@ -88,6 +88,7 @@ export default defineEventHandler(async (event) => {
             player_id: number;
             expires_at: number;
             clues_used: number;
+            started_at: number;
           }
         | undefined;
 
@@ -103,6 +104,16 @@ export default defineEventHandler(async (event) => {
             exp: expiresAtMs,
           });
 
+          // Get transfer count for grace period
+          const transferCount =
+            (
+              db
+                .prepare(
+                  `SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`,
+                )
+                .get(activeRound.player_id) as { count: number }
+            )?.count ?? 0;
+
           return {
             ...playerDetails,
             round: {
@@ -111,6 +122,8 @@ export default defineEventHandler(async (event) => {
               sessionId: sessionFromQuery,
               expiresAt: expiresAtMs,
               cluesUsed: activeRound.clues_used,
+              startedAt: activeRound.started_at,
+              transferCount,
             },
           };
         }
@@ -159,6 +172,16 @@ export default defineEventHandler(async (event) => {
       exp: expiresAt,
     });
 
+    // Get transfer count for grace period
+    const transferCount =
+      (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`,
+          )
+          .get(playerData.id) as { count: number }
+      )?.count ?? 0;
+
     return {
       ...playerData,
       round: {
@@ -167,6 +190,8 @@ export default defineEventHandler(async (event) => {
         sessionId,
         expiresAt,
         cluesUsed: 0,
+        startedAt: Math.floor(Date.now() / 1000),
+        transferCount,
       },
     };
   } catch (error) {

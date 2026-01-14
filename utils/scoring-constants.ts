@@ -9,9 +9,10 @@
 export const BASE_POINTS = 100;
 
 /**
- * Points deducted per clue used
+ * Percentage deducted per clue used (6% = 0.06)
+ * 5 clues × 6% = 30% max penalty
  */
-export const CLUE_PENALTY = 10;
+export const CLUE_PENALTY = 0.06;
 
 /**
  * Difficulty multipliers by tier
@@ -49,6 +50,9 @@ export const STREAK_BONUSES = [
 /**
  * Time bonus configuration
  */
+/**
+ * Time bonus configuration
+ */
 export const TIME_BONUS = {
   /** Maximum bonus for instant guesses */
   maxBonus: 1.2,
@@ -58,22 +62,22 @@ export const TIME_BONUS = {
   zeroBonusTime: 120,
   /** Time when penalty starts */
   penaltyStartTime: 300,
-  /** Penalty per 30 seconds */
-  penaltyPerStep: 0.1,
-  /** Maximum penalty */
-  maxPenalty: 0.5,
+  /** Penalty per second (0.1% = 0.001) */
+  penaltyPerSecond: 0.001,
+  /** Maximum penalty (30% = 0.3) */
+  maxPenalty: 0.3,
 } as const;
 
 /**
  * Malice penalty (wrong guesses)
- * Updated v1.4.0: Changed from -2% to -10% per wrong guess
- * Max 5 wrong guesses allowed before round abort
+ * v1.4.2: Changed from -10% to -6% per wrong guess
+ * Max 5 wrong guesses allowed before round abort (5 × 6% = 30% max)
  */
 export const MALICE_PENALTY = {
-  /** Penalty per wrong guess (-10% = -0.1) */
-  perGuess: 0.1,
-  /** Maximum penalty (5 wrong guesses × 10% = 50%) */
-  max: 0.5,
+  /** Penalty per wrong guess (-6% = -0.06) */
+  perGuess: 0.06,
+  /** Maximum penalty (5 wrong guesses × 6% = 30%) */
+  max: 0.3,
 } as const;
 
 /**
@@ -81,3 +85,16 @@ export const MALICE_PENALTY = {
  * 6th wrong guess = instant loss (score = 0)
  */
 export const MAX_WRONG_GUESSES = 5;
+
+/**
+ * Grace period: time freeze before time bonus starts counting
+ * v1.4.2: 5s per player transfer, capped at 30s
+ */
+export const GRACE_SECONDS_PER_TRANSFER = 5;
+export const MAX_GRACE_SECONDS = 30;
+
+/**
+ * Penalty cap: maximum penalty for clues, malice, and time is -30% each
+ * This ensures minimum score of 10% (e.g., 10 pts on Easy, 40 pts on Ultra)
+ */
+export const MAX_PENALTY_PERCENT = 0.3;

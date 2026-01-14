@@ -61,8 +61,8 @@ const guessBreakdown = {
   timeMultiplier: 1,
   cluesUsed: 0,
   cluePenalty: 10,
-  preStreak: 100,
-  timeScore: 100,
+  withStreak: 100,
+  afterTime: 100,
   streakBonus: 0,
   finalScore: 100,
 };

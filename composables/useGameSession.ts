@@ -11,6 +11,8 @@ import type { Player, UserSelectedDifficulty } from "~/types/player";
  * @property {string} sessionId - Parent session ID
  * @property {number} expiresAt - Timestamp when round expires
  * @property {number} cluesUsed - Number of clues revealed
+ * @property {number} startedAt - Unix timestamp when round started (seconds)
+ * @property {number} transferCount - Number of transfers for grace period
  */
 interface RoundState {
   id: string;
@@ -18,6 +20,8 @@ interface RoundState {
   sessionId: string;
   expiresAt: number;
   cluesUsed: number;
+  startedAt?: number;
+  transferCount?: number;
 }
 
 /**

@@ -131,9 +131,5 @@ const hasAutoUpdate = computed(
     props.submittedTypes.includes("streak"),
 );
 
-const roundPoints = computed(() =>
-  props.lastScore
-    ? Math.round(props.lastScore.baseScore * props.lastScore.timeMultiplier)
-    : 0,
-);
+const roundPoints = computed(() => props.lastScore?.score ?? 0);
 </script>

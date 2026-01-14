@@ -25,15 +25,28 @@
             </p>
           </div>
         </div>
+        <!-- Badge row: Difficulty | Live Score | Transfers | Help -->
         <div
-          class="flex w-full flex-row items-center justify-between gap-3 md:w-auto"
+          class="flex w-full flex-row items-center justify-between gap-2 md:w-auto md:justify-end md:gap-3"
         >
-          <div class="flex items-center gap-1">
-            <DifficultyBadge
-              :difficulty="difficulty ?? null"
-              :current-streak="currentStreak"
-            />
-          </div>
+          <!-- Difficulty (left on mobile) -->
+          <DifficultyBadge
+            :difficulty="difficulty ?? null"
+            :current-streak="currentStreak"
+          />
+
+          <!-- Live Score (middle on mobile, between difficulty and transfers) -->
+          <LiveScore
+            v-if="startedAt && difficulty"
+            :difficulty="difficulty"
+            :started-at="startedAt"
+            :transfer-count="transferCount"
+            :clues-used="cluesUsed"
+            :wrong-guesses="wrongGuesses"
+            :streak="currentStreak ?? 0"
+          />
+
+          <!-- Transfers + Help (right on mobile) -->
           <div class="flex items-center gap-1">
             <UBadge
               v-if="showBadge"
@@ -67,6 +80,7 @@
 import DifficultyBadge from "~/components/DifficultyBadge.vue";
 import TransferTimelineView from "~/components/TransferTimelineView.vue";
 import HelpModal from "~/components/HelpModal.vue";
+import LiveScore from "~/components/LiveScore.vue";
 
 interface TimelineItem {
   id: string;
@@ -84,5 +98,9 @@ defineProps<{
   showBadge?: boolean;
   currentStreak?: number;
   difficulty?: DifficultyInfo | null;
+  startedAt?: number;
+  transferCount?: number;
+  cluesUsed?: number;
+  wrongGuesses?: number;
 }>();
 </script>

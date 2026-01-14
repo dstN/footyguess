@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.4.2] - 2026-01-15
+
+### Complete Scoring Formula Overhaul
+
+This release rewrites the scoring formula to be **all-additive** — every
+bonus/penalty is a percentage of base × multiplier. **5 uses of any penalty =
+-30%** to guarantee minimum 10% score (10 pts on Easy, 40 pts on Ultra).
+
+### Changed
+
+- **Scoring Formula**: New all-additive system:
+  - Base × multiplier = adjustedBase
+  - **+ Streak bonus**: +5% to +30%
+  - **+ No clues bonus**: +10% if 0 clues used
+  - **− Clue penalty**: -6% per clue (max 5 = -30%)
+  - **+ No wrong guesses bonus**: +10% if 0 wrong guesses
+  - **− Wrong guess penalty**: -6% per wrong guess (max 5 = -30%)
+  - **± Time bonus**: +120% instant → 0% at 2min → -0.1% per sec after 5min (max
+    -30% at 10min)
+- **Minimum score**: 10% of base (e.g., 10 pts on Easy, 40 pts on Ultra)
+- **Time freeze**: Grace period of 5s per player transfer (capped at 30s)
+- **Perfect play reward**: 0 clues + 0 wrong guesses = +20% bonus
+- **Live score display**: Real-time potential score counter in
+  TransferTimelineCard
+
+### Fixed
+
+- **Toast notification**: Fixed "undefined base pts" and "NaN%" display.
+- **ScoreSnapshot**: Correctly shows penalties vs bonuses.
+- **Unicode Search**: Diacritics in player names are normalized.
+
+### Technical Notes
+
+- Penalties capped at 30%: `clueRawPenalty`, `maliceRawPenalty`, `timeBonus`.
+- Tests updated for new linear time penalty.
+
+---
+
 ## [1.4.1] - 2026-01-13
 
 ### Bug Fixes & Improvements

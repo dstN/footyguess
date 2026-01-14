@@ -39,12 +39,23 @@
         />
 
         <TransferTimelineCard
-          v-memo="[careerTimeline, difficulty, currentName, streak]"
+          v-memo="[
+            careerTimeline,
+            difficulty,
+            currentName,
+            streak,
+            cluesUsed,
+            wrongGuessCount,
+          ]"
           :items="careerTimeline"
           :is-loading="isLoading"
           :show-badge="Boolean(currentName)"
           :difficulty="difficulty"
           :current-streak="streak"
+          :started-at="roundStartedAt"
+          :transfer-count="transferCount"
+          :clues-used="cluesUsed"
+          :wrong-guesses="wrongGuessCount"
         />
 
         <DevPanel
@@ -153,6 +164,11 @@ const {
   onSubmit,
   clearGuess,
   giveUp,
+  // Live score data
+  roundStartedAt,
+  transferCount,
+  cluesUsed,
+  wrongGuessCount,
 } = usePlayGame();
 
 const isDev = import.meta.dev;

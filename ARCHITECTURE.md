@@ -1,7 +1,7 @@
 # Architecture & Technical Direction
 
 > **Status**: Living Document  
-> **Last Updated**: 2026-01-09  
+> **Last Updated**: 2026-01-15  
 > **Scope**: Nuxt 4 / Nuxt UI 4 — FootyGuess
 
 This document defines the architectural intent, conventions, and guardrails for
@@ -341,16 +341,16 @@ Ultra).
 
 A round can end in three distinct outcomes:
 
-| Outcome       | Trigger                       | Score | Streak           | UI Treatment            |
-| ------------- | ----------------------------- | ----- | ---------------- | ----------------------- |
-| **Win**       | Correct guess                 | ≥ 1   | Incremented      | Green checkmark, points |
-| **Surrender** | User clicks "Give Up"         | 0     | Reset to 0       | White flag icon         |
-| **Aborted**   | 6th wrong guess (max reached) | 0     | Reset to 0       | Red X icon, "Game Over" |
+| Outcome       | Trigger                       | Score | Streak      | UI Treatment            |
+| ------------- | ----------------------------- | ----- | ----------- | ----------------------- |
+| **Win**       | Correct guess                 | ≥ 1   | Incremented | Green checkmark, points |
+| **Surrender** | User clicks "Give Up"         | 0     | Reset to 0  | White flag icon         |
+| **Aborted**   | 6th wrong guess (max reached) | 0     | Reset to 0  | Red X icon, "Game Over" |
 
 **Wrong Guess Penalty**:
 
-- Each wrong guess applies a `-10%` penalty (malice)
-- Maximum 5 wrong guesses allowed (-50% total)
+- Each wrong guess applies a `-6%` penalty (malice)
+- Maximum 5 wrong guesses allowed (-30% total)
 - 6th wrong guess triggers instant abort (loss with score 0)
 - Penalty is applied to final score before multipliers
 
@@ -368,7 +368,7 @@ User submits guess
          Yes     No (6th guess)
           │      │
           ▼      ▼
-   -10% penalty  ABORT
+   -6% penalty   ABORT
         │        (score=0, streak reset)
         ▼
    Continue game
@@ -397,7 +397,32 @@ User selects difficulty → stored in localStorage
 - "New mystery" button reads from localStorage and navigates with query param
 - Explicit difficulty selection always overwrites localStorage
 
-### 7.6 Key Files
+### 7.6 Scoring Formula (v1.4.2)
+
+**ALL ADDITIVE** formula - every bonus/penalty is a percentage of
+`adjustedBase`. **Each penalty capped at 5 uses = -30%**, ensuring minimum 10%
+score.
+
+```text
+adjustedBase = base × multiplier
+
+score = adjustedBase
+      + streakBonus      (+5% to +30%)
+      + noClueBonus      (+10%) OR cluePenalty (-6% per clue, max -30%)
+      + noMaliceBonus    (+10%) OR malicePenalty (-6% per wrong, max -30%)
+      + timeBonus        (-0.1% per sec after 5min, max -30%, up to +120%)
+```
+
+**Example worst case** (Easy, 5 clues, 5 wrong guesses, 10+ minutes):
+
+```text
+100 (base) - 30 (clues) - 30 (malice) - 30 (time) = 10 pts
+```
+
+**Grace period**: Time freeze of 5s per player transfer (capped at 30s for 6+
+transfers). Timer only starts counting after grace period.
+
+### 7.7 Key Files
 
 | File                                | Responsibility                       |
 | ----------------------------------- | ------------------------------------ |
@@ -424,10 +449,10 @@ User selects difficulty → stored in localStorage
 
 ### 8.2 Deferred Concerns
 
-| Concern                    | Status             | Reference         |
-| -------------------------- | ------------------ | ----------------- |
-| Lazy DB initialization     | Accepted trade-off | Issue #74         |
-| Production-grade analytics | Deferred           | No immediate need |
+| Concern                | Status                     | Reference |
+| ---------------------- | -------------------------- | --------- | ----------------- |
+| Lazy DB initialization | Accepted trade-off         | Issue #74 |
+| -                      | Production-grade analytics | Deferred  | No immediate need |
 
 ---
 
@@ -473,7 +498,7 @@ User selects difficulty → stored in localStorage
 ### Quick Reference
 
 | If...                       | Then...                                                           |
-| --------------------------- | ----------------------------------------------------------------- |
+| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------- |
 | Adding server-side logic    | Put it in `server/services/`, not in API route                    |
 | Adding client state         | Create or extend a composable                                     |
 | Adding pure functions       | Put in `utils/` (client) or `server/utils/`                       |
@@ -482,7 +507,7 @@ User selects difficulty → stored in localStorage
 | Adding an API endpoint      | Follow the 5-step pattern in §3.1                                 |
 | Catching errors server-side | Use `logError()` + `errorResponse()`                              |
 | Catching errors client-side | Use `logError()` + update `isError` ref + show toast              |
-| Typing a function return    | Explicit if public API, inferred if internal                      |
+| -                           | Typing a function return                                          | Explicit if public API, inferred if internal |
 | Modifying scoring logic     | Update `server/utils/scoring.ts` AND `utils/scoring-constants.ts` |
 
 ### Absolute Rules
@@ -528,11 +553,12 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 ## Changelog
 
-| Date       | Change                                            |
-| ---------- | ------------------------------------------------- |
-| 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
-| 2026-01-12 | Added §7 Difficulty & Scoring System              |
-| 2026-01-11 | Fixed duplicate diagram in §2.1                   |
-| 2026-01-10 | Added Service Layer, AppError, Security Headers   |
-| 2026-01-09 | Updated: Resolved all major tech debt issues      |
-| 2026-01-07 | Initial architecture document created             |
+| Date | Change     |
+| ---- | ---------- | ------------------------------------------------- |
+| -    | 2026-01-14 | Added §7.6 Scoring Formula order                  |
+| -    | 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
+| -    | 2026-01-12 | Added §7 Difficulty & Scoring System              |
+| -    | 2026-01-11 | Fixed duplicate diagram in §2.1                   |
+| -    | 2026-01-10 | Added Service Layer, AppError, Security Headers   |
+| -    | 2026-01-09 | Updated: Resolved all major tech debt issues      |
+| -    | 2026-01-07 | Initial architecture document created             |

@@ -1,10 +1,7 @@
 <template>
   <UPopover
     v-if="difficulty"
-    mode="hover"
     :content="{ side: 'bottom', align: 'start' }"
-    :open-delay="200"
-    :close-delay="100"
     :ui="{
       content: 'bg-transparent shadow-none ring-0 border-0',
     }"

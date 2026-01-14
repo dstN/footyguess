@@ -64,6 +64,16 @@ export default defineEventHandler(async (event) => {
       exp: expiresAt,
     });
 
+    // Get transfer count for grace period
+    const transferCount =
+      (
+        db
+          .prepare(
+            `SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`,
+          )
+          .get(playerData.id) as { count: number }
+      )?.count ?? 0;
+
     return {
       ...playerData,
       round: {
@@ -72,6 +82,8 @@ export default defineEventHandler(async (event) => {
         sessionId,
         expiresAt,
         cluesUsed: 0,
+        startedAt: Math.floor(Date.now() / 1000),
+        transferCount,
       },
     };
   } catch (error) {

@@ -100,6 +100,11 @@ export function usePlayGame() {
       ? Math.round(difficulty.value.basePoints * difficulty.value.multiplier)
       : 0,
   );
+  // Live score data from round
+  const roundStartedAt = computed(() => round.value?.startedAt ?? 0);
+  const transferCount = computed(() => round.value?.transferCount ?? 0);
+  // Clues used from useClueReveal
+  const cluesUsed = computed(() => revealedClues.value?.length ?? 0);
 
   // === Difficulty Persistence ===
   /**
@@ -200,9 +205,10 @@ export function usePlayGame() {
   ) {
     isError.value = false;
     persistLastPlayer(playerName);
+    const timeBonusPct = Math.round((breakdown.timeBonus ?? 0) * 100);
     toast.add({
-      title: `Correct! +${breakdown.preStreak} base pts`,
-      description: `Time: +${Math.round((breakdown.timeMultiplier - 1) * 100)}% · Streak: ${Math.round(breakdown.streakBonus * 100)}% → total ${score} pts · Streak ${newStreak}`,
+      title: `Correct! +${breakdown.adjustedBase} base pts`,
+      description: `Time: ${timeBonusPct >= 0 ? "+" : ""}${timeBonusPct}% · Streak: ${Math.round((breakdown.streakBonus ?? 0) * 100)}% → total ${score} pts · Streak ${newStreak}`,
       color: "primary",
       icon: "i-lucide-party-popper",
     });
@@ -379,6 +385,11 @@ export function usePlayGame() {
 
     // Wrong guess tracking
     wrongGuessCount,
+
+    // Live score data
+    roundStartedAt,
+    transferCount,
+    cluesUsed,
 
     // Difficulty persistence
     loadPersistedDifficulty,

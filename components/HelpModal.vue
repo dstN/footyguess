@@ -58,7 +58,7 @@
             </li>
             <li>
               Use <strong class="text-white">"Get a tip"</strong> to reveal
-              random clues (costs points!)
+              random clues (costs 6% each!)
             </li>
             <li>Type your guess in the search box and select the player</li>
             <li>
@@ -81,6 +81,57 @@
           </h3>
 
           <div class="space-y-4">
+            <!-- Scoring Formula -->
+            <div class="rounded-lg border border-slate-700/50 bg-white/5 p-3">
+              <h4
+                class="mb-2 flex items-center gap-2 text-sm font-medium text-white"
+              >
+                <UIcon
+                  name="i-lucide-calculator"
+                  class="text-primary-400 h-4 w-4"
+                />
+                Score Calculation
+              </h4>
+              <p class="mb-2 text-xs text-slate-400">
+                All bonuses/penalties are % of base × multiplier.
+              </p>
+              <div class="space-y-1 font-mono text-xs text-slate-300">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500">1.</span>
+                  <span>Base points × Difficulty multiplier</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500">2.</span>
+                  <span class="text-mew-500">+ Streak bonus (+5% to +30%)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500">3.</span>
+                  <span class="text-emerald-400"
+                    >+ No clues (+10%) / − Clues (−6% each, max −30%)</span
+                  >
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500">4.</span>
+                  <span class="text-emerald-400"
+                    >+ No wrong guesses (+10%) / − Wrong (−6% each, max
+                    −30%)</span
+                  >
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500">5.</span>
+                  <span class="text-emerald-400">± Time (+120% to −30%)</span>
+                </div>
+                <div
+                  class="mt-2 flex items-center gap-2 border-t border-slate-700/50 pt-2"
+                >
+                  <span class="text-white">=</span>
+                  <span class="font-semibold text-white"
+                    >Final Score (min 10% of base)</span
+                  >
+                </div>
+              </div>
+            </div>
+
             <!-- Difficulty -->
             <div class="rounded-lg border border-slate-700/50 bg-white/5 p-3">
               <h4
@@ -93,8 +144,7 @@
                 Difficulty Multiplier
               </h4>
               <p class="mb-2 text-xs text-slate-400">
-                Based on how famous the player is (international/league
-                appearances):
+                Based on how famous the player is:
               </p>
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div class="flex items-center gap-2">
@@ -166,42 +216,37 @@
                   name="i-lucide-timer"
                   class="h-4 w-4 text-blue-400"
                 />
-                Time Bonus
+                Time Bonus / Penalty
               </h4>
-              <p class="mb-2 text-xs text-slate-400">
-                Guess faster for bonus points:
-              </p>
               <div class="space-y-1 text-xs text-slate-300">
                 <div class="flex justify-between">
-                  <span>Instant (≤{{ TIME_BONUS.instantThreshold }}s)</span>
-                  <span class="text-emerald-400"
-                    >+{{ Math.round(TIME_BONUS.maxBonus * 100) }}% bonus</span
-                  >
+                  <span>Instant (≤1s)</span>
+                  <span class="text-emerald-400">+120% bonus</span>
                 </div>
                 <div class="flex justify-between">
-                  <span
-                    >{{ TIME_BONUS.instantThreshold }}s →
-                    {{ Math.floor(TIME_BONUS.zeroBonusTime / 60) }}min</span
-                  >
+                  <span>1s → 2min</span>
                   <span class="text-slate-400">Linear drop to 0%</span>
                 </div>
                 <div class="flex justify-between">
-                  <span
-                    >{{ Math.floor(TIME_BONUS.zeroBonusTime / 60) }}min →
-                    {{ Math.floor(TIME_BONUS.penaltyStartTime / 60) }}min</span
-                  >
+                  <span>2min → 5min</span>
                   <span class="text-slate-400">No bonus/penalty</span>
                 </div>
                 <div class="flex justify-between">
-                  <span
-                    >After
-                    {{ Math.floor(TIME_BONUS.penaltyStartTime / 60) }}min</span
-                  >
+                  <span>5min → 10min</span>
                   <span class="text-red-400"
-                    >-{{ Math.round(TIME_BONUS.penaltyPerStep * 100) }}% per 30s
-                    (max -{{ Math.round(TIME_BONUS.maxPenalty * 100) }}%)</span
+                    >Linear −0.1%/sec (up to −30%)</span
                   >
                 </div>
+              </div>
+              <div class="mt-2 border-t border-slate-700/50 pt-2">
+                <p class="text-xs text-amber-400">
+                  <UIcon
+                    name="i-lucide-clock"
+                    class="mr-1 inline h-3 w-3"
+                  />
+                  Grace period: 5s per player transfer (max 30s) — timer starts
+                  after grace.
+                </p>
               </div>
             </div>
 
@@ -217,7 +262,7 @@
                 Streak Bonus
               </h4>
               <p class="mb-2 text-xs text-slate-400">
-                Consecutive correct guesses multiply your score:
+                Consecutive correct guesses add bonus:
               </p>
               <div class="grid grid-cols-3 gap-2 text-xs text-slate-300">
                 <div
@@ -245,12 +290,12 @@
               </h4>
               <p class="text-xs text-slate-300">
                 Each clue revealed costs
-                <span class="text-red-400">-{{ CLUE_PENALTY }} points</span>
-                from your base score. Use clues wisely!
+                <span class="text-red-400">−6%</span>
+                of your score. Maximum 5 clues = −30%.
               </p>
             </div>
 
-            <!-- Malice Penalty / Wrong Guesses -->
+            <!-- Wrong Guess Penalty -->
             <div class="rounded-lg border border-red-700/50 bg-red-900/10 p-3">
               <h4
                 class="mb-2 flex items-center gap-2 text-sm font-medium text-white"
@@ -261,8 +306,8 @@
                 />
                 Wrong Guess Penalty
               </h4>
-              <p class="mb-3 text-xs text-slate-400">
-                Be careful! Wrong guesses have serious consequences:
+              <p class="mb-2 text-xs text-slate-400">
+                Be careful! Wrong guesses have consequences:
               </p>
               <div class="space-y-2 text-xs text-slate-300">
                 <div class="rounded bg-black/30 p-2">
@@ -270,71 +315,35 @@
                     Maximum {{ MAX_WRONG_GUESSES }} wrong guesses allowed
                   </p>
                   <p class="text-slate-400">
-                    <span class="text-red-400"
-                      >-{{ Math.round(MALICE_PENALTY.perGuess * 100) }}%
-                      penalty</span
-                    >
+                    <span class="text-red-400">−6% penalty</span>
                     per wrong guess (total
-                    <span class="text-red-400"
-                      >-{{ Math.round(MALICE_PENALTY.max * 100) }}%</span
-                    >
-                    at {{ MAX_WRONG_GUESSES }} wrong).
+                    <span class="text-red-400">−30%</span>
+                    at 5 wrong).
                   </p>
                 </div>
                 <div class="text-slate-400">
                   <p class="mb-1">Penalty breakdown:</p>
                   <div class="ml-2 space-y-0.5 text-slate-500">
-                    <div>1st wrong guess: -10%</div>
-                    <div>2nd wrong guess: -20%</div>
-                    <div>3rd wrong guess: -30%</div>
-                    <div>4th wrong guess: -40%</div>
-                    <div>5th wrong guess: -50% (max penalty)</div>
+                    <div>1st wrong guess: −6%</div>
+                    <div>2nd wrong guess: −12%</div>
+                    <div>3rd wrong guess: −18%</div>
+                    <div>4th wrong guess: −24%</div>
+                    <div>5th wrong guess: −30% (max penalty)</div>
                   </div>
                 </div>
                 <div
                   class="rounded border border-red-500/30 bg-red-500/10 p-2 text-red-300"
                 >
-                  <p class="mb-1 font-medium">⚠️ 6th wrong guess = Round lost!</p>
-                  <p class="text-red-400/80">
-                    If you make a 6th wrong guess, the round is immediately
-                    aborted with a score of 0.
+                  <p class="mb-1 font-medium">
+                    ⚠️ 6th wrong guess = Round lost!
                   </p>
-                </div>
-                <div class="border-t border-slate-700/50 pt-2 text-slate-400">
-                  <p class="mb-1">Important notes:</p>
-                  <ul class="ml-2 list-disc space-y-0.5">
-                    <li>Your streak resets to 0 on any wrong guess</li>
-                    <li>
-                      You can still win with reduced score after 1-5 wrong
-                      guesses
-                    </li>
-                    <li>Give up any time if you're unsure</li>
-                  </ul>
+                  <p class="text-red-400/80">
+                    Round is immediately aborted with score 0.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-
-        <!-- Tips -->
-        <section>
-          <h3
-            class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
-          >
-            <UIcon
-              name="i-lucide-lightbulb"
-              class="text-primary-400 h-5 w-5"
-            />
-            Pro Tips
-          </h3>
-          <ul class="list-inside list-disc space-y-1 text-sm text-slate-300">
-            <li>
-              Look for distinctive transfer patterns (loan spells, big moves)
-            </li>
-            <li>Career length and clubs can narrow down the era</li>
-            <li>Youth academy → first team moves are good hints</li>
-            <li>Build streaks for massive score bonuses!</li>
-          </ul>
         </section>
       </div>
     </template>
@@ -354,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, inject, watch, onBeforeUnmount } from "vue";
 import {
   createFocusTrap,
   restoreFocus,
@@ -364,9 +373,6 @@ import {
   DIFFICULTY_MULTIPLIERS,
   MAX_POINTS_BY_TIER,
   STREAK_BONUSES,
-  TIME_BONUS,
-  CLUE_PENALTY,
-  MALICE_PENALTY,
   MAX_WRONG_GUESSES,
 } from "~/utils/scoring-constants";
 
@@ -406,13 +412,10 @@ function openModal() {
 // Accessibility: Focus management
 let removeTrap: (() => void) | null = null;
 let previousFocus: HTMLElement | null = null;
-const modalRef = ref<HTMLElement | null>(null); // Note: UModal doesn't easily expose ref to inner content via prop, so we might need to rely on UModal's built-in focus management or use a different approach.
-// Ideally, UModal handles this. But to demonstrate integration:
 
 watch(isOpen, (open) => {
   if (open) {
     previousFocus = getFocusedElement();
-    // Tiny delay to allow modal to render
     setTimeout(() => {
       const modalEl = document.querySelector('[role="dialog"]');
       if (modalEl instanceof HTMLElement) {
