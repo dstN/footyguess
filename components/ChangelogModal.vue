@@ -28,7 +28,7 @@
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
           >
             <UBadge
-              color="primary"
+              color="secondary"
               variant="subtle"
               size="xs"
               >v1.5.1</UBadge
@@ -71,7 +71,7 @@
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
           >
             <UBadge
-              color="primary"
+              color="secondary"
               variant="subtle"
               size="xs"
               >v1.5.0</UBadge
@@ -114,7 +114,7 @@
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
           >
             <UBadge
-              color="neutral"
+              color="secondary"
               variant="subtle"
               size="xs"
               >v1.4.4</UBadge
@@ -140,7 +140,7 @@
           <p class="text-center text-xs text-slate-500">
             View full history on
             <a
-              href="https://github.com/dstn/footyguess"
+              href="https://github.com/dstn/footyguess/blob/master/CHANGELOG.md"
               target="_blank"
               class="text-primary-400 hover:underline"
               >GitHub</a
@@ -153,8 +153,8 @@
     <template #footer="{ close }">
       <div class="flex justify-end">
         <UButton
-          color="neutral"
-          variant="ghost"
+          color="secondary"
+          variant="solid"
           class="cursor-pointer"
           @click="close"
         >
