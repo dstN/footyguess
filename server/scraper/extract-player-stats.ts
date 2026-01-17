@@ -52,7 +52,8 @@ function buildStatsUrl(profileUrl: string): string {
   }
 
   const [, playerName, tmId] = match;
-  return `${BASE_URL}/${playerName}/leistungsdaten/spieler/${tmId}/saison//plus/1`;
+  // Use universal format that works for split seasons (e.g. Eriksen) and standard players
+  return `${BASE_URL}/${playerName}/leistungsdaten/spieler/${tmId}/plus/1?saison=ges`;
 }
 
 /**
@@ -119,7 +120,7 @@ export async function fetchPlayerStats(
 ): Promise<{ stats: PlayerStats[]; totals: any; isGoalkeeper: boolean }> {
   try {
     const player = db
-      .prepare(`SELECT main_position FROM players WHERE id = ?`)
+      .prepare(`SELECT main_position, tm_url FROM players WHERE id = ?`)
       .get(playerId) as any;
 
     const isGoalkeeper = player?.main_position === "Goalkeeper";
