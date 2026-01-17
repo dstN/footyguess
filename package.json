@@ -6,7 +6,7 @@
   "scripts": {
     "build": "nuxt build",
     "build:check": "nuxt build && node scripts/check-bundle-size.ts",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",

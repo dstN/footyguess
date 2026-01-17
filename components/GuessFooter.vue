@@ -161,10 +161,10 @@ function focusInput() {
   const input = inputMenuRef.value?.inputRef || inputMenuRef.value?.input;
 
   if (input?.focus) {
-    input.focus();
+    input.focus({ preventScroll: true });
   } else if (input?.value?.focus) {
     // Handle if it's a ref wrapper (unwrapped ref in template vs script usage)
-    input.value.focus();
+    input.value.focus({ preventScroll: true });
   }
 }
 
