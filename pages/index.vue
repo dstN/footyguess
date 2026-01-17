@@ -238,6 +238,12 @@
           button-color="primary"
           button-size="md"
         />
+        <ChangelogModal
+          button-label="Updates"
+          button-variant="ghost"
+          button-color="neutral"
+          button-size="md"
+        />
       </div>
     </main>
   </ErrorBoundary>
@@ -322,6 +328,7 @@ import { ref, computed } from "vue";
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
+import ChangelogModal from "~/components/ChangelogModal.vue";
 import DifficultySelector from "~/components/DifficultySelector.vue";
 import type { UserSelectedDifficulty } from "~/types/player";
 

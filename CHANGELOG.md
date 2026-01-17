@@ -2,6 +2,16 @@
 
 # Changelog
 
+## [1.5.4] - 2026-01-17
+
+### New Features
+
+- **Changelog Modal**: Added an "Updates" button to the home page footer,
+  allowing players to view the latest changes and improvements directly within
+  the app.
+
+---
+
 ## [1.5.3] - 2026-01-17
 
 ### Mobile Improvements
