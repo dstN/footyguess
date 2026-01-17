@@ -2,6 +2,15 @@
 
 # Changelog
 
+## [1.5.1] - 2026-01-17
+
+### Security
+
+- **Dependencies**: Updated dependencies via `npm audit fix` to resolve reported
+  vulnerabilities.
+
+---
+
 ## [1.5.0] - 2026-01-17
 
 ### Major Release: System Reliability, Admin Tools & Visual Polish
