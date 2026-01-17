@@ -2,6 +2,29 @@
 
 # Changelog
 
+## [1.5.3] - 2026-01-17
+
+### Mobile Improvements
+
+- **Keyboard Stability**: The guess input field now remains active during the
+  loading state. This prevents mobile keyboards from automatically hiding when
+  you submit a guess, ensuring a faster and smoother gameplay loop.
+- **Scroll Fixes**: Updated the main layout to use Dynamic Viewport Height
+  (`dvh`). This fixes an issue where the address bar on mobile devices caused
+  the page to slightly scroll/jump when focusing inputs or triggering
+  animations.
+
+---
+
+## [1.5.2] - 2026-01-17
+
+### Security
+
+- **Dependencies**: Updated dependencies via `npm audit fix` to resolve reported
+  vulnerabilities.
+
+---
+
 ## [1.5.1] - 2026-01-17
 
 ### Security
