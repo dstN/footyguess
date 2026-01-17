@@ -1,6 +1,6 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-12 **Scope**: FootyGuess
+> **Status**: Living Document **Last Updated**: 2026-01-17 **Scope**: FootyGuess
 > Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
@@ -34,7 +34,7 @@ functions.
 
 **Current State** (as of 2026-01-12):
 
-```
+```typescript
 server/services/
 ├── clue.ts          # ✅ useClue
 ├── guess.ts         # ✅ processGuess
@@ -572,12 +572,11 @@ links
    - Task definitions
 
 3. **Development Scripts**
+
    ```json
    {
      "scripts": {
-       "dev:debug": "node --inspect node_modules/.bin/nuxt dev",
-       "db:seed": "tsx scripts/seed-dev-data.ts",
-       "db:reset": "tsx scripts/reset-db.ts"
+       "db:reset": "tsx server/scripts/reset-scores.ts"
      }
    }
    ```
@@ -780,17 +779,17 @@ links
 
 ---
 
-## Status Summary (Reconciliation Audit 2026-01-13)
+## Status Summary (Reconciliation Audit 2026-01-17)
 
 | Section                 | Done  | Partial | Not Done |
 | ----------------------- | ----- | ------- | -------- |
 | 1. Code Stability       | 4     | 0       | 0        |
-| 2. Game Logic           | 2     | 0       | 3        |
+| 2. Game Logic           | 3     | 0       | 2        |
 | 3. Frontend/UX          | 1     | 3       | 2        |
 | 4. Developer Experience | 0     | 1       | 2        |
 | 5. Performance          | 0     | 0       | 3        |
 | 6. Future Features      | 0     | 0       | 3        |
-| **Total**               | **7** | **4**   | **13**   |
+| **Total**               | **8** | **4**   | **12**   |
 
 ---
 
@@ -799,12 +798,12 @@ links
 | Priority | Category     | Items                                    | Status         |
 | -------- | ------------ | ---------------------------------------- | -------------- |
 | **P0**   | Testing      | Scoring tests                            | ✅ DONE        |
-| **P1**   | Architecture | Service layer, TypeScript strictness     | 🟡 Partial     |
+| **P1**   | Architecture | Service layer, TypeScript strictness     | ✅ DONE        |
 | **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
 | **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
 | **P2**   | UX           | Accessibility, mobile, game persistence  | 🟡 Partial     |
 | **P2**   | DX           | Tooling, debugging                       | 🟡 Partial     |
-| **P3**   | Game Logic   | Clue improvements, scoring refinements   | ❌ Not Started |
+| **P3**   | Game Logic   | Clue improvements                        | ❌ Not Started |
 | **P3**   | UX           | Visual feedback, social features         | ❌ Not Started |
 | **P3**   | Features     | Game modes, content expansion            | ❌ Not Started |
 
@@ -824,6 +823,7 @@ When implementing any improvement:
 
 ## Changelog
 
-| Date       | Change                                         |
-| ---------- | ---------------------------------------------- |
-| 2026-01-11 | Reconciliation: Corrected service layer status |
+| Date       | Change                                                                 |
+| ---------- | ---------------------------------------------------------------------- |
+| 2026-01-17 | Full system audit: Updated status markers, fixed test setup (useState) |
+| 2026-01-11 | Reconciliation: Corrected service layer status                         |

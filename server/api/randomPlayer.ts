@@ -104,15 +104,8 @@ export default defineEventHandler(async (event) => {
             exp: expiresAtMs,
           });
 
-          // Get transfer count for grace period
-          const transferCount =
-            (
-              db
-                .prepare(
-                  `SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`,
-                )
-                .get(activeRound.player_id) as { count: number }
-            )?.count ?? 0;
+          // Get transfer count for grace period - use filtered length from player details
+          const transferCount = playerDetails.transfers.length;
 
           return {
             ...playerDetails,
@@ -172,15 +165,8 @@ export default defineEventHandler(async (event) => {
       exp: expiresAt,
     });
 
-    // Get transfer count for grace period
-    const transferCount =
-      (
-        db
-          .prepare(
-            `SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`,
-          )
-          .get(playerData.id) as { count: number }
-      )?.count ?? 0;
+    // Get transfer count for grace period - use filtered length from player data
+    const transferCount = playerData.transfers.length;
 
     return {
       ...playerData,

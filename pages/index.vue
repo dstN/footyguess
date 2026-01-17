@@ -281,6 +281,40 @@
       </div>
     </template>
   </UModal>
+  <!-- Expired Session Modal -->
+  <UModal
+    v-model:open="showExpiredSessionModal"
+    title="Session Expired"
+    description="Oooh. Sorry. It seems your session expired."
+  >
+    <template #default>
+      <span class="hidden" />
+    </template>
+    <template #body>
+      <div class="space-y-4 text-center">
+        <div
+          class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 ring-1 ring-orange-500/50"
+        >
+          <UIcon
+            name="i-lucide-ghost"
+            class="h-8 w-8 text-orange-400"
+          />
+        </div>
+        <p class="text-slate-300">Wanna start a new game?</p>
+      </div>
+    </template>
+    <template #footer>
+      <UButton
+        block
+        size="lg"
+        color="primary"
+        class="cursor-pointer"
+        @click="handleExpiredSessionConfirm"
+      >
+        Start New Game
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -324,6 +358,7 @@ const currentStreak = computed(() => {
 
 // Modal state for game continuation choice
 const showGameChoiceModal = ref(false);
+const showExpiredSessionModal = ref(false);
 
 /**
  * Get human-readable difficulty label
@@ -336,13 +371,40 @@ function getDifficultyLabel(difficulty: UserSelectedDifficulty | null): string {
 /**
  * Handle play button click - show choice modal if user has active streak
  */
-function handlePlayClick() {
+async function handlePlayClick() {
   if (currentStreak.value > 0) {
+    // Verify session still exists on server (could be reset)
+    const sessionId = localStorage.getItem("footyguess_session_id");
+    if (sessionId) {
+      try {
+        const stats = await $fetch<{ exists: boolean }>(
+          `/api/sessionStats?sessionId=${sessionId}`,
+        );
+        if (!stats.exists) {
+          // Session deleted on server - show expired modal
+          showExpiredSessionModal.value = true;
+          return;
+        }
+      } catch (e) {
+        // If check fails, assume session might be valid or let play logic handle errors
+        console.error("Session check failed", e);
+      }
+    }
     showGameChoiceModal.value = true;
   } else {
     // No active streak, show difficulty selector directly
     difficultySelectorRef.value?.open();
   }
+}
+
+function handleExpiredSessionConfirm() {
+  if (import.meta.client) {
+    localStorage.removeItem("footyguess_session_id");
+    localStorage.removeItem("footyguess_streak");
+    localStorage.removeItem("footyguess_last_player");
+  }
+  showExpiredSessionModal.value = false;
+  difficultySelectorRef.value?.open();
 }
 
 /**

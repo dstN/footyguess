@@ -13,6 +13,7 @@ vi.mock("#imports", () => ({
   useRouter: () => ({ push: routerPushMock, replace: vi.fn() }),
   useRoute: () => ({ query: routeQueryMock.value }),
   useToast: () => ({ add: toastAddMock }),
+  useState: (key: string, initialValue: () => unknown) => ref(initialValue()),
   inject: () => undefined,
   onMounted: () => {},
   useHead: () => {},
@@ -23,6 +24,10 @@ interface TestGlobals {
   useRouter: () => { push: typeof routerPushMock; replace: () => void };
   useRoute: () => { query: Record<string, string> };
   useToast: () => { add: typeof toastAddMock };
+  useState: (
+    key: string,
+    initialValue: () => unknown,
+  ) => ReturnType<typeof ref>;
   inject: () => undefined;
   onMounted: () => void;
   useHead: () => void;
@@ -40,6 +45,8 @@ const testGlobals = globalThis as typeof globalThis & TestGlobals;
 testGlobals.useRouter = () => ({ push: routerPushMock, replace: vi.fn() });
 testGlobals.useRoute = () => ({ query: routeQueryMock.value });
 testGlobals.useToast = () => ({ add: toastAddMock });
+testGlobals.useState = (key: string, initialValue: () => unknown) =>
+  ref(initialValue());
 testGlobals.inject = () => undefined;
 testGlobals.onMounted = () => {};
 testGlobals.useHead = () => {};

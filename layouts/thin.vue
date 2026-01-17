@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative min-h-screen overflow-x-hidden bg-[#050915] text-slate-100"
+    class="relative min-h-screen overflow-visible bg-[#050915] text-slate-100"
     :class="{ 'animations-paused': isModalOpen }"
   >
     <a
@@ -18,31 +18,15 @@
         class="absolute inset-0 bg-[linear-gradient(120deg,rgba(0,255,170,0.08),transparent_45%),linear-gradient(60deg,rgba(255,39,167,0.08),transparent_40%)]"
       />
       <div class="glitch-layer absolute inset-0" />
+      <div class="cyber-grid absolute inset-0 opacity-70" />
     </div>
 
     <div
-      class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 pt-8 pb-28 md:px-0"
+      id="main-content"
+      class="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center p-6"
+      tabindex="-1"
     >
-      <div
-        class="glass-panel border-primary-900/50 relative w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
-        :class="{ 'animate-shake': shouldShake }"
-        @animationend="shouldShake = false"
-      >
-        <div class="pointer-events-none absolute inset-0 opacity-70">
-          <div class="cyber-grid absolute inset-0" />
-          <div
-            class="from-primary-500 via-mew-500 to-primary-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r"
-          />
-        </div>
-
-        <div
-          id="main-content"
-          class="relative z-10 p-6 sm:p-8"
-          tabindex="-1"
-        >
-          <slot @shake="triggerShake" />
-        </div>
-      </div>
+      <slot @shake="triggerShake" />
     </div>
   </div>
 </template>
@@ -89,20 +73,6 @@ provide(isModalOpenKey, isModalOpen);
   background-size: 80px 80px;
   mix-blend-mode: screen;
   opacity: 0.6;
-  /* Animation moved to media query for performance */
-}
-
-@keyframes animate {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  25% {
-    transform: translate3d(-4px, 0, 0);
-  }
-  75% {
-    transform: translate3d(4px, 0, 0);
-  }
 }
 
 .glitch-layer::after {
@@ -123,7 +93,11 @@ provide(isModalOpenKey, isModalOpen);
     linear-gradient(180deg, rgba(0, 255, 170, 0.08), rgba(0, 0, 0, 0));
   mix-blend-mode: screen;
   filter: blur(1.5px);
-  /* Animation moved to media query */
+}
+
+.animations-paused .glitch-layer,
+.animations-paused .glitch-layer::after {
+  animation-play-state: paused;
 }
 
 @keyframes glitch-shift {
@@ -158,22 +132,11 @@ provide(isModalOpenKey, isModalOpen);
   }
 }
 
-.animate-shake {
-  animation: animate 0.4s ease-in-out;
-}
-
-.animations-paused .glitch-layer,
-.animations-paused .glitch-layer::after {
-  animation-play-state: paused;
-}
-
 @media (min-width: 768px) {
   .glitch-layer {
     animation: glitch-shift 9s linear infinite;
     will-change: background-position, opacity;
-    filter: drop-shadow(0 0 6px rgba(0, 255, 200, 0.25));
   }
-
   .glitch-layer::after {
     animation: glitch-drift 14s ease-in-out infinite alternate;
   }

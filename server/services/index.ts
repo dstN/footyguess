@@ -10,3 +10,4 @@ export * from "./player.ts";
 export * from "./session.ts";
 export * from "./leaderboard.ts";
 export * from "./request.ts";
+export * from "./admin.ts";

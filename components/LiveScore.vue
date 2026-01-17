@@ -10,7 +10,10 @@
     }"
     :title="`Potential score (${elapsedDisplay})`"
   >
-    ~{{ potentialScore.toFixed(3) }} pts
+    ~{{
+      isScoreSteady ? Math.round(potentialScore) : potentialScore.toFixed(3)
+    }}
+    pts
   </UBadge>
 </template>
 
@@ -57,10 +60,28 @@ const effectiveElapsed = computed(() =>
   Math.max(0, elapsedSeconds.value - graceSeconds.value),
 );
 
-// Format elapsed time for display
+// Check if score is currently changing (false during grace period and stable windows)
+const isScoreSteady = computed(() => {
+  // Grace period: Steady
+  if (elapsedSeconds.value < graceSeconds.value) return true;
+
+  const effective = effectiveElapsed.value;
+  // Time bonus stability:
+  // 0-1s: Steady (Instant bonus)
+  if (effective <= 1) return true;
+  // 1-120s: Changing (Bonus dropping)
+  if (effective <= 120) return false;
+  // 120-300s: Steady (No bonus, no penalty yet)
+  if (effective <= 300) return true;
+  // >300s: Changing (Penalty increasing)
+  return false;
+});
+
+// Format elapsed time for display (Fixed seconds)
 const elapsedDisplay = computed(() => {
-  const mins = Math.floor(elapsedSeconds.value / 60);
-  const secs = elapsedSeconds.value % 60;
+  const totalSecs = Math.floor(elapsedSeconds.value);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 });
 

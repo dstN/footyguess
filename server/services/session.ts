@@ -27,6 +27,7 @@ export interface LastScore {
 
 export interface SessionStats {
   sessionId: string;
+  exists: boolean;
   nickname: string | null;
   streak: number;
   bestStreak: number;
@@ -54,29 +55,29 @@ export function getSessionStats(sessionId: string): SessionStats {
       }
     | undefined;
 
-  // Calculate live total from scores table
-  const liveTotal = db
-    .prepare(
-      `SELECT COALESCE(SUM(score), 0) as total FROM scores WHERE session_id = ?`,
-    )
-    .get(sessionId) as { total: number };
+  // Calculate live total from scores table if session exists
+  let cachedTotal = 0;
+  if (session) {
+    const liveTotal = db
+      .prepare(
+        `SELECT COALESCE(SUM(score), 0) as total FROM scores WHERE session_id = ?`,
+      )
+      .get(sessionId) as { total: number };
 
-  const cachedTotal = session?.total_score ?? 0;
-  const calculatedTotal = liveTotal?.total ?? 0;
+    cachedTotal = session.total_score ?? 0;
+    const calculatedTotal = liveTotal?.total ?? 0;
 
-  // If there's a discrepancy, update the cache
-  if (
-    session &&
-    calculatedTotal !== cachedTotal &&
-    calculatedTotal > cachedTotal
-  ) {
-    try {
-      db.prepare(`UPDATE sessions SET total_score = ? WHERE id = ?`).run(
-        calculatedTotal,
-        sessionId,
-      );
-    } catch {
-      // Ignore update failures
+    // If there's a discrepancy, update the cache
+    if (calculatedTotal !== cachedTotal && calculatedTotal > cachedTotal) {
+      try {
+        db.prepare(`UPDATE sessions SET total_score = ? WHERE id = ?`).run(
+          calculatedTotal,
+          sessionId,
+        );
+        cachedTotal = calculatedTotal;
+      } catch {
+        // Ignore update failures
+      }
     }
   }
 
@@ -172,10 +173,11 @@ export function getSessionStats(sessionId: string): SessionStats {
 
   return {
     sessionId,
+    exists: !!session,
     nickname: session?.nickname ?? null,
     streak: session?.streak ?? 0,
     bestStreak: session?.best_streak ?? 0,
-    totalScore: cachedTotal ?? 0,
+    totalScore: cachedTotal,
     lastPlayerId: lastScoreRow?.player_id ?? null,
     lastScore,
     submittedTypes: submittedTypes.map((e) => e.type),

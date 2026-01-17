@@ -98,7 +98,15 @@ const MAX_GRACE_SECONDS = 15;
  */
 function getTransferCount(playerId: number): number {
   const result = db
-    .prepare(`SELECT COUNT(*) as count FROM transfers WHERE player_id = ?`)
+    .prepare(
+      `SELECT COUNT(*) as count 
+       FROM transfers t
+       LEFT JOIN clubs fc ON t.from_club_id = fc.id
+       LEFT JOIN clubs tc ON t.to_club_id = tc.id
+       WHERE t.player_id = ?
+         AND (fc.name IS NULL OR fc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.')
+         AND (tc.name IS NULL OR tc.name NOT REGEXP 'U\\d{1,2}|Yth\\.|Jgd\\.')`,
+    )
     .get(playerId) as { count: number };
   return result?.count ?? 0;
 }

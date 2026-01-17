@@ -521,6 +521,55 @@ transfers). Timer only starts counting after grace period.
 
 ---
 
+## 12. Accessibility & Mobile Guidelines
+
+### 12.1 Accessibility Requirements (WCAG 2.1 Target: AA)
+
+| Requirement                 | Implementation                                                          |
+| --------------------------- | ----------------------------------------------------------------------- |
+| **Reduced motion**          | `@media (prefers-reduced-motion)` in `main.css` disables all animations |
+| **Focus management**        | `utils/accessibility.ts` provides `createFocusTrap()`, `restoreFocus()` |
+| **Screen reader announces** | `announceToScreenReader()` for dynamic content changes                  |
+| **Skip links**              | `skipToMainContent()` utility available                                 |
+| **ARIA labels**             | All interactive elements must have `aria-label` or visible text         |
+| **Keyboard navigation**     | All modals trap focus; Escape closes modals                             |
+| **Color contrast**          | Text on dark backgrounds uses `slate-300` or lighter (4.5:1 minimum)    |
+
+### 12.2 Accessibility Pattern
+
+```typescript
+// Modal accessibility pattern (see HelpModal.vue)
+watch(isOpen, (open) => {
+  if (open) {
+    previousFocus = getFocusedElement();
+    removeTrap = createFocusTrap(modalEl);
+  } else {
+    removeTrap?.();
+    restoreFocus(previousFocus);
+  }
+});
+```
+
+### 12.3 Mobile Optimization
+
+| Concern             | Current State                                   |
+| ------------------- | ----------------------------------------------- |
+| **Touch targets**   | Buttons use `size="xl"` (≥44px) on primary CTAs |
+| **Responsive grid** | Tailwind `sm:` / `md:` breakpoints              |
+| **Fixed footer**    | GuessFooter uses `fixed bottom-0` on mobile     |
+| **Text scaling**    | No fixed `px` font sizes in body text           |
+
+### 12.4 Accessibility Decision Rules
+
+| If...                          | Then...                                            |
+| ------------------------------ | -------------------------------------------------- |
+| Adding a modal                 | Use focus trap pattern from `HelpModal.vue`        |
+| Adding dynamic content updates | Call `announceToScreenReader()` for screen readers |
+| Adding animation               | Wrap in `@media (prefers-reduced-motion)` check    |
+| Adding interactive non-button  | Add `tabindex`, `role`, and keyboard event handler |
+
+---
+
 ## Appendix A: Directory Purpose Reference
 
 | Directory          | Purpose                                          | Owner  |
@@ -555,6 +604,8 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 | Date | Change     |
 | ---- | ---------- | ------------------------------------------------- |
+| -    | 2026-01-17 | Admin Tools & Full Audit (v1.5.0)                 |
+| -    | 2026-01-17 | Added §12 Accessibility & Mobile Guidelines       |
 | -    | 2026-01-17 | Header Polish & Grace Timer (v1.4.4)              |
 | -    | 2026-01-15 | Updated §7.6 Scoring, Leaderboard fixes (v1.4.3)  |
 | -    | 2026-01-14 | Added §7.6 Scoring Formula order                  |
