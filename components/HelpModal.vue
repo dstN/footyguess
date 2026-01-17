@@ -106,20 +106,20 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-500">3.</span>
-                  <span class="text-emerald-400"
+                  <span class="text-primary-400"
                     >+ No clues (+10%) / − Clues (−6% each, max −30%)</span
                   >
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-500">4.</span>
-                  <span class="text-emerald-400"
+                  <span class="text-primary-400"
                     >+ No wrong guesses (+10%) / − Wrong (−6% each, max
                     −30%)</span
                   >
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-slate-500">5.</span>
-                  <span class="text-emerald-400">± Time (+120% to −30%)</span>
+                  <span class="text-primary-400">± Time (+120% to −30%)</span>
                 </div>
                 <div
                   class="mt-2 flex items-center gap-2 border-t border-slate-700/50 pt-2"
@@ -221,7 +221,7 @@
               <div class="space-y-1 text-xs text-slate-300">
                 <div class="flex justify-between">
                   <span>Instant (≤1s)</span>
-                  <span class="text-emerald-400">+120% bonus</span>
+                  <span class="text-primary-400">+120% bonus</span>
                 </div>
                 <div class="flex justify-between">
                   <span>1s → 2min</span>
@@ -244,8 +244,8 @@
                     name="i-lucide-clock"
                     class="mr-1 inline h-3 w-3"
                   />
-                  Grace period: 5s per player transfer (max 30s) — timer starts
-                  after grace.
+                  Grace period: 2.5s per player transfer (max 15s) — timer
+                  starts after grace.
                 </p>
               </div>
             </div>

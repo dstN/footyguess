@@ -26,14 +26,35 @@
           </div>
         </div>
         <!-- Badge row: Difficulty | Live Score | Transfers | Help -->
+        <!-- Badge row: Difficulty | Live Score | Transfers | Guesses -->
         <div
-          class="flex w-full flex-row items-center justify-between gap-2 md:w-auto md:justify-end md:gap-3"
+          class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end sm:gap-3"
         >
           <!-- Difficulty (left on mobile) -->
           <DifficultyBadge
             :difficulty="difficulty ?? null"
             :current-streak="currentStreak"
           />
+
+          <!-- Transfers (right on mobile) -->
+          <UBadge
+            v-if="showBadge"
+            color="primary"
+            variant="soft"
+            class="flex w-full items-center justify-center text-xs sm:w-auto"
+          >
+            Transfers: {{ items.length }}
+          </UBadge>
+
+          <!-- Guesses Indicator -->
+          <UBadge
+            v-if="difficulty"
+            :color="(wrongGuesses ?? 0) > 0 ? 'error' : 'neutral'"
+            variant="soft"
+            class="flex w-full items-center justify-center text-xs transition-colors sm:w-auto"
+          >
+            Guesses: {{ wrongGuesses ?? 0 }} / {{ MAX_WRONG_GUESSES + 1 }}
+          </UBadge>
 
           <!-- Live Score (middle on mobile, between difficulty and transfers) -->
           <LiveScore
@@ -45,26 +66,6 @@
             :wrong-guesses="wrongGuesses"
             :streak="currentStreak ?? 0"
           />
-
-          <!-- Transfers + Help (right on mobile) -->
-          <div class="flex items-center gap-1">
-            <UBadge
-              v-if="showBadge"
-              color="primary"
-              variant="soft"
-              class="text-xs"
-            >
-              Transfers: {{ items.length }}
-            </UBadge>
-            <HelpModal
-              :show-label="false"
-              button-size="xs"
-              button-variant="ghost"
-              button-color="neutral"
-              button-class="!p-0 h-4 w-4 text-slate-500 hover:text-slate-300 opacity-100"
-              icon-size="h-4 w-4"
-            />
-          </div>
         </div>
       </div>
     </template>
@@ -79,8 +80,8 @@
 <script setup lang="ts">
 import DifficultyBadge from "~/components/DifficultyBadge.vue";
 import TransferTimelineView from "~/components/TransferTimelineView.vue";
-import HelpModal from "~/components/HelpModal.vue";
 import LiveScore from "~/components/LiveScore.vue";
+import { MAX_WRONG_GUESSES } from "~/utils/scoring-constants";
 
 interface TimelineItem {
   id: string;

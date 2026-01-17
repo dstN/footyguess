@@ -20,13 +20,14 @@
         @update:confirmResetOpen="(val) => (confirmResetOpen = val)"
       />
 
-      <UAlert
-        v-show="Boolean(errorMessage)"
-        color="error"
-        icon="i-lucide-alert-triangle"
-        :title="errorMessage"
-        class="border border-red-500/30 bg-white/5 text-red-500/90"
-      />
+      <!-- Screen reader feedback only (visible feedback is via Toasts) -->
+      <div
+        v-if="errorMessage"
+        role="alert"
+        class="sr-only"
+      >
+        {{ errorMessage }}
+      </div>
 
       <section class="space-y-4">
         <ClueBar
@@ -71,6 +72,7 @@
       </section>
 
       <GuessFooter
+        ref="guessFooterRef"
         :schema="schema"
         :state="formState"
         :model-value="formState.guess"
@@ -81,8 +83,8 @@
         :has-guess="hasGuess"
         @update:model-value="(val: string) => (formState.guess = val)"
         @update:search-term="onSearch"
-        @submit="onSubmit"
-        @enter="submitGuessViaEnter"
+        @submit="handleSubmitAndFocus"
+        @enter="handleEnterAndFocus"
         @clear="clearGuess"
       />
 
@@ -242,4 +244,21 @@ onBeforeUnmount(() => {
 onBeforeRouteLeave(() => {
   clearDevPollTimer();
 });
+import { nextTick } from "vue";
+
+const guessFooterRef = ref<InstanceType<typeof GuessFooter> | null>(null);
+
+async function handleSubmitAndFocus(event: any) {
+  await onSubmit(event);
+  await nextTick();
+  guessFooterRef.value?.focusInput();
+}
+
+async function handleEnterAndFocus(guess: string) {
+  // Clear the search term on enter so the input is clear for the next guess
+  onSearch("");
+  await submitGuessViaEnter(guess);
+  await nextTick();
+  guessFooterRef.value?.focusInput();
+}
 </script>

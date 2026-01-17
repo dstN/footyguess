@@ -90,8 +90,8 @@ export const MAX_WRONG_GUESSES = 5;
  * Grace period: time freeze before time bonus starts counting
  * v1.4.2: 5s per player transfer, capped at 30s
  */
-export const GRACE_SECONDS_PER_TRANSFER = 5;
-export const MAX_GRACE_SECONDS = 30;
+export const GRACE_SECONDS_PER_TRANSFER = 2.5;
+export const MAX_GRACE_SECONDS = 15;
 
 /**
  * Penalty cap: maximum penalty for clues, malice, and time is -30% each

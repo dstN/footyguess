@@ -31,11 +31,13 @@
             :aria-label="`${clue.label}${clue.value ? ': ' + clue.value : ''}`"
             data-testid="clue-item"
           >
-            {{ clue.label
-            }}<span
-              v-if="clue.value"
-              aria-hidden="false"
-              >: {{ clue.value }}</span
+            <span
+              >{{ clue.label
+              }}<span
+                v-if="clue.value"
+                aria-hidden="false"
+                >: {{ clue.value }}</span
+              ></span
             >
           </UBadge>
         </TransitionGroup>

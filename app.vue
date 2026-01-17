@@ -1,5 +1,6 @@
 <template>
   <UApp :toaster="toaster">
+    <AppInterference />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

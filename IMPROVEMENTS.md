@@ -234,34 +234,32 @@ game logic changes:
 
 ---
 
-### 2.2 Scoring System Refinements ❌ NOT DONE
+### 2.2 Scoring System Refinements ✅ DONE (v1.4.2)
 
 **Priority**: P3 | **Effort**: Small | **Category**: Game Logic
 
-**Potential Improvements**:
+**Completed**:
+
+- **Linear Time Penalty**: Implemented smoother decay (-0.1%/sec) instead of
+  steps.
+- **Detailed Breakdowns**: Toast notification provides full bonus/penalty
+  visibility.
+- **All-Additive Formula**: Standardized all bonuses as % of adjusted base.
+
+**Future Ideas**:
 
 1. **Progressive Clue Costs**
 
    - First clue: 5 points
    - Later clues: 15 points
-   - Encourages strategic clue usage
 
-2. **Hint Types with Different Costs**
-
-   - Biographical clues: 5 points
-   - Career stats: 10 points
-   - Transfer history: 15 points
-
-3. **Guess Quality Bonus**
+2. **Guess Quality Bonus**
    - Partial match detection ("Ronaldo" for "Cristiano Ronaldo")
-   - Suggestion system before full guess
 
-**Important**: Any scoring changes must:
+**Technical Notes**:
 
-- Update `server/utils/scoring.ts` (source of truth)
-- Update `utils/scoring-constants.ts` (client display)
-- Update `HelpModal.vue` (user documentation)
-- Add/update tests
+- `server/utils/scoring.ts` is the single source of truth.
+- `HelpModal.vue` is automatically synced via constants.
 
 ---
 

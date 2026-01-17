@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-x-0 bottom-0 z-[100] mx-auto flex w-full max-w-5xl justify-center px-4 pb-0"
+      class="fixed inset-x-0 bottom-0 z-[100] mx-auto flex w-full max-w-5xl justify-center pb-0"
       role="region"
       aria-label="Guess submission"
     >
@@ -16,6 +16,7 @@
           aria-label="Player guess form"
         >
           <UInputMenu
+            ref="inputMenuRef"
             v-model="modelValue"
             v-model:search-term="searchTermModel"
             placeholder="Type or search the player's name"
@@ -146,4 +147,22 @@ function handleEnter(event: KeyboardEvent) {
   event.preventDefault();
   emit("enter", props.modelValue);
 }
+
+const inputMenuRef = ref();
+
+function focusInput() {
+  // Use exposed inputRef from Nuxt UI component (HTMLInputElement or Ref<HTMLInputElement>)
+  const input = inputMenuRef.value?.inputRef || inputMenuRef.value?.input;
+
+  if (input?.focus) {
+    input.focus();
+  } else if (input?.value?.focus) {
+    // Handle if it's a ref wrapper (unwrapped ref in template vs script usage)
+    input.value.focus();
+  }
+}
+
+defineExpose({
+  focusInput,
+});
 </script>

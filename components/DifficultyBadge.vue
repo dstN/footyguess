@@ -10,15 +10,11 @@
       <UBadge
         :color="badge.color"
         variant="soft"
-        class="text-xs"
+        class="flex w-full items-center justify-center text-xs sm:w-auto"
         :class="badge.class"
       >
         {{ label }}
       </UBadge>
-      <UIcon
-        name="i-lucide-help-circle"
-        class="h-4 w-4 text-slate-500 transition-colors hover:text-slate-300"
-      />
     </div>
 
     <template #content>

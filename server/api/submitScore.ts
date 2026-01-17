@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
       }
 
       playerId = last.player_id;
-      value = last.time_score ?? session?.last_round_time_score ?? 0;
+      value = last.score ?? session?.last_round_score ?? 0;
       baseScore = last.base_score ?? null;
       finalScore = last.score ?? null;
       playerName = getPlayerName(playerId);

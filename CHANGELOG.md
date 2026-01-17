@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.4.4] - 2026-01-17
+
+### Header & UI Polish
+
+This release standardizes the game header for a cleaner, consistent experience
+across devices.
+
+### Changed
+
+- **Header Badges**:
+  - **Mobile**: Now arranged in a symmetrical **2x2 Grid** (Difficulty |
+    Transfers / Guesses | Score).
+  - **Desktop**: Reverts to a clean single row with natural widths.
+  - **Sizing**: Removed fixed heights; added full-width filling on mobile.
+  - **Order**: Reordered to [Difficulty, Transfers, Guesses, LiveScore].
+  - **Formatting**: Fixed "Strong foot : Right" spacing issue.
+  - **Cleanup**: Removed redundant (?) help icons.
+- **Grace Timer**: Adjusted logic to **2.5s per transfer** (was 5s) with a **15s
+  Max Cap** (was 30s) to better balance difficulty.
+
+## [1.4.3] - 2026-01-15
+
+### Victory Mechanics Polish & Hotfixes
+
+This release refines the post-victory experience, ensuring score transparency
+and fixing discrepancies in the leaderboard and live score systems.
+
+### Fixed
+
+- **Leaderboard Accuracy**: Fixed an issue where leaderboard submissions used
+  the partial `time_score` (Base + Time) instead of the full `score` (including
+  Clue and Wrong Guess bonuses). Leaderboards now reflect the true Total Score.
+- **Streak Bonus Calculation**: Fixed logic where streak bonus was calculated on
+  the pre-win streak (0%) instead of the achieved streak (5%). Users now
+  correctly receive the bonus for the milestone they just completed.
+- **LiveScore Visibility**: Fixed a bug where the LiveScore badge disappeared on
+  page refresh (restored sessions lacked `startedAt` timestamp).
+- **HelpModal Syntax**: Fixed a missing end tag that could break the UI.
+
+### Changed
+
+- **Toast Notifications**:
+  - Title now displays the **Total Score** (e.g., `Correct! +229 pts`).
+  - Description provides a cleaner, detailed breakdown including Clue and Wrong
+    Guess percentages (e.g., `Base: 100 · Streak: 5 (+5%) · Clues: +10%`).
+- **Input Refocus**: The guess input now automatically refocuses after
+  submitting, even after incorrect guesses (once the form resets), allowing for
+  immediate typing.
+- **ScoreSnapshot**: Removed redundant "submits here" text.
+
 ## [1.4.2] - 2026-01-15
 
 ### Complete Scoring Formula Overhaul
@@ -20,7 +70,7 @@ bonus/penalty is a percentage of base × multiplier. **5 uses of any penalty =
   - **± Time bonus**: +120% instant → 0% at 2min → -0.1% per sec after 5min (max
     -30% at 10min)
 - **Minimum score**: 10% of base (e.g., 10 pts on Easy, 40 pts on Ultra)
-- **Time freeze**: Grace period of 5s per player transfer (capped at 30s)
+- **Time freeze**: Grace period of 2.5s per player transfer (capped at 15s)
 - **Perfect play reward**: 0 clues + 0 wrong guesses = +20% bonus
 - **Live score display**: Real-time potential score counter in
   TransferTimelineCard

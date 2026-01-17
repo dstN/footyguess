@@ -1,7 +1,7 @@
 # Architecture & Technical Direction
 
 > **Status**: Living Document  
-> **Last Updated**: 2026-01-15  
+> **Last Updated**: 2026-01-17  
 > **Scope**: Nuxt 4 / Nuxt UI 4 — FootyGuess
 
 This document defines the architectural intent, conventions, and guardrails for
@@ -419,7 +419,7 @@ score = adjustedBase
 100 (base) - 30 (clues) - 30 (malice) - 30 (time) = 10 pts
 ```
 
-**Grace period**: Time freeze of 5s per player transfer (capped at 30s for 6+
+**Grace period**: Time freeze of 2.5s per player transfer (capped at 15s for 6+
 transfers). Timer only starts counting after grace period.
 
 ### 7.7 Key Files
@@ -555,6 +555,8 @@ The `.llm/` directory contains framework documentation for AI assistants:
 
 | Date | Change     |
 | ---- | ---------- | ------------------------------------------------- |
+| -    | 2026-01-17 | Header Polish & Grace Timer (v1.4.4)              |
+| -    | 2026-01-15 | Updated §7.6 Scoring, Leaderboard fixes (v1.4.3)  |
 | -    | 2026-01-14 | Added §7.6 Scoring Formula order                  |
 | -    | 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
 | -    | 2026-01-12 | Added §7 Difficulty & Scoring System              |

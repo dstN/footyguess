@@ -3,10 +3,14 @@
     v-if="potentialScore > 0"
     :color="scoreColorBadge"
     variant="soft"
-    class="font-mono text-xs"
+    class="flex w-full items-center justify-center font-mono text-xs transition-all duration-300 sm:w-auto"
+    :class="{
+      'animate-penalty-pulse': isPenaltyActive,
+      'animate-event-pulse': triggerEventAnim,
+    }"
     :title="`Potential score (${elapsedDisplay})`"
   >
-    ~{{ potentialScore }} pts
+    ~{{ potentialScore.toFixed(3) }} pts
   </UBadge>
 </template>
 
@@ -92,7 +96,8 @@ const potentialScore = computed(() => {
 
   // Time bonus/penalty (capped at -30%)
   const timeBonus = Math.max(-0.3, getTimeBonus(effectiveElapsed.value));
-  const timeBonusPoints = Math.round(base * timeBonus);
+  // Don't round time bonus for live display (floating point adds drama)
+  const timeBonusPoints = base * timeBonus;
 
   const score = Math.max(
     base +
@@ -105,6 +110,8 @@ const potentialScore = computed(() => {
     1,
   );
 
+  // Return fixed string for display or number?
+  // Computed expects number usually, but we can return number here and format in template
   return score;
 });
 
@@ -148,16 +155,15 @@ function getTimeBonus(elapsed: number): number {
 
 function updateElapsed() {
   if (props.startedAt > 0) {
-    elapsedSeconds.value = Math.max(
-      0,
-      Math.floor(Date.now() / 1000) - props.startedAt,
-    );
+    // precision: floating point seconds
+    elapsedSeconds.value = Math.max(0, Date.now() / 1000 - props.startedAt);
   }
 }
 
 onMounted(() => {
   updateElapsed();
-  timer = setInterval(updateElapsed, 1000);
+  // Update frequently for stop-clock effect (50ms = 20fps)
+  timer = setInterval(updateElapsed, 50);
 });
 
 onUnmounted(() => {
@@ -171,4 +177,69 @@ watch(
     updateElapsed();
   },
 );
+
+// Penalty active state (> 5 min)
+const isPenaltyActive = computed(() => effectiveElapsed.value > 300);
+
+// Animation trigger for events
+const triggerEventAnim = ref(false);
+
+function pulseEvent() {
+  triggerEventAnim.value = true;
+  setTimeout(() => {
+    triggerEventAnim.value = false;
+  }, 400);
+}
+
+// Watch for score-impacting events
+watch(
+  [() => props.cluesUsed, () => props.wrongGuesses, scoreColorBadge],
+  () => {
+    pulseEvent();
+  },
+);
 </script>
+
+<style scoped>
+@keyframes penalty-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes event-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.animate-penalty-pulse {
+  animation: penalty-pulse 1.5s infinite ease-in-out;
+}
+
+.animate-event-pulse {
+  animation: event-pulse 0.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion) {
+  .animate-penalty-pulse,
+  .animate-event-pulse {
+    animation: none !important;
+  }
+}
+</style>

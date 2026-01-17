@@ -333,7 +333,7 @@ function getValueColor(type: string): string {
     case "round":
       return "text-primary-400";
     case "total":
-      return "text-emerald-400";
+      return "text-primary-400";
     case "streak":
       return "text-mew-500";
     default:

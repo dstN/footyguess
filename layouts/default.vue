@@ -31,7 +31,7 @@
         <div class="pointer-events-none absolute inset-0 opacity-70">
           <div class="cyber-grid absolute inset-0" />
           <div
-            class="from-primary-500 absolute inset-x-0 top-0 h-1 bg-gradient-to-r via-pink-400 to-emerald-300"
+            class="from-primary-500 via-mew-500 to-primary-300 absolute inset-x-0 top-0 h-1 bg-gradient-to-r"
           />
         </div>
 

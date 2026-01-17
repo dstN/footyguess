@@ -42,7 +42,7 @@
             </span>
             <span
               class="font-mono"
-              :class="cluesUsed === 0 ? 'text-emerald-400' : 'text-red-400'"
+              :class="cluesUsed === 0 ? 'text-primary-400' : 'text-red-400'"
               >{{
                 cluesUsed === 0 ? `+${noClueBonus}` : `-${cluePenalty}`
               }}</span
@@ -61,7 +61,7 @@
             </span>
             <span
               class="font-mono"
-              :class="missedGuesses === 0 ? 'text-emerald-400' : 'text-red-400'"
+              :class="missedGuesses === 0 ? 'text-primary-400' : 'text-red-400'"
               >{{
                 missedGuesses === 0 ? `+${noMaliceBonus}` : `-${malicePenalty}`
               }}</span
@@ -80,7 +80,7 @@
             <span
               class="font-mono"
               :class="
-                timeBonusPoints >= 0 ? 'text-emerald-400' : 'text-red-400'
+                timeBonusPoints >= 0 ? 'text-primary-400' : 'text-red-400'
               "
               >{{ timeBonusPoints >= 0 ? "+" : "" }}{{ timeBonusPoints }}</span
             >
@@ -92,10 +92,6 @@
           >
             <span class="flex items-center gap-1 font-semibold text-slate-200">
               Round score
-              <span
-                class="rounded bg-slate-800/50 px-1 py-0.5 text-xs font-normal text-slate-500"
-                >submits here</span
-              >
             </span>
             <span
               class="text-primary-400 font-mono text-lg font-bold"
@@ -183,7 +179,7 @@ const cluePenalty = computed(() => {
     return props.lastScore.cluePenalty;
   }
   return cluesUsed.value > 0
-    ? Math.round(adjustedBase.value * 0.1 * cluesUsed.value)
+    ? Math.round(adjustedBase.value * 0.06 * cluesUsed.value)
     : 0;
 });
 
@@ -199,7 +195,7 @@ const malicePenalty = computed(() => {
     return props.lastScore.malicePenalty;
   }
   return missedGuesses.value > 0
-    ? Math.round(adjustedBase.value * 0.1 * missedGuesses.value)
+    ? Math.round(adjustedBase.value * 0.06 * missedGuesses.value)
     : 0;
 });
 

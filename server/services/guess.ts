@@ -90,8 +90,8 @@ const MAX_WRONG_GUESSES = 5;
 /**
  * Grace period: 5s per transfer, capped at 30s (6 transfers)
  */
-const GRACE_SECONDS_PER_TRANSFER = 5;
-const MAX_GRACE_SECONDS = 30;
+const GRACE_SECONDS_PER_TRANSFER = 2.5;
+const MAX_GRACE_SECONDS = 15;
 
 /**
  * Get transfer count for a player (for grace period calculation)
@@ -186,7 +186,7 @@ export function processGuess(
   const breakdown = calculateScore(
     difficulty,
     cluesUsed,
-    sessionRow?.streak ?? 0,
+    correct ? (sessionRow?.streak ?? 0) + 1 : 0, // Award bonus for the streak achieved
     { elapsedSeconds, missedGuesses: totalWrongGuesses, graceSeconds },
   );
 

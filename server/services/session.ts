@@ -118,20 +118,18 @@ export function getSessionStats(sessionId: string): SessionStats {
     const streakBonus = getStreakBonusMultiplier(lastScoreRow.streak ?? 0);
     const cluesUsed = lastScoreRow.clues_used ?? 0;
 
-    // malice_penalty in DB is stored as actual points penalty (e.g., -30)
+    // malice_penalty in DB is stored as actual points penalty
     // We need to infer missedGuesses from it
-    // capped penalty formula: min(0.3, 0.1 * missedGuesses) * adjustedBase = malicePenalty
+    // capped penalty formula: min(0.3, 0.06 * missedGuesses) * adjustedBase = malicePenalty
     const adjustedBase = lastScoreRow.base_score ?? 0;
     const malicePenaltyStored = Math.abs(lastScoreRow.malice_penalty ?? 0);
 
-    // Reverse calculate missedGuesses: if penalty = 30% of base = 0.3 * base,
-    // then 0.1 * missedGuesses = 0.3 (capped), so at least 3 wrong guesses
-    // But actual count could be higher, we estimate
+    // Reverse calculate missedGuesses
     let missedGuesses = 0;
     if (adjustedBase > 0 && malicePenaltyStored > 0) {
       const penaltyRatio = malicePenaltyStored / adjustedBase;
-      missedGuesses = Math.round(penaltyRatio * 10); // 0.1 per wrong guess
-      if (missedGuesses > 3) missedGuesses = 3; // Cap shows max 3 (30%)
+      missedGuesses = Math.round(penaltyRatio / 0.06);
+      if (missedGuesses > 5) missedGuesses = 5; // Cap is 30% (5 * 6%)
     }
 
     // Reconstruct scoring breakdown (ALL ADDITIVE on adjustedBase)
@@ -139,7 +137,7 @@ export function getSessionStats(sessionId: string): SessionStats {
 
     // Clue bonus/penalty (capped at 30%)
     const noClueBonus = cluesUsed === 0 ? Math.round(adjustedBase * 0.1) : 0;
-    const clueRawPenalty = cluesUsed > 0 ? Math.min(0.3, 0.1 * cluesUsed) : 0;
+    const clueRawPenalty = cluesUsed > 0 ? Math.min(0.3, 0.06 * cluesUsed) : 0;
     const cluePenalty = Math.round(adjustedBase * clueRawPenalty);
 
     // Malice bonus/penalty (capped at 30%)

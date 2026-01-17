@@ -6,6 +6,7 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 import type { Player, UserSelectedDifficulty } from "~/types/player";
 import type { GuessFormOutput } from "~/types/forms";
 import type { ScoreBreakdown } from "~/server/utils/scoring";
+import { useInterference } from "./useInterference";
 
 interface RoundState {
   id: string;
@@ -15,16 +16,6 @@ interface RoundState {
   cluesUsed: number;
 }
 
-/**
- * Manages guess submission and validation
- * Handles API communication for guess submissions
- *
- * @example
- * ```ts
- * const { submitGuess, submitGuessViaEnter, clearGuess } = useGuessSubmission(player, round, streak);
- * await submitGuess("Harry Kane");
- * ```
- */
 export function useGuessSubmission(
   player: Ref<Player | null>,
   round: Ref<RoundState | null>,
@@ -49,6 +40,7 @@ export function useGuessSubmission(
 ) {
   const isSubmitting = ref(false);
   const wrongGuessCount = ref(0);
+  const { trigger: triggerInterference } = useInterference();
 
   /**
    * Validates and extracts guess value from various input formats
@@ -109,6 +101,7 @@ export function useGuessSubmission(
 
       // Handle round abort (too many wrong guesses)
       if (res.aborted) {
+        triggerInterference(800, "high"); // Intense effect for loss
         announceToScreenReader(
           `Round lost! Too many wrong guesses. The player was ${res.playerName}`,
           "assertive",
@@ -130,6 +123,7 @@ export function useGuessSubmission(
           res.streak,
         );
       } else {
+        triggerInterference(400, "medium"); // Medium effect for wrong guess
         // 6th wrong guess triggers abort, so remaining = MAX_WRONG_GUESSES + 1 - count
         const remaining = 6 - (res.wrongGuessCount ?? 0);
         announceToScreenReader(
@@ -165,8 +159,8 @@ export function useGuessSubmission(
    * Alternative submission trigger via Enter key
    * @param {string} guess - Current guess value
    */
-  function submitGuessViaEnter(guess: string) {
-    onSubmit({
+  async function submitGuessViaEnter(guess: string) {
+    return onSubmit({
       preventDefault: () => {},
       data: { guess },
     } as FormSubmitEvent<GuessFormOutput>);

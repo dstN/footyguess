@@ -206,9 +206,18 @@ export function usePlayGame() {
     isError.value = false;
     persistLastPlayer(playerName);
     const timeBonusPct = Math.round((breakdown.timeBonus ?? 0) * 100);
+    const cluesPct =
+      breakdown.cluesUsed === 0
+        ? "+10%"
+        : `-${Math.min(30, breakdown.cluesUsed * 6)}%`;
+    const malicePct =
+      breakdown.missedGuesses === 0
+        ? "+10%"
+        : `-${Math.min(30, breakdown.missedGuesses * 6)}%`;
+
     toast.add({
-      title: `Correct! +${breakdown.adjustedBase} base pts`,
-      description: `Time: ${timeBonusPct >= 0 ? "+" : ""}${timeBonusPct}% · Streak: ${Math.round((breakdown.streakBonus ?? 0) * 100)}% → total ${score} pts · Streak ${newStreak}`,
+      title: `Correct! +${score} pts`,
+      description: `Base: ${breakdown.adjustedBase} · Time: ${timeBonusPct >= 0 ? "+" : ""}${timeBonusPct}% · Streak: ${newStreak} (+${Math.round((breakdown.streakBonus ?? 0) * 100)}%) · Clues: ${cluesPct} · Wrong: ${malicePct}`,
       color: "primary",
       icon: "i-lucide-party-popper",
     });

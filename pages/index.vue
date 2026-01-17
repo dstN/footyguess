@@ -153,7 +153,9 @@
                   />
                   Speed Bonus
                 </span>
-                <span class="text-slate-400">+120% to -30%</span>
+                <span class="text-slate-400"
+                  >+120% to -30% · Max Grace 15s</span
+                >
               </div>
 
               <div
@@ -177,9 +179,12 @@
                     name="i-lucide-lightbulb"
                     class="h-4 w-4 text-purple-400"
                   />
-                  Clue Penalty
+                  Clues
                 </span>
-                <span class="text-red-400">-6% each (max 5)</span>
+                <span class="text-slate-400"
+                  >None: <span class="text-emerald-400">+10%</span> · Each:
+                  <span class="text-red-400">-6%</span></span
+                >
               </div>
 
               <div
@@ -190,9 +195,12 @@
                     name="i-lucide-zap"
                     class="h-4 w-4 text-red-400"
                   />
-                  Wrong Guesses
+                  Errors
                 </span>
-                <span class="text-red-400">-6% each, 6th = loss</span>
+                <span class="text-slate-400"
+                  >None: <span class="text-emerald-400">+10%</span> · Each:
+                  <span class="text-red-400">-6%</span></span
+                >
               </div>
             </div>
 
