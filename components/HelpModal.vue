@@ -379,7 +379,13 @@ import {
 const props = withDefaults(
   defineProps<{
     buttonLabel?: string;
-    buttonColor?: "primary" | "neutral" | "error" | "success" | "warning";
+    buttonColor?:
+      | "primary"
+      | "secondary"
+      | "neutral"
+      | "error"
+      | "success"
+      | "warning";
     buttonVariant?: "solid" | "outline" | "soft" | "subtle" | "ghost" | "link";
     buttonSize?: "xs" | "sm" | "md" | "lg" | "xl";
     buttonClass?: string;

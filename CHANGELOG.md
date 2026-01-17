@@ -2,6 +2,36 @@
 
 # Changelog
 
+## [1.5.1] - 2026-01-17
+
+### Patch Release: Security, Mobile Polish & Updates
+
+This patch combines critical security fixes with significant mobile improvements
+and a new in-app changelog viewer.
+
+### Critical Fixes
+
+- **Security**: Updated dependencies via `npm audit fix` to resolve reported
+  vulnerabilities.
+
+### Mobile Improvements
+
+- **Keyboard Stability**: The guess input field now remains active during the
+  loading state. This prevents mobile keyboards from automatically hiding when
+  you submit a guess, ensuring a faster and smoother gameplay loop.
+- **Scroll Fixes**: Updated the main layout to use Dynamic Viewport Height
+  (`dvh`). This fixes an issue where the address bar on mobile devices caused
+  the page to slightly scroll/jump when focusing inputs or triggering
+  animations.
+
+### New Features
+
+- **Changelog Modal**: Added an "Updates" button to the home page footer (next
+  to "Full Scoring Details"), allowing players to view the latest changes
+  directly within the app.
+
+---
+
 ## [1.5.0] - 2026-01-17
 
 ### Major Release: System Reliability, Admin Tools & Visual Polish

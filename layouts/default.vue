@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative min-h-screen overflow-x-hidden bg-[#050915] text-slate-100"
+    class="relative min-h-[100dvh] overflow-x-hidden bg-[#050915] text-slate-100"
     :class="{ 'animations-paused': isModalOpen }"
   >
     <a

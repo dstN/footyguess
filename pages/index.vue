@@ -204,11 +204,18 @@
               </div>
             </div>
 
-            <div class="pt-2">
+            <div class="flex items-center gap-2 pt-2">
               <HelpModal
                 button-label="Full Scoring Details"
                 button-variant="soft"
                 button-color="primary"
+                button-size="sm"
+                :show-label="true"
+              />
+              <ChangelogModal
+                button-label="What's New"
+                button-variant="soft"
+                button-color="secondary"
                 button-size="sm"
                 :show-label="true"
               />
@@ -322,6 +329,7 @@ import { ref, computed } from "vue";
 import ErrorBoundary from "~/components/ErrorBoundary.vue";
 import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
+import ChangelogModal from "~/components/ChangelogModal.vue";
 import DifficultySelector from "~/components/DifficultySelector.vue";
 import type { UserSelectedDifficulty } from "~/types/player";
 

@@ -24,7 +24,7 @@
             :color="isError ? 'error' : 'primary'"
             size="lg"
             class="min-w-[14rem] flex-1 bg-slate-900/20 text-white"
-            :disabled="isLoading"
+            :loading="isLoading"
             :highlight="true"
             :ignore-filter="true"
             :create-item="false"
@@ -133,6 +133,12 @@ const searchTermModel = computed({
 });
 
 function handleEnter(event: KeyboardEvent) {
+  // Prevent double submission if already loading
+  if (props.isLoading) {
+    event.preventDefault();
+    return;
+  }
+
   // If there's an active suggestion match, let the menu handle selection (don't prevent default)
   const isExactMatch = props.suggestions.some(
     (s) => s.toLowerCase() === props.modelValue.toLowerCase(),
