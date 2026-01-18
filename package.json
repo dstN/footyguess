@@ -11,10 +11,12 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "scrape": "tsx server/scraper/autonomous-batch-scraper.ts",
+    "lint": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "prepare": "husky"
   },
   "dependencies": {
     "@nuxt/ui": "^4.3.0",
@@ -29,6 +31,7 @@
     "@playwright/test": "^1.57.0",
     "@types/better-sqlite3": "^7.6.12",
     "@vitest/ui": "^3.0.5",
+    "husky": "^9.1.7",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tsx": "^4.19.3",

@@ -35,6 +35,14 @@ searchability, and rebalances the default difficulty experience.
   - Repaired 76 players with "Unknown" positions.
   - Verified 100% stats coverage and nationality data.
 
+### Development Workflow
+
+- **Quality Gates**: Integrated **Husky** to enforce code quality checks before
+  every commit.
+  - **Pre-commit**: Automatically runs `prettier --check` (formatting) and
+    `vitest` (unit tests).
+  - **Safety**: Prevents committing broken code or schema mismatches.
+
 ---
 
 ## [1.5.2] - 2026-01-18

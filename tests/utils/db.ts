@@ -13,7 +13,6 @@ export function resetDb() {
   db.exec("DELETE FROM clubs;");
   db.exec("DELETE FROM competitions;");
   db.exec("DELETE FROM requested_players;");
-  db.exec("DELETE FROM scrape_jobs;");
 }
 
 export default db;

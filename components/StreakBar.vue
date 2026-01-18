@@ -5,7 +5,7 @@
     aria-label="Current and best streak information"
   >
     <span
-      class="text-mew-500 text-xs tracking-[0.18em] uppercase font-semibold"
+      class="text-mew-500 text-xs font-semibold tracking-[0.18em] uppercase"
       id="streak-label"
     >
       Streaks
@@ -17,11 +17,7 @@
     >
       Current <span class="text-primary-400 font-bold">{{ streak }}</span>
     </span>
-    <span
-      class="text-slate-400"
-    >
-      •
-    </span>
+    <span class="text-slate-400"> • </span>
     <span
       class="text-sm font-semibold"
       :aria-label="`Best streak: ${bestStreak}`"

@@ -9,7 +9,13 @@ const player = ref({
   height_cm: 183,
   main_position: "CM",
   secondary_positions: ["AM", "DM"],
-  total_stats: { appearances: 100, goals: 10, assists: 20, yellow_cards: 5, red_cards: 1 },
+  total_stats: {
+    appearances: 100,
+    goals: 10,
+    assists: 20,
+    yellow_cards: 5,
+    red_cards: 1,
+  },
   stats: [{ competition: "Bundesliga", appearances: 50 }],
   birthplace: "Greifswald",
 } as any);

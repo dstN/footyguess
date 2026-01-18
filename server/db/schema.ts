@@ -28,7 +28,8 @@ export function initSchema() {
     CREATE TABLE IF NOT EXISTS players (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      tm_id INTEGER,
+      name_search TEXT, 
+      tm_id INTEGER UNIQUE,
       tm_url TEXT,
       tm_short_name TEXT,
       tm_short_name_search TEXT,
