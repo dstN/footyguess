@@ -2,7 +2,7 @@
   <UModal
     v-model:open="isOpen"
     title="What's New"
-    description="Recent updates and improvements to FootyGuess"
+    description="Recent updates and improvements"
   >
     <UButton
       icon="i-lucide-scroll-text"
@@ -28,12 +28,12 @@
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
           >
             <UBadge
-              color="primary"
+              color="secondary"
               variant="subtle"
               size="xs"
               >v1.6.0</UBadge
             >
-            Gameplay Balance & Integrity
+            Gameplay & Integrity
             <span class="ml-auto text-xs font-normal text-slate-500"
               >Jan 18</span
             >
@@ -60,6 +60,10 @@
               <li>
                 <strong class="text-white">New Players:</strong> Added ~180 new
                 Top Scorers & Ballon d'Or winners.
+              </li>
+              <li>
+                <strong class="text-white">Score Hiding:</strong> Tap the live
+                score badge to hide it if you prefer avoiding spoilers/stress.
               </li>
             </ul>
           </div>

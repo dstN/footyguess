@@ -23,6 +23,8 @@ searchability, and rebalances the default difficulty experience.
   "Fernando (Fernando Francisco Reges)").
 - **Smart Validation**: The guess validator now accepts these disambiguated
   names as correct answers.
+- **Score Hiding**: Tap the live score badge to hide/censor it (persisted
+  preference).
 
 ### Data Integrity & Repairs
 

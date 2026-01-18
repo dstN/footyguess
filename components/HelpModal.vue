@@ -221,19 +221,23 @@
               <div class="space-y-1 text-xs text-slate-300">
                 <div class="flex justify-between">
                   <span>Instant (≤1s)</span>
-                  <span class="text-primary-400">+120% bonus</span>
+                  <span class="text-primary-400 text-right">+120% bonus</span>
                 </div>
                 <div class="flex justify-between">
                   <span>1s → 2min</span>
-                  <span class="text-slate-400">Linear drop to 0%</span>
+                  <span class="text-right text-slate-400"
+                    >Linear drop to 0%</span
+                  >
                 </div>
                 <div class="flex justify-between">
                   <span>2min → 5min</span>
-                  <span class="text-slate-400">No bonus/penalty</span>
+                  <span class="text-right text-slate-400"
+                    >No bonus/penalty</span
+                  >
                 </div>
                 <div class="flex justify-between">
                   <span>5min → 10min</span>
-                  <span class="text-red-400"
+                  <span class="text-right text-red-400"
                     >Linear −0.1%/sec (up to −30%)</span
                   >
                 </div>
@@ -246,6 +250,13 @@
                   />
                   Grace period: 2.5s per player transfer (max 15s) — timer
                   starts after grace.
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                  <UIcon
+                    name="i-lucide-eye-off"
+                    class="mr-1 inline h-3 w-3"
+                  />
+                  Tip: Tap the live score during the game to hide it.
                 </p>
               </div>
             </div>

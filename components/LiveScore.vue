@@ -1,20 +1,38 @@
 <template>
-  <UBadge
+  <div
     v-if="potentialScore > 0"
-    :color="scoreColorBadge"
-    variant="soft"
-    class="flex w-full items-center justify-center font-mono text-xs transition-all duration-300 sm:w-auto"
-    :class="{
-      'animate-penalty-pulse': isPenaltyActive,
-      'animate-event-pulse': triggerEventAnim,
-    }"
-    :title="`Potential score (${elapsedDisplay})`"
+    class="relative flex w-full cursor-pointer items-center justify-center sm:w-auto"
+    @click="toggleHidden"
   >
-    ~{{
-      isScoreSteady ? Math.round(potentialScore) : potentialScore.toFixed(3)
-    }}
-    pts
-  </UBadge>
+    <!-- Badge is always rendered to maintain layout size, just invisible when hidden -->
+    <UBadge
+      :color="scoreColorBadge"
+      variant="soft"
+      class="flex w-full items-center justify-center font-mono text-xs transition-all duration-300 sm:w-auto"
+      :class="{
+        'animate-penalty-pulse': isPenaltyActive && !isHidden,
+        'animate-event-pulse': triggerEventAnim && !isHidden,
+        'opacity-0': isHidden,
+      }"
+      :title="
+        isHidden
+          ? 'Click to reveal score'
+          : `Potential score (${elapsedDisplay})`
+      "
+    >
+      ~{{
+        isScoreSteady ? Math.round(potentialScore) : potentialScore.toFixed(3)
+      }}
+      pts
+    </UBadge>
+
+    <!-- Skeleton overlays the badge exactly when hidden -->
+    <USkeleton
+      v-if="isHidden"
+      class="absolute inset-0 rounded-md bg-slate-800/50"
+      :ui="{ rounded: 'rounded-md' }"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -44,9 +62,21 @@ const props = withDefaults(
   },
 );
 
+// Toggle visibility of the score
+const isHidden = ref(false);
+
+function toggleHidden() {
+  isHidden.value = !isHidden.value;
+  if (import.meta.client) {
+    localStorage.setItem(
+      "footyguess_livescore_hidden",
+      isHidden.value.toString(),
+    );
+  }
+}
+
 const elapsedSeconds = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
-
 // Calculate grace seconds: 5s per transfer, max 30s
 const graceSeconds = computed(() =>
   Math.min(
@@ -182,6 +212,13 @@ function updateElapsed() {
 }
 
 onMounted(() => {
+  if (import.meta.client) {
+    const stored = localStorage.getItem("footyguess_livescore_hidden");
+    if (stored !== null) {
+      isHidden.value = stored === "true";
+    }
+  }
+
   updateElapsed();
   // Update frequently for stop-clock effect (50ms = 20fps)
   timer = setInterval(updateElapsed, 50);

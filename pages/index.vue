@@ -127,6 +127,9 @@
                 class="h-4 w-4 text-yellow-400"
               />
               Scoring Basics
+              <span class="ml-auto text-xs font-normal text-slate-500"
+                >(Tap live score to hide)</span
+              >
             </h3>
 
             <div class="space-y-2 text-sm">
@@ -140,7 +143,9 @@
                   />
                   Difficulty
                 </span>
-                <span class="text-slate-400">1× to 4× multiplier</span>
+                <span class="text-right text-slate-400"
+                  >1× to 4× multiplier</span
+                >
               </div>
 
               <div
@@ -153,7 +158,7 @@
                   />
                   Speed Bonus
                 </span>
-                <span class="text-slate-400"
+                <span class="text-right text-slate-400"
                   >+120% to -30% · Max Grace 15s</span
                 >
               </div>
@@ -168,7 +173,7 @@
                   />
                   Streak Bonus
                 </span>
-                <span class="text-slate-400">Up to +30%</span>
+                <span class="text-right text-slate-400">Up to +30%</span>
               </div>
 
               <div
@@ -181,7 +186,7 @@
                   />
                   Clues
                 </span>
-                <span class="text-slate-400"
+                <span class="text-right text-slate-400"
                   >None: <span class="text-emerald-400">+10%</span> · Each:
                   <span class="text-red-400">-6%</span></span
                 >
@@ -197,7 +202,7 @@
                   />
                   Errors
                 </span>
-                <span class="text-slate-400"
+                <span class="text-right text-slate-400"
                   >None: <span class="text-emerald-400">+10%</span> · Each:
                   <span class="text-red-400">-6%</span></span
                 >
