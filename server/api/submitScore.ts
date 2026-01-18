@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from "h3";
 import { enforceRateLimit } from "../utils/rate-limit.ts";
 import { parseSchema } from "../utils/validate.ts";
 import { AppError, Errors, handleApiError } from "../utils/errors.ts";
+import { isNicknameAllowed } from "../utils/nickname-filter.ts";
 import {
   getSessionForScoring,
   updateSessionNickname,
@@ -69,6 +70,9 @@ export default defineEventHandler(async (event) => {
     }
 
     if (nickname) {
+      if (!isNicknameAllowed(nickname)) {
+        throw Errors.badRequest("Nickname contains inappropriate content");
+      }
       updateSessionNickname(sessionId, nickname);
     }
 

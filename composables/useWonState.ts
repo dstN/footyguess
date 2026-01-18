@@ -113,9 +113,12 @@ export function useWonState() {
 
   /**
    * Submit a score to the leaderboard
+   * @returns Object with success status and optional error message
    */
-  async function submit(type: "round" | "total" | "streak"): Promise<boolean> {
-    if (!sessionId.value) return false;
+  async function submit(
+    type: "round" | "total" | "streak",
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!sessionId.value) return { success: false, error: "No session" };
 
     try {
       await $fetch("/api/submitScore", {
@@ -138,10 +141,14 @@ export function useWonState() {
       }
 
       logInfo("useWonState", `Submitted ${type} score`);
-      return true;
+      return { success: true };
     } catch (err) {
       logError("useWonState", "Submit score failed", err as Error);
-      return false;
+      // Extract error message from API response
+      const errorMessage =
+        (err as { data?: { message?: string } })?.data?.message ||
+        "Please try again";
+      return { success: false, error: errorMessage };
     }
   }
 

@@ -197,9 +197,9 @@ useSeoMeta({
 });
 
 async function handleSubmit(type: "round" | "total" | "streak") {
-  const success = await submit(type);
+  const result = await submit(type);
 
-  if (success) {
+  if (result.success) {
     useToast().add({
       title: "Submitted",
       description:
@@ -211,7 +211,7 @@ async function handleSubmit(type: "round" | "total" | "streak") {
   } else {
     useToast().add({
       title: "Submit failed",
-      description: "Please try again",
+      description: result.error || "Please try again",
       color: "error",
     });
   }

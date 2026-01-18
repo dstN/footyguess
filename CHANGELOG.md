@@ -2,6 +2,21 @@
 
 # Changelog
 
+## [1.6.2] - 2026-01-18
+
+### Nickname Moderation
+
+Added server-side profanity filter to prevent inappropriate leaderboard names.
+
+- **Nickname Filter**: Uses `bad-words-next` package with 9 language
+  dictionaries (EN, ES, FR, DE, RU, UA, PL, CH + Russian Latin)
+- **Leetspeak Detection**: Catches obfuscated profanity like `f*ck`, `sh1t`
+- **Unicode Confusables**: Blocks homoglyph attacks like `fμck`
+- **Clear Feedback**: Users see "Nickname contains inappropriate content"
+  instead of generic error
+
+---
+
 ## [1.6.1] - 2026-01-18
 
 ### Difficulty Tier Refinements
