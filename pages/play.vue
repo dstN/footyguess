@@ -58,17 +58,6 @@
           :clues-used="cluesUsed"
           :wrong-guesses="wrongGuessCount"
         />
-
-        <DevPanel
-          :visible="isDev"
-          :url="devUrl"
-          :submitting="devSubmitting"
-          :status="devStatus"
-          :player-id="devPlayerId"
-          :error="devError"
-          @update:url="(val) => (devUrl = val)"
-          @submit="submitDevUrl"
-        />
       </section>
 
       <GuessFooter
@@ -121,7 +110,6 @@ import HighscoreModal from "~/components/HighscoreModal.vue";
 import HelpModal from "~/components/HelpModal.vue";
 import TransferTimelineCard from "~/components/TransferTimelineCard.vue";
 import PlayHeader from "~/components/PlayHeader.vue";
-import DevPanel from "~/components/DevPanel.vue";
 import { usePlayGame } from "~/composables/usePlayGame";
 import { ref, onBeforeUnmount } from "vue";
 
@@ -174,75 +162,9 @@ const {
 } = usePlayGame();
 
 const isDev = import.meta.dev;
-const devUrl = ref("");
-const devStatus = ref<string | null>(null);
-const devError = ref<string | null>(null);
-const devSubmitting = ref(false);
-const devRequestId = ref<number | null>(null);
-const devPlayerId = ref<number | null>(null);
-const devPollTimer = ref<ReturnType<typeof setInterval> | null>(null);
-
-async function pollDevStatus() {
-  if (!devRequestId.value) return;
-  try {
-    const res = await $fetch<{
-      status: string;
-      playerId: number | null;
-      error: string | null;
-    }>(`/api/requestStatus?id=${devRequestId.value}`);
-    devStatus.value = res.status;
-    devPlayerId.value = res.playerId ?? null;
-    if (res.error) devError.value = res.error;
-    if (["done", "failed"].includes(res.status) && devPollTimer.value) {
-      clearInterval(devPollTimer.value);
-      devPollTimer.value = null;
-    }
-  } catch (err) {
-    devError.value = "Failed to fetch request status.";
-  }
-}
-
-async function submitDevUrl() {
-  devError.value = null;
-  devStatus.value = null;
-  devPlayerId.value = null;
-  if (!devUrl.value.trim()) return;
-  devSubmitting.value = true;
-  try {
-    const res = await $fetch<{
-      id: number;
-      status: string;
-      playerId: number | null;
-    }>("/api/requestPlayer", {
-      method: "POST",
-      body: { url: devUrl.value.trim() },
-    });
-    devRequestId.value = res.id;
-    devStatus.value = res.status;
-    devPlayerId.value = res.playerId ?? null;
-    if (!devPollTimer.value) {
-      devPollTimer.value = setInterval(pollDevStatus, 5000);
-    }
-  } catch (err) {
-    devError.value = "Failed to submit URL.";
-  } finally {
-    devSubmitting.value = false;
-  }
-}
-
-function clearDevPollTimer() {
-  if (devPollTimer.value) {
-    clearInterval(devPollTimer.value);
-    devPollTimer.value = null;
-  }
-}
-
-onBeforeUnmount(() => {
-  clearDevPollTimer();
-});
 
 onBeforeRouteLeave(() => {
-  clearDevPollTimer();
+  // No cleanup needed
 });
 import { nextTick } from "vue";
 

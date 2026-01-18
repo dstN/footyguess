@@ -59,10 +59,17 @@ export function useClueData(player: Ref<Player | null>) {
   const cluePool = computed<Clue[]>(() => {
     if (!player.value) return [];
     const age = getAge(player.value.birthdate);
-    const origin =
-      player.value.nationalities?.length && player.value.nationalities[0]
-        ? player.value.nationalities.join(", ")
-        : player.value.birthplace;
+    const getOrigin = () => {
+      const p = player.value;
+      if (!p) return null;
+      // Prioritize legacy names array, fallback to birthplace
+      if (p.nationalities?.length && p.nationalities[0]) {
+        return p.nationalities.join(", ");
+      }
+      return p.birthplace;
+    };
+
+    const origin = getOrigin();
 
     const cleanOrigin = cleanValue(origin);
 

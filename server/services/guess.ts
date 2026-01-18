@@ -42,7 +42,20 @@ export function isCorrectGuess(guess: string, playerName: string): boolean {
   const normalizedGuess = normalize(guess);
   const normalizedName = normalize(playerName);
 
-  return normalizedGuess === normalizedName;
+  if (normalizedGuess === normalizedName) return true;
+
+  // Check if guess is in format "Name (Full Name)"
+  // If so, check if the base name matches
+  if (guess.includes("(") && guess.includes(")")) {
+    const pattern = /^(.*?)\s*\(/;
+    const match = guess.match(pattern);
+    if (match) {
+      const stripped = normalize(match[1]);
+      if (stripped === normalizedName) return true;
+    }
+  }
+
+  return false;
 }
 
 /**

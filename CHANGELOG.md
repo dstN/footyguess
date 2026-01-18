@@ -2,6 +2,59 @@
 
 # Changelog
 
+## [1.6.0] - 2026-01-18
+
+### Scraper Reliability, Data Integrity & Gameplay Polish
+
+This release transforms the database integrity, massively improves player
+searchability, and rebalances the default difficulty experience.
+
+### Gameplay Balancing
+
+- **Default Difficulty**: Prior to this update, "Default" difficulty heavily
+  favored Hard players (73% of the database). It now enforces a balanced **33%
+  Easy / 33% Medium / 33% Hard** probability, making the default experience much
+  more varied.
+
+### User Interface
+
+- **Search Disambiguation**: When multiple players share the same name (e.g.,
+  "Fernando"), the search bar now displays their full name for clarity (e.g.,
+  "Fernando (Fernando Francisco Reges)").
+- **Smart Validation**: The guess validator now accepts these disambiguated
+  names as correct answers.
+
+### Data Integrity & Repairs
+
+- **Database Repair**: Fixed a critical schema corruption where `scores`
+  referenced a non-existent table (`rounds_broken`), ensuring data stability.
+- **Search Normalization**: Re-processed 6,338 player records to normalize
+  search names, fixing issues where players like "Yaya Touré" couldn't be found
+  with standard keyboards.
+- **Data Quality**:
+  - Repaired 76 players with "Unknown" positions.
+  - Verified 100% stats coverage and nationality data.
+
+---
+
+## [1.5.2] - 2026-01-18
+
+### Scraper Reliability & Bug Fixes
+
+- **Scraper Fix**: Implemented a fallback strategy for retrieving player stats.
+  If transfermarkt doesn't select "Overall balance" by default (causing missing
+  stats for players like Eriksen), the scraper now retries with `?saison=ges` to
+  force full career data.
+- **Mobile Viewport**: Added `interactive-widget=resizes-content` to the
+  viewport meta tag. This ensures fixed bottom elements (like the Guess Bar)
+  stay visible above the virtual keyboard on mobile.
+- **Scroll Jump Fix**: Added `preventScroll: true` when refocusing the input to
+  stop jarring page jumps on mobile.
+- **Syntax Fixes**: Resolved invalid HTML nesting in `index.vue` and TypeScript
+  errors in `extract-player-stats.ts`.
+
+---
+
 ## [1.5.1] - 2026-01-17
 
 ### Patch Release: Security, Mobile Polish & Updates

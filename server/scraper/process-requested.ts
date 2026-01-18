@@ -1,6 +1,7 @@
 import db from "../db/connection.ts";
 import { initSchema } from "../db/schema.ts";
-import { logError } from "../utils/logger.ts";
+import { fetchAndSavePlayerDetails } from "./extract-player-data.ts";
+import { fetchPlayerStats, savePlayerStats } from "./extract-player-stats.ts";
 
 const BASE_URL = "https://tmapi-alpha.transfermarkt.technology/";
 
@@ -11,16 +12,98 @@ interface Transfer {
   details: {
     date: string;
     seasonId: number;
+    isPending: boolean;
     marketValue: { value: number };
-    fee: { value: number; text: string };
-    age: number;
-    contractUntilDate: string;
+    fee: { value: number | null; text?: string };
+    season: {
+      id: number;
+      display: string;
+    };
   };
-  typeDetails: { type: string; name: string; feeDescription: string };
+  typeDetails: {
+    type: string;
+    name: string;
+    feeDescription: string;
+  };
+  relativeUrl: string;
+}
+
+interface RichClubData {
+  id: string;
+  name: string;
+  tmUrl: string;
+  leagueId: string;
 }
 
 function cleanClubName(name: string): string {
   return name.replace(/\s*\(-?\s*\d{4}\)\s*$/, "").trim();
+}
+
+// Reuse logic from autonomous-batch-scraper
+async function fetchClubFromAPI(clubId: string): Promise<RichClubData | null> {
+  try {
+    const url = `${BASE_URL}club/${clubId}`;
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+
+    if (response.status === 429) {
+      await new Promise((r) => setTimeout(r, 2000));
+      return fetchClubFromAPI(clubId);
+    }
+    if (!response.ok) return null;
+
+    const data: any = await response.json();
+    if (data.success && data.data) {
+      const club = data.data;
+      return {
+        id: String(club.id),
+        name: cleanClubName(club.name),
+        tmUrl: club.relativeUrl || "",
+        leagueId: club.baseDetails?.primaryCompetitionId || "",
+      };
+    }
+  } catch {}
+  return null;
+}
+
+async function ensureClubExists(clubId: string): Promise<void> {
+  try {
+    const parsedId = parseInt(clubId);
+    const existing = db
+      .prepare(`SELECT id, tm_id FROM clubs WHERE id = ?`)
+      .get(parsedId) as any;
+    if (existing && existing.tm_id) return;
+
+    const clubData = await fetchClubFromAPI(clubId);
+    if (clubData) {
+      db.prepare(
+        `
+        INSERT INTO clubs (id, name, tm_id, tm_url, league_id)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          tm_id = excluded.tm_id,
+          tm_url = excluded.tm_url,
+          league_id = COALESCE(excluded.league_id, clubs.league_id)
+      `,
+      ).run(
+        parsedId,
+        clubData.name,
+        parseInt(clubData.id),
+        clubData.tmUrl,
+        clubData.leagueId,
+      );
+    } else if (!existing) {
+      db.prepare(`INSERT INTO clubs (id, name) VALUES (?, ?)`).run(
+        parsedId,
+        `Club ${clubId}`,
+      );
+    }
+  } catch {}
 }
 
 async function fetchTransferHistory(tmId: number): Promise<Transfer[]> {
@@ -28,181 +111,155 @@ async function fetchTransferHistory(tmId: number): Promise<Transfer[]> {
     const response = await fetch(`${BASE_URL}transfer/history/player/${tmId}`, {
       headers: {
         Accept: "application/json",
-        "Accept-Language": "en-US",
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
     });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) return [];
     const data: any = await response.json();
     return data.data?.history?.terminated || [];
-  } catch (error) {
-    throw error;
+  } catch {
+    return [];
   }
 }
 
-async function fetchClubDetails(clubIds: string[]): Promise<Map<string, any>> {
-  if (clubIds.length === 0) return new Map();
+async function processTransfers(
+  playerId: number,
+  tmId: number,
+  clubMap: Map<string, any>,
+) {
+  const transfers = await fetchTransferHistory(tmId);
+  const existingTransfers = new Set(
+    (
+      db
+        .prepare(`SELECT transfer_key FROM transfers WHERE player_id = ?`)
+        .all(playerId) as any[]
+    ).map((t) => t.transfer_key),
+  );
 
-  try {
-    const BATCH_SIZE = 100;
-    const clubMap = new Map<string, any>();
+  for (const transfer of transfers) {
+    if (existingTransfers.has(transfer.id)) continue;
 
-    for (let i = 0; i < clubIds.length; i += BATCH_SIZE) {
-      const batch = clubIds.slice(i, i + BATCH_SIZE);
-      const params = batch.map((id) => `ids[]=${id}`).join("&");
-      const url = `${BASE_URL}clubs?${params}`;
+    const fromClub = transfer.transferSource?.clubId;
+    const toClub = transfer.transferDestination?.clubId;
 
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "Accept-Language": "en-US",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        },
-      });
+    if (fromClub) await ensureClubExists(fromClub);
+    if (toClub) await ensureClubExists(toClub);
 
-      if (!response.ok) continue;
+    try {
+      const transferDate = transfer.details?.date
+        ? transfer.details.date.split("T")[0]
+        : null;
+      const season = transfer.details?.season?.display || null;
+      const fee =
+        transfer.details?.fee?.value !== null &&
+        transfer.details?.fee?.value !== undefined
+          ? Math.round(transfer.details.fee.value)
+          : 0;
+      const transferType = transfer.typeDetails?.type || null;
+      const upcoming = transfer.details?.isPending ? 1 : 0;
 
-      const data: any = await response.json();
-      if (data.data?.length) {
-        data.data.forEach((club: any) => {
-          clubMap.set(club.id, {
-            id: club.id,
-            name: cleanClubName(club.name),
-            baseDetails: club.baseDetails,
-          });
-        });
-      }
-
-      await new Promise((r) => setTimeout(r, 300));
+      db.prepare(
+        `
+          INSERT OR IGNORE INTO transfers 
+          (player_id, season, transfer_date, from_club_id, to_club_id, fee, transfer_type, upcoming, transfer_key)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+      ).run(
+        playerId,
+        season,
+        transferDate,
+        fromClub ? parseInt(fromClub) : null,
+        toClub ? parseInt(toClub) : null,
+        fee,
+        transferType,
+        upcoming,
+        transfer.id,
+      );
+    } catch (e) {
+      console.error(`Error saving transfer: ${e}`);
     }
-
-    return clubMap;
-  } catch (error) {
-    console.error("Error fetching club details:", error);
-    return new Map();
   }
 }
 
-function getTmId(url: string) {
-  const match = url.match(/spieler\/(\d+)/i);
-  return match ? Number.parseInt(match[1], 10) : null;
-}
+async function processRequestedPlayer(req: { id: number; url: string }) {
+  console.log(`\nProcessing request ${req.id}: ${req.url}`);
 
-(async () => {
-  initSchema();
+  // Extract TM ID
+  // Supports: /profil/spieler/123 or just id
+  let tmId: number | null = null;
+  const match = req.url.match(/spieler\/(\d+)/) || req.url.match(/\/(\d+)$/);
+  if (match) tmId = parseInt(match[1]);
 
-  const pending = db
-    .prepare(
-      `SELECT id, url FROM requested_players WHERE status = 'pending' ORDER BY id ASC`,
-    )
-    .all() as Array<{ id: number; url: string }>;
-
-  if (!pending.length) {
-    console.log("No pending player requests.");
+  if (!tmId) {
+    console.error("Could not parse TM ID");
+    db.prepare(
+      `UPDATE requested_players SET status = 'failed', error = 'Invalid URL' WHERE id = ?`,
+    ).run(req.id);
     return;
   }
 
-  for (const req of pending) {
+  try {
     db.prepare(
-      `UPDATE requested_players SET status = 'processing', updated_at = strftime('%s','now') WHERE id = ?`,
+      `UPDATE requested_players SET status = 'processing' WHERE id = ?`,
     ).run(req.id);
 
-    try {
-      const tmId = getTmId(req.url);
-      if (!tmId) {
-        throw new Error("Could not extract TM ID from URL");
-      }
+    console.log(`   Fetched TM ID: ${tmId}`);
 
-      const player = db
-        .prepare(`SELECT id FROM players WHERE tm_id = ?`)
-        .get(tmId) as { id: number } | undefined;
+    // 1. Fetch & Save Details (creates player in DB)
+    await fetchAndSavePlayerDetails(tmId);
 
-      if (player) {
-        const hasTransfers = db
-          .prepare(`SELECT 1 FROM transfers WHERE player_id = ? LIMIT 1`)
-          .get(player.id);
+    // Get DB ID
+    const player = db
+      .prepare(`SELECT id, tm_url FROM players WHERE tm_id = ?`)
+      .get(tmId) as any;
+    if (!player) throw new Error("Failed to save player");
 
-        if (!hasTransfers) {
-          const transfers = await fetchTransferHistory(tmId);
-          if (transfers.length > 0) {
-            const clubIds = new Set<string>();
-            transfers.forEach((t) => {
-              if (t.transferSource?.clubId)
-                clubIds.add(t.transferSource.clubId);
-              if (t.transferDestination?.clubId)
-                clubIds.add(t.transferDestination.clubId);
-            });
+    // 2. Transfers
+    console.log(`   Processing transfers...`);
+    await processTransfers(player.id, tmId, new Map());
 
-            const clubMap = await fetchClubDetails(Array.from(clubIds));
-            const stmt = db.prepare(
-              `INSERT OR IGNORE INTO transfers
-              (player_id, season, transfer_date, from_club_id, to_club_id, fee, transfer_type, transfer_key)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            );
-
-            for (const transfer of transfers) {
-              const fromClubId = transfer.transferSource?.clubId;
-              const toClubId = transfer.transferDestination?.clubId;
-              const date = new Date(transfer.details?.date)
-                .toISOString()
-                .split("T")[0];
-              const season =
-                transfer.details?.seasonId?.toString() || "Unknown";
-              const feeValue = transfer.details?.fee?.value;
-              const fee =
-                feeValue !== null && feeValue !== undefined
-                  ? Math.floor(feeValue)
-                  : null;
-              const type = transfer.typeDetails?.name || "Transfer";
-              const key = `${fromClubId}-${toClubId}-${date}`;
-
-              if (fromClubId) {
-                const clubData = clubMap.get(fromClubId);
-                const name = clubData?.name || `Club ${fromClubId}`;
-                db.prepare(
-                  `INSERT OR IGNORE INTO clubs (id, name) VALUES (?, ?)`,
-                ).run(parseInt(fromClubId), name);
-              }
-              if (toClubId) {
-                const clubData = clubMap.get(toClubId);
-                const name = clubData?.name || `Club ${toClubId}`;
-                db.prepare(
-                  `INSERT OR IGNORE INTO clubs (id, name) VALUES (?, ?)`,
-                ).run(parseInt(toClubId), name);
-              }
-
-              stmt.run(
-                player.id,
-                season,
-                date,
-                fromClubId ? parseInt(fromClubId) : null,
-                toClubId ? parseInt(toClubId) : null,
-                fee,
-                type,
-                key,
-              );
-            }
-          }
-        }
-
-        db.prepare(
-          `UPDATE requested_players SET status = 'done', player_id = ?, updated_at = strftime('%s','now') WHERE id = ?`,
-        ).run(player.id, req.id);
-      } else {
-        throw new Error(`Player with TM ID ${tmId} not found in database`);
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      db.prepare(
-        `UPDATE requested_players SET status = 'failed', error = ?, updated_at = strftime('%s','now') WHERE id = ?`,
-      ).run(errorMsg, req.id);
-      logError("Requested player scrape failed", error as Error, {
-        requestId: req.id,
-        url: req.url,
-      });
+    // 3. Stats
+    console.log(`   Processing stats...`);
+    const { stats, totals } = await fetchPlayerStats(
+      player.tm_url || req.url,
+      player.id,
+    );
+    if (stats.length > 0) {
+      db.prepare(`DELETE FROM player_stats WHERE player_id = ?`).run(player.id);
+      await savePlayerStats(player.id, stats, totals);
     }
+
+    // Done
+    db.prepare(
+      `UPDATE requested_players SET status = 'done', player_id = ?, updated_at = strftime('%s','now') WHERE id = ?`,
+    ).run(player.id, req.id);
+
+    console.log(`   ✅ Success!`);
+  } catch (e: any) {
+    console.error(`   ❌ Failed: ${e.message}`);
+    db.prepare(
+      `UPDATE requested_players SET status = 'failed', error = ?, updated_at = strftime('%s','now') WHERE id = ?`,
+    ).run(e.message, req.id);
   }
-})();
+}
+
+async function run() {
+  initSchema();
+  const pending = db
+    .prepare(`SELECT id, url FROM requested_players WHERE status != 'done'`)
+    .all() as any[];
+
+  if (pending.length === 0) {
+    console.log("No pending requests.");
+    return;
+  }
+
+  console.log(`Found ${pending.length} pending requests.`);
+  for (const req of pending) {
+    await processRequestedPlayer(req);
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
+
+run();

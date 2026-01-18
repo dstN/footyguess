@@ -83,6 +83,7 @@ export interface Player {
   main_position: string;
   secondary_positions: string[];
   nationalities: string[];
+  nationalities_ids?: string | null;
   active: number | null;
   retired_since: string | null;
   total_stats: Record<string, number | string> | null;

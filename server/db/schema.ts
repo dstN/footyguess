@@ -27,8 +27,7 @@ export function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS players (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      name_search TEXT,
+      name TEXT NOT NULL,
       tm_id INTEGER,
       tm_url TEXT,
       tm_short_name TEXT,
@@ -54,7 +53,11 @@ export function initSchema() {
 
     CREATE TABLE IF NOT EXISTS clubs (
       id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL
+      name TEXT NOT NULL,
+      tm_id INTEGER,
+      tm_url TEXT,
+      league_id TEXT,
+      FOREIGN KEY (league_id) REFERENCES competitions(id)
     );
 
     CREATE TABLE IF NOT EXISTS nationalities (
@@ -168,35 +171,9 @@ export function initSchema() {
       updated_at INTEGER DEFAULT (strftime('%s','now'))
     );
 
-    CREATE TABLE IF NOT EXISTS scrape_jobs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL,
-      target TEXT NOT NULL,
-      priority INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'pending',
-      attempts INTEGER NOT NULL DEFAULT 0,
-      next_run_at INTEGER DEFAULT (strftime('%s','now')),
-      last_error TEXT,
-      created_at INTEGER DEFAULT (strftime('%s','now')),
-      updated_at INTEGER DEFAULT (strftime('%s','now')),
-      UNIQUE (type, target)
-    );
-
-    CREATE TABLE IF NOT EXISTS scrape_jobs_dlq (
-      id INTEGER PRIMARY KEY,
-      type TEXT NOT NULL,
-      target TEXT NOT NULL,
-      priority INTEGER NOT NULL,
-      attempts INTEGER NOT NULL,
-      last_error TEXT,
-      original_created_at INTEGER,
-      failed_at INTEGER DEFAULT (strftime('%s','now'))
-    );
-
     CREATE INDEX IF NOT EXISTS idx_players_name_search ON players(name_search);
     CREATE INDEX IF NOT EXISTS idx_players_tm_short_name_search ON players(tm_short_name_search);
     CREATE INDEX IF NOT EXISTS idx_players_tm_full_name_search ON players(tm_full_name_search);
-    CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at);
     CREATE INDEX IF NOT EXISTS idx_transfers_player_date ON transfers(player_id, transfer_date DESC);
     
     -- Performance optimization indexes (Issue #42)
@@ -329,10 +306,7 @@ export function initSchema() {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_transfers_player_key ON transfers(player_id, transfer_key)`,
     "idx_transfers_player_key",
   );
-  runMigration(
-    `CREATE INDEX IF NOT EXISTS idx_scrape_jobs_status_next ON scrape_jobs(status, next_run_at)`,
-    "idx_scrape_jobs_status_next",
-  );
+
   runMigration(
     `ALTER TABLE rounds ADD COLUMN max_clues_allowed INTEGER DEFAULT 10`,
     "rounds.max_clues_allowed",
@@ -364,5 +338,17 @@ export function initSchema() {
   runMigration(
     `CREATE INDEX IF NOT EXISTS idx_leaderboard_player_id ON leaderboard_entries(player_id)`,
     "idx_leaderboard_player_id",
+  );
+
+  // Club metadata enrichment
+  runMigration(`ALTER TABLE clubs ADD COLUMN tm_id INTEGER`, "clubs.tm_id");
+  runMigration(`ALTER TABLE clubs ADD COLUMN tm_url TEXT`, "clubs.tm_url");
+  runMigration(
+    `ALTER TABLE clubs ADD COLUMN league_id TEXT`,
+    "clubs.league_id",
+  );
+  runMigration(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_clubs_tm_id ON clubs(tm_id)`,
+    "idx_clubs_tm_id",
   );
 }

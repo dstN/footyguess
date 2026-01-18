@@ -140,10 +140,45 @@ async function fetchClubDetails(
       const data: any = await response.json();
       if (data.data?.length) {
         data.data.forEach((club: any) => {
-          clubMap.set(club.id, {
+          const clubData = {
             id: club.id,
             name: cleanClubName(club.name),
-          });
+            slug: club.slug || club.relativeUrl, // API naming varies
+            leagueId: club.leagueId, // Check if this exists in bulk response
+          };
+          clubMap.set(club.id, clubData);
+
+          // Opportunistically update DB with metadata if available
+          // Note: Bulk API might have different structure than singular.
+          // If leagueId is present, let's use it.
+          // Based on test output, we saw "relativeUrl" but leagueId wasn't clear in the truncated output.
+          // Let's assume singular fetch is safer for consistent metadata unless we are sure.
+          // For now, let's just map it.
+
+          // Actually, let's try to update if we have the data
+          if (clubData.slug) {
+            try {
+              db.prepare(
+                `
+                    INSERT INTO clubs (id, name, tm_id, tm_url, league_id)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                      tm_id = excluded.tm_id,
+                      tm_url = excluded.tm_url,
+                      league_id = COALESCE(excluded.league_id, clubs.league_id)
+                  `,
+              ).run(
+                parseInt(clubData.id),
+                clubData.name,
+                parseInt(clubData.id),
+                clubData.slug,
+                clubData.leagueId,
+              );
+              // console.log(`     Batch enriched: ${clubData.name}`);
+            } catch (e) {
+              /* ignore */
+            }
+          }
         });
       }
 
@@ -206,12 +241,19 @@ function addClub(clubId: string, clubName: string): void {
   }
 }
 
+interface RichClubData {
+  id: string;
+  name: string;
+  tmUrl: string;
+  leagueId: string;
+}
+
 /**
- * Fetch a single club from API by ID
+ * Fetch a single club from API by ID (Singular Endpoint for Metadata)
  */
-async function fetchClubFromAPI(clubId: string): Promise<ClubData | null> {
+async function fetchClubFromAPI(clubId: string): Promise<RichClubData | null> {
   try {
-    const url = `${BASE_URL}clubs?ids[]=${clubId}`;
+    const url = `${BASE_URL}club/${clubId}`;
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -229,46 +271,66 @@ async function fetchClubFromAPI(clubId: string): Promise<ClubData | null> {
     if (!response.ok) return null;
 
     const data: any = await response.json();
-    if (data.data?.length > 0) {
-      const club = data.data[0];
+    if (data.success && data.data) {
+      const club = data.data;
       return {
-        id: club.id,
+        id: String(club.id),
         name: cleanClubName(club.name),
+        tmUrl: club.relativeUrl,
+        leagueId: club.baseDetails?.primaryCompetitionId,
       };
     }
   } catch {
-    // Error fetching - will use placeholder
+    // Error fetching
   }
   return null;
 }
 
 /**
- * Ensure a club exists before referencing it in transfers (fetches from API if needed)
+ * Ensure a club exists and has metadata
  */
 async function ensureClubExists(clubId: string): Promise<void> {
   try {
     const parsedId = parseInt(clubId);
-    const exists = db
-      .prepare(`SELECT id FROM clubs WHERE id = ? LIMIT 1`)
-      .get(parsedId);
+    const existing = db
+      .prepare(`SELECT id, tm_id FROM clubs WHERE id = ?`)
+      .get(parsedId) as any;
 
-    if (!exists) {
-      // Try to fetch club from API
-      const clubData = await fetchClubFromAPI(clubId);
+    // If club exists and has ALL metadata, we are good
+    if (existing && existing.tm_id && existing.league_id) {
+      return;
+    }
 
-      if (clubData) {
-        // Insert real club data
-        db.prepare(`INSERT INTO clubs (id, name) VALUES (?, ?)`).run(
-          parsedId,
-          clubData.name,
-        );
-      } else {
-        // Fallback to placeholder if API doesn't have it
-        db.prepare(`INSERT INTO clubs (id, name) VALUES (?, ?)`).run(
-          parsedId,
-          `Club ${clubId}`,
-        );
-      }
+    // Otherwise, fetch (or re-fetch) to get metadata
+    const clubData = await fetchClubFromAPI(clubId);
+
+    if (clubData) {
+      // Upsert: Insert or Update
+      db.prepare(
+        `
+        INSERT INTO clubs (id, name, tm_id, tm_url, league_id)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          tm_id = excluded.tm_id,
+          tm_url = excluded.tm_url,
+          league_id = excluded.league_id
+      `,
+      ).run(
+        parsedId,
+        clubData.name,
+        parseInt(clubData.id),
+        clubData.tmUrl,
+        clubData.leagueId,
+      );
+      console.log(
+        `     🏟️  Enriched club: ${clubData.name} (${clubData.leagueId})`,
+      );
+    } else if (!existing) {
+      // Create simplistic placeholder if API fails and it didn't exist
+      db.prepare(`INSERT INTO clubs (id, name) VALUES (?, ?)`).run(
+        parsedId,
+        `Club ${clubId}`,
+      );
     }
   } catch {
     // Already exists or other error
@@ -591,8 +653,10 @@ async function processPlayer(
   name: string,
   tmId: number,
   tmUrl: string,
+  index: number,
+  total: number,
 ): Promise<void> {
-  console.log(`\n👤 ${name}`);
+  console.log(`\n👤 [${index + 1}/${total}] ${name}`);
 
   // 1. Fetch and update player details
   console.log(`   📥 Updating player details...`);
@@ -612,6 +676,29 @@ async function processPlayer(
     console.log(`     ❌ Error: ${error}`);
     logError("updatePlayerFields", name, tmId, error);
     return; // Stop processing this player
+  }
+
+  // --- Force Enrich Current Club ---
+  // Ensure the player's current club (if any) has metadata, regardless of transfer updates.
+  try {
+    const currentPlayer = db
+      .prepare("SELECT current_club_id, active FROM players WHERE tm_id = ?")
+      .get(tmId) as any;
+    if (currentPlayer?.active && currentPlayer?.current_club_id) {
+      // Check if club needs enrichment
+      const clubId = currentPlayer.current_club_id;
+      const club = db
+        .prepare("SELECT tm_id FROM clubs WHERE id = ?")
+        .get(clubId) as any;
+
+      if (!club || !club.tm_id) {
+        // Fetch and update
+        console.log(`   🏟️  Enriching current club info for ID ${clubId}...`);
+        await ensureClubExists(String(clubId));
+      }
+    }
+  } catch (e) {
+    console.log(`   ⚠️  Error enriching current club: ${e}`);
   }
 
   // 2. Fetch and update transfers
@@ -693,7 +780,14 @@ async function main() {
 
   for (const player of players) {
     try {
-      await processPlayer(player.id, player.name, player.tm_id, player.tm_url);
+      await processPlayer(
+        player.id,
+        player.name,
+        player.tm_id,
+        player.tm_url,
+        processed,
+        players.length,
+      );
       processed++;
     } catch (error) {
       console.log(`   ❌ Error: ${error}`);

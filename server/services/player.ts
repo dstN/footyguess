@@ -70,7 +70,7 @@ export function searchPlayers(query: string, limit: number = 10): string[] {
 
   const rows = db
     .prepare(
-      `SELECT name FROM players
+      `SELECT name, tm_full_name FROM players
        WHERE name_search LIKE ? ESCAPE '\\'
           OR name_search LIKE ? ESCAPE '\\'
           OR name_search LIKE ? ESCAPE '\\'
@@ -94,9 +94,23 @@ export function searchPlayers(query: string, limit: number = 10): string[] {
       patternWord,
       patternHyphen,
       limit,
-    ) as { name: string }[];
+    ) as { name: string; tm_full_name: string | null }[];
 
-  return rows.map((r) => r.name);
+  // Identify duplicate names in the result set
+  const nameCounts = new Map<string, number>();
+  for (const r of rows) {
+    nameCounts.set(r.name, (nameCounts.get(r.name) || 0) + 1);
+  }
+
+  return rows.map((r) => {
+    // If this name appears multiple times, append the full name for disambiguation
+    if ((nameCounts.get(r.name) || 0) > 1 && r.tm_full_name) {
+      if (r.name !== r.tm_full_name) {
+        return `${r.name} (${r.tm_full_name})`;
+      }
+    }
+    return r.name;
+  });
 }
 
 /**
@@ -136,7 +150,15 @@ interface GetRandomPlayerOptions {
 export function getRandomPlayer(
   options: GetRandomPlayerOptions = {},
 ): PlayerWithDetails | null {
-  const { tierFilter, excludePlayerIds = [] } = options;
+  const { excludePlayerIds = [] } = options;
+  let { tierFilter } = options;
+
+  // If no specific tier requested (default mode), randomly pick one with equal probability
+  // This ensures 33/33/33 distribution instead of skewing towards the most common tier (Hard)
+  if (!tierFilter) {
+    const tiers: Difficulty["tier"][] = ["easy", "medium", "hard"];
+    tierFilter = tiers[Math.floor(Math.random() * tiers.length)];
+  }
 
   const intlCases = Object.entries(INTL_WEIGHTS)
     .map(([id, weight]) => `WHEN '${id}' THEN ps.appearances * ${weight}`)
@@ -146,7 +168,9 @@ export function getRandomPlayer(
   const top5Sum = `SUM(CASE WHEN c.id IN (${top5Ids}) THEN ps.appearances ELSE 0 END)`;
 
   // Build filter clause based on tier filter
+  // We use specific thresholds to optimize the SQL search space for each tier
   let filterClause: string;
+
   if (tierFilter === "ultra") {
     // Ultra: players that don't meet hard thresholds
     filterClause = `WHERE p.id NOT IN (
@@ -157,19 +181,31 @@ export function getRandomPlayer(
         HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
            OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
       )`;
-  } else if (tierFilter) {
-    // Specific tier: filter to players meeting hard threshold (non-ultra pool)
-    // Then we'll verify exact tier in the retry loop
+  } else if (tierFilter === "easy") {
+    // Easy optimization: strict high thresholds
+    // > 80 Intl OR > 400 Top5
     filterClause = `WHERE p.id IN (
         SELECT ps.player_id
         FROM player_stats ps
         JOIN competitions c ON ps.competition_id = c.id
         GROUP BY ps.player_id
-        HAVING ${intlSum} >= ${INTL_HARD_THRESHOLD}
-           OR ${top5Sum} >= ${TOP5_HARD_THRESHOLD}
+        HAVING ${intlSum} > 80
+           OR ${top5Sum} > 400
+      )`;
+  } else if (tierFilter === "medium") {
+    // Medium optimization: medium thresholds
+    // >= 60 Intl OR >= 200 Top5 (captures Easy too, but excludes Hard/Ultra)
+    filterClause = `WHERE p.id IN (
+        SELECT ps.player_id
+        FROM player_stats ps
+        JOIN competitions c ON ps.competition_id = c.id
+        GROUP BY ps.player_id
+        HAVING ${intlSum} >= 60
+           OR ${top5Sum} >= 200
       )`;
   } else {
-    // Default: exclude ultra (backwards compatible behavior)
+    // Hard (or backup): standard thresholds
+    // >= 45 Intl OR >= 100 Top5 (captures Easy/Medium too)
     filterClause = `WHERE p.id IN (
         SELECT ps.player_id
         FROM player_stats ps
@@ -194,8 +230,8 @@ export function getRandomPlayer(
 
   if (totalCount <= 0) return null;
 
-  // Increase attempts when filtering by specific tier
-  const maxAttempts = tierFilter ? 15 : 5;
+  // Increase attempts finding specific tiers
+  const maxAttempts = 15;
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -218,16 +254,10 @@ export function getRandomPlayer(
     try {
       const enriched = enrichPlayer(player);
 
-      // Check if tier matches filter (if specified)
-      if (tierFilter) {
-        if (enriched.difficulty.tier === tierFilter) {
-          return enriched;
-        }
-      } else {
-        // Default behavior: exclude ultra
-        if (enriched.difficulty.tier !== "ultra") {
-          return enriched;
-        }
+      // Verify exact tier match (SQL is approximate/inclusive)
+      // Since we force-set tierFilter above, this will always check against our random choice
+      if (enriched.difficulty.tier === tierFilter) {
+        return enriched;
       }
     } catch {
       // Invalid player data, try another
@@ -242,6 +272,26 @@ export function getRandomPlayer(
 
 function enrichPlayer(player: Player): PlayerWithDetails {
   const parsed = parsePlayerData(player);
+
+  // Resolution: Always prefer IDs (Source of Truth) over legacy column
+  if (player.nationalities_ids) {
+    const ids = player.nationalities_ids
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (ids.length > 0) {
+      // Use placeholders for WHERE IN clause
+      const placeholders = ids.map(() => "?").join(",");
+      const nations = db
+        .prepare(`SELECT name FROM nationalities WHERE id IN (${placeholders})`)
+        .all(...ids) as { name: string }[];
+
+      if (nations.length > 0) {
+        parsed.nationalities = nations.map((n) => n.name);
+      }
+    }
+  }
 
   const transfers = db
     .prepare(

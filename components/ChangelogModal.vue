@@ -22,6 +22,86 @@
 
     <template #body>
       <div class="space-y-6 text-slate-200">
+        <!-- v1.6.0 -->
+        <section>
+          <h3
+            class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
+          >
+            <UBadge
+              color="primary"
+              variant="subtle"
+              size="xs"
+              >v1.6.0</UBadge
+            >
+            Gameplay Balance & Integrity
+            <span class="ml-auto text-xs font-normal text-slate-500"
+              >Jan 18</span
+            >
+          </h3>
+          <div class="space-y-3 text-sm text-slate-300">
+            <p>
+              A major update to data integrity, search, and gameplay balance.
+            </p>
+            <ul class="list-inside list-disc space-y-1 pl-2">
+              <li>
+                <strong class="text-white">Better Default Difficulty:</strong>
+                Now ensures an equal 33% chance for Easy, Medium, and Hard
+                players (was skewed to 73% Hard).
+              </li>
+              <li>
+                <strong class="text-white">Smart Search:</strong> Duplicate
+                names like "Fernando" now show full names for clarity.
+              </li>
+              <li>
+                <strong class="text-white">Data Repair:</strong> Fixed "unknown"
+                positions and normalized search names (fixes accents like
+                "Touré").
+              </li>
+              <li>
+                <strong class="text-white">New Players:</strong> Added ~180 new
+                Top Scorers & Ballon d'Or winners.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- v1.5.4 -->
+        <section>
+          <h3
+            class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
+          >
+            <UBadge
+              color="secondary"
+              variant="subtle"
+              size="xs"
+              >v1.5.2</UBadge
+            >
+            Scraper & UX Fixes
+            <span class="ml-auto text-xs font-normal text-slate-500"
+              >Jan 18</span
+            >
+          </h3>
+          <div class="space-y-3 text-sm text-slate-300">
+            <p>
+              Resolved missing stats for players like Eriksen and polished
+              mobile experience.
+            </p>
+            <ul class="list-inside list-disc space-y-1 pl-2">
+              <li>
+                <strong class="text-white">Scraper Fix:</strong> Added fallback
+                for split-season stats.
+              </li>
+              <li>
+                <strong class="text-white">Mobile UX:</strong> Fixed keyboard
+                layout & scroll jumps.
+              </li>
+              <li>
+                <strong class="text-white">Polish:</strong> Fixed syntax errors.
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <!-- v1.5.1 -->
         <section>
           <h3
