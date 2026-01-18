@@ -321,7 +321,23 @@ function enrichPlayer(player: Player): PlayerWithDetails {
     )
     .all(player.id) as PlayerStats[];
 
-  const difficulty = computeDifficulty(stats as any);
+  // Parse clean sheets from total_stats if goalkeeper
+  let cleanSheets: number | undefined;
+  if (player.main_position?.includes("Goalkeeper") && player.total_stats) {
+    try {
+      const totalStats = JSON.parse(player.total_stats);
+      if (totalStats.clean_sheets !== undefined) {
+        cleanSheets = Number(totalStats.clean_sheets) || 0;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  const difficulty = computeDifficulty(stats as any, {
+    isGoalkeeper: player.main_position?.includes("Goalkeeper"),
+    cleanSheets,
+  });
 
   return {
     ...parsed,

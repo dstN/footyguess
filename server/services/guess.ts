@@ -67,15 +67,42 @@ export function getDifficulty(playerId: number) {
       `
       SELECT
         ps.appearances,
+        ps.goals,
+        ps.assists,
         c.id AS competition_id
       FROM player_stats ps
       JOIN competitions c ON ps.competition_id = c.id
       WHERE ps.player_id = ?
     `,
     )
-    .all(playerId) as Array<{ appearances: number; competition_id: string }>;
+    .all(playerId) as Array<{
+    appearances: number;
+    competition_id: string;
+    goals: number;
+    assists: number;
+  }>;
 
-  return computeDifficulty(stats);
+  const player = db
+    .prepare("SELECT main_position, total_stats FROM players WHERE id = ?")
+    .get(playerId) as { main_position: string; total_stats: string | null };
+
+  // Parse clean sheets from total_stats if goalkeeper
+  let cleanSheets: number | undefined;
+  if (player?.main_position?.includes("Goalkeeper") && player.total_stats) {
+    try {
+      const totalStats = JSON.parse(player.total_stats);
+      if (totalStats.clean_sheets !== undefined) {
+        cleanSheets = Number(totalStats.clean_sheets) || 0;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  return computeDifficulty(stats, {
+    isGoalkeeper: player?.main_position?.includes("Goalkeeper"),
+    cleanSheets,
+  });
 }
 
 /**

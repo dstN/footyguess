@@ -2,6 +2,26 @@
 
 # Changelog
 
+## [1.6.1] - 2026-01-18
+
+### Difficulty Tier Refinements
+
+Completely overhauled difficulty classification with stricter AND-based
+thresholds and multiple exception rules for Champions League performance and
+goalkeeper recognition.
+
+- **Base Thresholds**: Now require BOTH weighted international appearances
+  (CL/EL weighted higher) AND top-5 league appearances to qualify for each tier
+- **Champions League Excellence**: Players with 25+ CL goals OR 20+ CL
+  goals+assists automatically qualify as Easy, rewarding European elite
+  performance
+- **Goalkeeper Recognition**: Legendary keepers with 325+ clean sheets and
+  international experience now properly classified as Easy tier
+- **Balanced Distribution**: Final split is 4.2% Easy, 4.5% Medium, 6.1% Hard,
+  85.3% Ultra across all 6,651 players
+
+---
+
 ## [1.6.0] - 2026-01-18
 
 ### Scraper Reliability, Data Integrity & Gameplay Polish

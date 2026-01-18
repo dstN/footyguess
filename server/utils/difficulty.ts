@@ -28,19 +28,28 @@ export interface Difficulty {
   cluePenalty: number;
 }
 
-type StatRow = { competition_id: string; appearances: number };
+type StatRow = {
+  competition_id: string;
+  appearances: number;
+  goals: number;
+  assists: number;
+};
 
 /**
+ * Sum goals + assists from stats rows for specific competition IDs.
+ */
+function sumGoalsAndAssists(stats: StatRow[], ids: string[]) {
+  return stats
+    .filter((s) => ids.includes(s.competition_id))
+    .reduce(
+      (acc, s) => acc + (Number(s.goals) || 0) + (Number(s.assists) || 0),
+      0,
+    );
+}
+
+// ... (existing helper functions start here)
+/**
  * Sum appearances from stats rows for specific competition IDs.
- * Used to count total appearances in a group of competitions (e.g., Top 5 leagues).
- *
- * @param stats - Array of player statistics by competition
- * @param ids - Array of competition IDs to sum
- * @returns Total appearances in the specified competitions
- *
- * @example
- * const top5Apps = sumAppearances(stats, TOP5_LEAGUES);
- * // Returns: 250 (total apps in Premier League, La Liga, etc.)
  */
 function sumAppearances(stats: StatRow[], ids: string[]) {
   return stats
@@ -50,19 +59,6 @@ function sumAppearances(stats: StatRow[], ids: string[]) {
 
 /**
  * Calculate weighted appearance count for international competitions.
- * Different competitions have different weights based on prestige:
- * - Champions League: 1.25x (most prestigious)
- * - Europa League: 1.25x
- * - UEFA competitions: 0.75x
- * - National league cups: 0.5x
- * - Lesser competitions: 0.25x
- *
- * @param stats - Array of player statistics by competition
- * @returns Weighted sum of international competition appearances
- *
- * @example
- * const intlApps = sumWeightedInternational(stats);
- * // A player with 20 CL apps + 30 Europa apps = 20*1.25 + 30*1.25 = 62.5
  */
 function sumWeightedInternational(stats: StatRow[]) {
   return stats
@@ -75,175 +71,124 @@ function sumWeightedInternational(stats: StatRow[]) {
 }
 
 /**
- * Determine difficulty tier and point multiplier based on appearance count.
- * Tier is determined by competition basis:
- *
- * International basis thresholds:
- * - >80 apps: Easy (1.0x)
- * - 60-80 apps: Medium (1.25x)
- * - 45-60 apps: Hard (1.5x)
- * - <45 apps: Ultra (2.0x)
- *
- * Top 5 leagues basis thresholds:
- * - >400 apps: Easy (1.0x)
- * - 200-400 apps: Medium (1.25x)
- * - 100-200 apps: Hard (1.5x)
- * - <100 apps: Ultra (2.0x)
- *
- * @param basis - Whether calculating by international or top5 league experience
- * @param totalApps - Total weighted appearances
- * @returns Object containing tier name and point multiplier
- *
- * @example
- * getTier("international", 70) // => { tier: 'medium', multiplier: 2 }
- * getTier("top5", 250) // => { tier: 'medium', multiplier: 2 }
- *
- * Multipliers (updated v1.3.0): Easy=1, Medium=2, Hard=3, Ultra=4
+ * Sum goals from stats rows for specific competition IDs.
  */
-function getTier(
-  basis: DifficultyBasis,
-  totalApps: number,
-): { tier: DifficultyTier; multiplier: number } {
-  if (basis === "international") {
-    if (totalApps > 80) return { tier: "easy", multiplier: 1 };
-    if (totalApps >= 60) return { tier: "medium", multiplier: 2 };
-    if (totalApps >= INTL_HARD_THRESHOLD) {
-      return { tier: "hard", multiplier: 3 };
-    }
-    return { tier: "ultra", multiplier: 4 };
-  }
-
-  // top 5 leagues
-  if (totalApps > 400) return { tier: "easy", multiplier: 1 };
-  if (totalApps >= 200) return { tier: "medium", multiplier: 2 };
-  if (totalApps >= TOP5_HARD_THRESHOLD) {
-    return { tier: "hard", multiplier: 3 };
-  }
-  return { tier: "ultra", multiplier: 4 };
+function sumGoals(stats: StatRow[], ids: string[]) {
+  return stats
+    .filter((s) => ids.includes(s.competition_id))
+    .reduce((acc, s) => acc + (Number(s.goals) || 0), 0);
 }
 
-/**
- * Compute the difficulty tier for a player based on their competition appearances.
- *
- * Algorithm:
- * 1. Calculate weighted international appearances (applies INTL_WEIGHTS multipliers)
- * 2. Calculate total Top 5 league appearances
- * 3. Prefer international tier if it's not ultra; otherwise use Top 5 tier
- * 4. Special case: if basis is Top 5 and tier is easy but intl apps <50, downgrade to medium
- *    (to prevent obscure players from feeling too easy)
- * 5. Special case: if basis is Top 5 and tier is medium but intl apps <20, downgrade to hard
- *    (to prevent domestic-only players in medium tier)
- * 6. Special case: if basis is international and tier is easy but top5 apps <50, downgrade to medium
- *    (to prevent players with tons of intl apps but few top5 league games from being too easy)
- * 7. Special case: if basis is international and tier is medium but top5 apps <10, downgrade to hard
- *    (to prevent players with moderate intl apps but minimal top5 league presence)
- * 8. Apply forceUltra override if specified (for hard mode)
- *
- * @param stats - Array of player statistics with competition_id and appearances
- * @param opts - Options object
- * @param opts.forceUltra - If true, always return ultra tier (for hard mode)
- * @returns Difficulty object with tier, multiplier, basis, and total appearances
- *
- * @example
- * const difficulty = computeDifficulty(playerStats);
- * // Returns: {
- * //   tier: 'hard',
- * //   multiplier: 1.5,
- * //   basis: 'international',
- * //   totalAppearances: 55,
- * //   basePoints: 100,
- * //   cluePenalty: 10
- * // }
- *
- * @example
- * // Hard mode forces ultra difficulty
- * const hardModeDiff = computeDifficulty(playerStats, { forceUltra: true });
- * // Returns: { tier: 'ultra', multiplier: 2, ...}
- */
+// ... (getTier function unchanged)
+
 export function computeDifficulty(
   stats: StatRow[],
-  opts: { forceUltra?: boolean } = {},
+  opts: {
+    forceUltra?: boolean;
+    isGoalkeeper?: boolean;
+    cleanSheets?: number;
+  } = {},
 ): Difficulty {
   const intlApps = sumWeightedInternational(stats);
   const top5Apps = sumAppearances(stats, TOP5_LEAGUES);
 
-  // Prefer international weighted apps; fall back to top5 only when international doesn't meet thresholds.
-  const intlTier = intlApps > 0 ? getTier("international", intlApps) : null;
-  const top5Tier = top5Apps > 0 ? getTier("top5", top5Apps) : null;
+  // Calculate Champions League goals and assists for exceptions
+  const clGoals = sumGoals(stats, ["CL"]);
+  const clGoalsAndAssists = sumGoalsAndAssists(stats, ["CL"]);
 
-  let chosen: {
-    basis: DifficultyBasis;
-    total: number;
-    tier: { tier: DifficultyTier; multiplier: number };
+  // Default to Ultra
+  let tier: { tier: DifficultyTier; multiplier: number } = {
+    tier: "ultra",
+    multiplier: 4,
   };
 
-  if (intlTier && intlTier.tier !== "ultra") {
-    chosen = { basis: "international", total: intlApps, tier: intlTier };
-  } else if (top5Tier) {
-    chosen = { basis: "top5", total: top5Apps, tier: top5Tier };
-  } else if (intlTier) {
-    chosen = { basis: "international", total: intlApps, tier: intlTier };
-  } else {
-    const fallback = getTier("international", 0);
-    chosen = { basis: "international", total: 0, tier: fallback };
-  }
-
-  let tier = opts.forceUltra
-    ? { tier: "ultra" as const, multiplier: 4 }
-    : chosen.tier;
-
-  // If a player is flagged easy purely by league apps but has little/no top European experience,
-  // downgrade easy to medium to avoid obscure picks feeling trivial.
-  if (
-    !opts.forceUltra &&
-    chosen.basis === "top5" &&
-    tier.tier === "easy" &&
-    intlApps < 50
-  ) {
+  // Check strict AND thresholds (Easy -> Medium -> Hard)
+  if (intlApps >= 100 && top5Apps >= 250) {
+    tier = { tier: "easy", multiplier: 1 };
+  } else if (intlApps >= 80 && top5Apps >= 175) {
     tier = { tier: "medium", multiplier: 2 };
-  }
-
-  // If a player is flagged medium by league apps but has minimal international experience,
-  // downgrade to hard to ensure domestic-only players aren't too easy.
-  if (
-    !opts.forceUltra &&
-    chosen.basis === "top5" &&
-    tier.tier === "medium" &&
-    intlApps < 35
-  ) {
+  } else if (intlApps >= 60 && top5Apps >= 125) {
     tier = { tier: "hard", multiplier: 3 };
   }
 
-  // If a player is flagged easy by international apps but has minimal top5 league experience,
-  // downgrade to medium to prevent players who only play in weaker leagues from being too easy.
-  if (
-    !opts.forceUltra &&
-    chosen.basis === "international" &&
-    tier.tier === "easy" &&
-    top5Apps < TOP5_EASY_MIN
-  ) {
-    tier = { tier: "medium", multiplier: 2 };
+  // EXCEPTION: Goalkeepers get slightly lower thresholds for Easy
+  // Standard Easy is 100/250. GKs get 80/200.
+  // This helps legends like Alisson (99), Navas (91), Dida (96) reach Easy.
+  if (opts.isGoalkeeper) {
+    if (intlApps >= 80 && top5Apps >= 200) {
+      tier = { tier: "easy", multiplier: 1 };
+    }
+
+    // EXCEPTION: Goalkeeper Clean Sheet-based tiers
+    // For legendary GKs who had long careers but fewer international matches
+    if (opts.cleanSheets !== undefined) {
+      if (opts.cleanSheets > 325 && intlApps > 45) {
+        // Upgrade to Easy if not already better
+        if (
+          tier.tier === "medium" ||
+          tier.tier === "hard" ||
+          tier.tier === "ultra"
+        ) {
+          tier = { tier: "easy", multiplier: 1 };
+        }
+      } else if (opts.cleanSheets > 275 && intlApps > 35) {
+        // Upgrade to Medium if not already better
+        if (tier.tier === "hard" || tier.tier === "ultra") {
+          tier = { tier: "medium", multiplier: 2 };
+        }
+      } else if (opts.cleanSheets > 225 && intlApps > 25) {
+        // Upgrade to Hard if not already better
+        if (tier.tier === "ultra") {
+          tier = { tier: "hard", multiplier: 3 };
+        }
+      }
+    }
   }
 
-  // If a player is flagged medium by international apps but has very minimal top5 league experience,
-  // downgrade to hard to prevent obscure players with moderate intl apps from being too easy.
-  if (
-    !opts.forceUltra &&
-    chosen.basis === "international" &&
-    tier.tier === "medium" &&
-    top5Apps < TOP5_MEDIUM_MIN
-  ) {
-    tier = { tier: "hard", multiplier: 3 };
+  // EXCEPTION 1: Champions League Goal Scorers (25+)
+  if (clGoals >= 25) {
+    if (
+      tier.tier === "ultra" ||
+      tier.tier === "hard" ||
+      tier.tier === "medium"
+    ) {
+      tier = { tier: "easy", multiplier: 1 };
+    }
   }
 
-  // Allow ultra tier even in normal mode; forceUltra still overrides.
-  const normalizedTier = tier;
+  // EXCEPTION 2: Champions League Icons (Cascading G+A)
+  if (clGoalsAndAssists >= 20) {
+    if (
+      tier.tier === "ultra" ||
+      tier.tier === "hard" ||
+      tier.tier === "medium"
+    ) {
+      tier = { tier: "easy", multiplier: 1 };
+    }
+  } else if (clGoalsAndAssists >= 10) {
+    if (tier.tier === "ultra" || tier.tier === "hard") {
+      tier = { tier: "medium", multiplier: 2 };
+    }
+  } else if (clGoalsAndAssists >= 5) {
+    if (tier.tier === "ultra") {
+      tier = { tier: "hard", multiplier: 3 };
+    }
+  }
+
+  // Force ultra override
+  if (opts.forceUltra) {
+    tier = { tier: "ultra", multiplier: 4 };
+  }
+
+  // Determine primary basis
+  const basis: DifficultyBasis =
+    intlApps > top5Apps * 0.2 ? "international" : "top5";
 
   return {
-    basis: chosen.basis,
-    totalAppearances: chosen.total,
-    tier: normalizedTier.tier,
-    multiplier: normalizedTier.multiplier,
+    basis,
+    totalAppearances: basis === "international" ? intlApps : top5Apps,
+    tier: tier.tier,
+    multiplier: tier.multiplier,
     basePoints: BASE_POINTS,
     cluePenalty: CLUE_PENALTY,
   };

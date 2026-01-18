@@ -7,18 +7,61 @@ function run() {
 
   // 1. Fetch all stats
   console.log("Fetching all player stats...");
+  console.log("Fetching all player stats...");
+  console.log("Fetching all player stats...");
   const allStats = db
-    .prepare("SELECT player_id, competition_id, appearances FROM player_stats")
+    .prepare(
+      "SELECT player_id, competition_id, appearances, goals, assists FROM player_stats",
+    )
     .all() as {
     player_id: number;
     competition_id: string;
     appearances: number;
+    goals: number;
+    assists: number;
   }[];
+
+  // Fetch player metadata for goalkeeper check
+  const players = db
+    .prepare("SELECT id, main_position, total_stats FROM players")
+    .all() as {
+    id: number;
+    main_position: string | null;
+    total_stats: string | null;
+  }[];
+
+  const playerMetadata = new Map<
+    number,
+    { isGoalkeeper: boolean; cleanSheets?: number }
+  >();
+
+  for (const p of players) {
+    const isGoalkeeper = p.main_position?.includes("Goalkeeper") || false;
+    let cleanSheets: number | undefined;
+
+    if (isGoalkeeper && p.total_stats) {
+      try {
+        const totalStats = JSON.parse(p.total_stats);
+        if (totalStats.clean_sheets !== undefined) {
+          cleanSheets = Number(totalStats.clean_sheets) || 0;
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
+    playerMetadata.set(p.id, { isGoalkeeper, cleanSheets });
+  }
 
   // 2. Group by player
   const playerStatsMap = new Map<
     number,
-    { competition_id: string; appearances: number }[]
+    {
+      competition_id: string;
+      appearances: number;
+      goals: number;
+      assists: number;
+    }[]
   >();
 
   for (const row of allStats) {
@@ -28,10 +71,14 @@ function run() {
     playerStatsMap.get(row.player_id)!.push({
       competition_id: row.competition_id,
       appearances: row.appearances,
+      goals: row.goals,
+      assists: row.assists,
     });
   }
 
-  // 3. Compute difficulty for each player
+  // 3. Compute difficulty for all
+  console.log(`Computed stats for ${playerStatsMap.size} players.`);
+
   const distribution: Record<DifficultyTier, number> = {
     easy: 0,
     medium: 0,
@@ -39,15 +86,19 @@ function run() {
     ultra: 0,
   };
 
-  const totalPlayers = playerStatsMap.size;
-  console.log(`Computed stats for ${totalPlayers} players.`);
-
-  for (const stats of playerStatsMap.values()) {
-    const diff = computeDifficulty(stats);
+  for (const [playerId, stats] of playerStatsMap) {
+    const metadata = playerMetadata.get(playerId) || {
+      isGoalkeeper: false,
+    };
+    const diff = computeDifficulty(stats, {
+      isGoalkeeper: metadata.isGoalkeeper,
+      cleanSheets: metadata.cleanSheets,
+    });
     distribution[diff.tier]++;
   }
 
   // 4. Output results
+  const totalPlayers = playerStatsMap.size;
   console.log("\n--- Difficulty Distribution ---");
   console.log(
     `Easy:   ${distribution.easy} (${((distribution.easy / totalPlayers) * 100).toFixed(1)}%)`,
@@ -62,19 +113,32 @@ function run() {
     `Ultra:  ${distribution.ultra} (${((distribution.ultra / totalPlayers) * 100).toFixed(1)}%)`,
   );
 
-  console.log("\n--- Difficulty Rules (approximate) ---");
-  console.log("International (weighted): CL/EL=1.25x, others=0.25-0.75x");
-  console.log("Top 5 Leagues: Sum of apps in GB1, ES1, IT1, L1, FR1");
-  console.log("\nBase Thresholds (International OR Top 5):");
-  console.log("Easy:   >80 Intl  OR  >400 Top5");
-  console.log("Medium: >60 Intl  OR  >200 Top5");
-  console.log("Hard:   >45 Intl  OR  >100 Top5");
-  console.log("Ultra:  <45 Intl  AND <100 Top5");
-  console.log("\nDowngrade Rules (Cross-Checks):");
-  console.log("1. Rated Easy (Top5) but <50 Intl Apps -> Medium");
-  console.log("2. Rated Med  (Top5) but <35 Intl Apps -> Hard");
-  console.log("3. Rated Easy (Intl) but <100 Top5 Apps -> Medium");
-  console.log("4. Rated Med  (Intl) but <50 Top5 Apps  -> Hard");
+  console.log("\n--- Difficulty Rules ---");
+  console.log("International weighted: CL/EL=1.25x, others=0.25-0.75x");
+  console.log("Top 5 Leagues: GB1, ES1, IT1, L1, FR1");
+
+  console.log("\n[BASE THRESHOLDS - Must meet BOTH criteria]");
+  console.log("  Easy:   >= 100 Intl  AND  >= 250 Top5");
+  console.log("  Medium: >= 80 Intl   AND  >= 175 Top5");
+  console.log("  Hard:   >= 60 Intl   AND  >= 125 Top5");
+  console.log("  Ultra:  Everything else");
+
+  console.log("\n[EXCEPTION 1 - Champions League Goals]");
+  console.log("  >= 25 CL Goals → Upgrade to Easy");
+
+  console.log("\n[EXCEPTION 2 - Champions League Performance]");
+  console.log("  >= 20 CL G+A → Upgrade to Easy");
+  console.log("  10-19 CL G+A → Upgrade to Medium");
+  console.log("  5-9 CL G+A   → Upgrade to Hard");
+
+  console.log("\n[GOALKEEPER EXCEPTIONS]");
+  console.log("  Reduced Apps Threshold: >= 80 Intl AND >= 200 Top5 → Easy");
+  console.log("  Clean Sheets:");
+  console.log("    > 325 CS AND > 45 Intl → Easy");
+  console.log("    > 275 CS AND > 35 Intl → Medium");
+  console.log("    > 225 CS AND > 25 Intl → Hard");
+
+  console.log("\nNote: All exceptions only upgrade tiers, never downgrade.");
 }
 
 run();

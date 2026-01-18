@@ -205,6 +205,12 @@
                   >
                 </div>
               </div>
+              <p class="mt-2 text-xs text-slate-400">
+                Tiers are based on weighted international + top-5 league
+                appearances, with exceptions for Champions League excellence
+                (25+ CL goals or 20+ G+A qualify as Easy) and goalkeeper clean
+                sheets (325+ CS qualify as Easy).
+              </p>
             </div>
 
             <!-- Time Bonus -->

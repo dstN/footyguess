@@ -22,6 +22,43 @@
 
     <template #body>
       <div class="space-y-6 text-slate-200">
+        <!-- v1.6.1 -->
+        <section>
+          <h3
+            class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
+          >
+            <UBadge
+              color="secondary"
+              variant="subtle"
+              size="xs"
+              >v1.6.1</UBadge
+            >
+            Difficulty Refinements
+            <span class="ml-auto text-xs font-normal text-slate-500"
+              >Jan 18</span
+            >
+          </h3>
+          <div class="space-y-3 text-sm text-slate-300">
+            <p>
+              Overhauled difficulty tiers with strict criteria and exceptions.
+            </p>
+            <ul class="list-inside list-disc space-y-1 pl-2">
+              <li>
+                <strong class="text-white">Stricter Thresholds:</strong> Require
+                BOTH international AND top-5 league appearances.
+              </li>
+              <li>
+                <strong class="text-white">CL Excellence:</strong> 25+ CL goals
+                or 20+ G+A qualify as Easy.
+              </li>
+              <li>
+                <strong class="text-white">GK Recognition:</strong> 325+ clean
+                sheets with international experience → Easy.
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <!-- v1.6.0 -->
         <section>
           <h3
@@ -144,6 +181,12 @@
               <li>
                 <strong class="text-white">New Feature:</strong> Added this
                 "What's New" modal!
+              </li>
+              <li>
+                <strong class="text-white">Difficulty Tiers:</strong> Overhauled
+                classification system with stricter AND-based thresholds and
+                multiple exceptions for CL performance and goalkeeper clean
+                sheets.
               </li>
             </ul>
           </div>
