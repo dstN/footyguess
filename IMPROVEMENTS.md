@@ -473,7 +473,7 @@ links
 
 ---
 
-### 3.4 Game State Persistence 🟡 PARTIALLY DONE
+### 3.4 Game State Persistence ✅ DONE
 
 **Priority**: P2 | **Effort**: Medium | **Category**: UX
 
@@ -550,7 +550,7 @@ links
 
 ## 4. Developer Experience
 
-### 4.1 Development Tooling 🟡 PARTIALLY DONE
+### 4.1 Development Tooling ✅ DONE
 
 **Priority**: P2 | **Effort**: Small | **Category**: DX
 
@@ -781,15 +781,15 @@ links
 
 ## Status Summary (Reconciliation Audit 2026-01-17)
 
-| Section                 | Done  | Partial | Not Done |
-| ----------------------- | ----- | ------- | -------- |
-| 1. Code Stability       | 4     | 0       | 0        |
-| 2. Game Logic           | 3     | 0       | 2        |
-| 3. Frontend/UX          | 1     | 3       | 2        |
-| 4. Developer Experience | 0     | 1       | 2        |
-| 5. Performance          | 0     | 0       | 3        |
-| 6. Future Features      | 0     | 0       | 3        |
-| **Total**               | **8** | **4**   | **12**   |
+| Section                 | Done   | Partial | Not Done |
+| ----------------------- | ------ | ------- | -------- |
+| 1. Code Stability       | 4      | 0       | 0        |
+| 2. Game Logic           | 3      | 0       | 2        |
+| 3. Frontend/UX          | 2      | 2       | 2        |
+| 4. Developer Experience | 1      | 0       | 2        |
+| 5. Performance          | 0      | 0       | 3        |
+| 6. Future Features      | 0      | 0       | 3        |
+| **Total**               | **10** | **2**   | **12**   |
 
 ---
 
@@ -801,8 +801,8 @@ links
 | **P1**   | Architecture | Service layer, TypeScript strictness     | ✅ DONE        |
 | **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
 | **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
-| **P2**   | UX           | Accessibility, mobile, game persistence  | 🟡 Partial     |
-| **P2**   | DX           | Tooling, debugging                       | 🟡 Partial     |
+| **P2**   | UX           | Accessibility, mobile                    | 🟡 Partial     |
+| **P2**   | DX           | Debugging                                | ❌ Not Started |
 | **P3**   | Game Logic   | Clue improvements                        | ❌ Not Started |
 | **P3**   | UX           | Visual feedback, social features         | ❌ Not Started |
 | **P3**   | Features     | Game modes, content expansion            | ❌ Not Started |
@@ -825,5 +825,6 @@ When implementing any improvement:
 
 | Date       | Change                                                                 |
 | ---------- | ---------------------------------------------------------------------- |
+| 2026-01-18 | Full system audit: Game persistence & dev tooling marked DONE          |
 | 2026-01-17 | Full system audit: Updated status markers, fixed test setup (useState) |
 | 2026-01-11 | Reconciliation: Corrected service layer status                         |

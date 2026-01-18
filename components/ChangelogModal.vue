@@ -106,7 +106,7 @@
           </div>
         </section>
 
-        <!-- v1.5.4 -->
+        <!-- v1.5.2 -->
         <section>
           <h3
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
@@ -117,30 +117,23 @@
               size="xs"
               >v1.5.2</UBadge
             >
-            Scraper & UX Fixes
+            Mobile UX
             <span class="ml-auto text-xs font-normal text-slate-500"
               >Jan 18</span
             >
           </h3>
-          <div class="space-y-3 text-sm text-slate-300">
-            <p>
-              Resolved missing stats for players like Eriksen and polished
-              mobile experience.
-            </p>
-            <ul class="list-inside list-disc space-y-1 pl-2">
-              <li>
-                <strong class="text-white">Scraper Fix:</strong> Added fallback
-                for split-season stats.
-              </li>
-              <li>
-                <strong class="text-white">Mobile UX:</strong> Fixed keyboard
-                layout & scroll jumps.
-              </li>
-              <li>
-                <strong class="text-white">Polish:</strong> Fixed syntax errors.
-              </li>
-            </ul>
-          </div>
+          <ul
+            class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
+          >
+            <li>
+              <strong class="text-white">Fixed Keyboard:</strong> Input stays
+              visible above the virtual keyboard on mobile.
+            </li>
+            <li>
+              <strong class="text-white">No Scroll Jumps:</strong> Fixed page
+              jumping when focusing the guess input.
+            </li>
+          </ul>
         </section>
 
         <!-- v1.5.1 -->
@@ -154,42 +147,23 @@
               size="xs"
               >v1.5.1</UBadge
             >
-            Security & Mobile Polish
+            Mobile Polish
             <span class="ml-auto text-xs font-normal text-slate-500"
               >Jan 17</span
             >
           </h3>
-          <div class="space-y-3 text-sm text-slate-300">
-            <p>
-              This patch combines critical security fixes with significant
-              mobile improvements and a new in-app changelog viewer.
-            </p>
-            <ul class="list-inside list-disc space-y-1 pl-2">
-              <li>
-                <strong class="text-white">Security:</strong> Updated
-                dependencies to resolve reported vulnerabilities.
-              </li>
-              <li>
-                <strong class="text-white">Mobile Keyboard:</strong> Input now
-                stays active while checking guesses, ensuring keyboard
-                stability.
-              </li>
-              <li>
-                <strong class="text-white">Mobile Layout:</strong> Switched to
-                dynamic viewport height (dvh) to prevent scrolling jumps.
-              </li>
-              <li>
-                <strong class="text-white">New Feature:</strong> Added this
-                "What's New" modal!
-              </li>
-              <li>
-                <strong class="text-white">Difficulty Tiers:</strong> Overhauled
-                classification system with stricter AND-based thresholds and
-                multiple exceptions for CL performance and goalkeeper clean
-                sheets.
-              </li>
-            </ul>
-          </div>
+          <ul
+            class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
+          >
+            <li>
+              <strong class="text-white">Mobile Keyboard:</strong> Input stays
+              active while checking guesses.
+            </li>
+            <li>
+              <strong class="text-white">Mobile Layout:</strong> Switched to
+              dynamic viewport to prevent scrolling jumps.
+            </li>
+          </ul>
         </section>
 
         <!-- v1.5.0 -->
@@ -203,39 +177,26 @@
               size="xs"
               >v1.5.0</UBadge
             >
-            Major Update
+            Gameplay & Score Polish
             <span class="ml-auto text-xs font-normal text-slate-500"
               >Jan 17</span
             >
           </h3>
-          <div class="space-y-3 text-sm text-slate-300">
-            <p>
-              A massive update focusing on reliability, admin tools, and visual
-              polish.
-            </p>
-            <ul class="list-inside list-disc space-y-1 pl-2">
-              <li>
-                <strong class="text-white">Calmer Live Score:</strong> Score
-                stays stable when not changing, only using decimals during
-                countdowns.
-              </li>
-              <li>
-                <strong class="text-white">Visual Stability:</strong> Fixed
-                "shake" animation causing scrollbar glitches.
-              </li>
-              <li>
-                <strong class="text-white">Session Integrity:</strong> Better
-                handling of expired sessions with auto-recovery.
-              </li>
-              <li>
-                <strong class="text-white">Admin Tools:</strong> New /reset page
-                and atomic database resets.
-              </li>
-            </ul>
-          </div>
+          <ul
+            class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
+          >
+            <li>
+              <strong class="text-white">Calmer Live Score:</strong> Score stays
+              stable when not changing, only uses decimals during countdowns.
+            </li>
+            <li>
+              <strong class="text-white">Session Integrity:</strong> Better
+              handling of expired sessions with auto-recovery.
+            </li>
+          </ul>
         </section>
 
-        <!-- v1.4.0 -->
+        <!-- v1.4.4 -->
         <section>
           <h3
             class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
@@ -246,16 +207,14 @@
               size="xs"
               >v1.4.4</UBadge
             >
-            UI Polish
+            Grace Timer
             <span class="ml-auto text-xs font-normal text-slate-500"
               >Jan 17</span
             >
           </h3>
-          <ul class="list-inside list-disc space-y-2 text-sm text-slate-300">
-            <li>
-              <strong class="text-white">Mobile Header:</strong> Improved 2x2
-              grid layout for Stats/Score badges.
-            </li>
+          <ul
+            class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
+          >
             <li>
               <strong class="text-white">Grace Period:</strong> Adjusted to 2.5s
               per club (max 15s) for better pacing.
