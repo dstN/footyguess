@@ -2,6 +2,27 @@
 
 # Changelog
 
+## [1.6.3] - 2026-01-19
+
+### Self-Service Session Deletion
+
+Added user-facing `/delete` page for session data removal.
+
+- **Delete Page**: New `/delete` route allows users to delete their own session
+  data by entering their session ID
+- **Full Cleanup**: Removes all associated data (scores, rounds, leaderboard
+  entries, session) in a single transaction
+- **Self-Detection**: Automatically detects and pre-fills the current session
+  ID, warning users when deleting their own session
+- **Local Data Cleanup**: Clears all localStorage data when deleting own session
+  (streak, difficulty, etc.)
+- **Toast Feedback**: Uses toast notifications instead of page content for
+  success/error feedback
+- **SEO Friendly**: Unlike `/reset`, the delete page is indexable by search
+  engines
+
+---
+
 ## [1.6.2] - 2026-01-18
 
 ### Nickname Moderation

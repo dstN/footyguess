@@ -22,6 +22,44 @@
 
     <template #body>
       <div class="space-y-6 text-slate-200">
+        <!-- v1.6.3 -->
+        <section>
+          <h3
+            class="mb-2 flex items-center gap-2 text-lg font-semibold text-white"
+          >
+            <UBadge
+              color="secondary"
+              variant="subtle"
+              size="xs"
+              >v1.6.3</UBadge
+            >
+            Delete Session
+            <span class="ml-auto text-xs font-normal text-slate-500"
+              >Jan 19</span
+            >
+          </h3>
+          <div class="space-y-3 text-sm text-slate-300">
+            <p>
+              New self-service page to delete your session and all game data.
+            </p>
+            <ul class="list-inside list-disc space-y-1 pl-2">
+              <li>
+                <strong class="text-white">Delete Page:</strong> Visit
+                <code class="text-primary-400">/delete</code> to remove your
+                session.
+              </li>
+              <li>
+                <strong class="text-white">Full Cleanup:</strong> Removes
+                scores, rounds, leaderboard entries, and session data.
+              </li>
+              <li>
+                <strong class="text-white">Auto-Detection:</strong> Pre-fills
+                your current session ID for convenience.
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <!-- v1.6.1 -->
         <section>
           <h3
