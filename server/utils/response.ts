@@ -7,6 +7,7 @@
  */
 
 import type { H3Event } from "h3";
+import { setResponseStatus } from "h3";
 
 export interface ApiResponse<T = unknown> {
   /** Unique request identifier for tracing */
@@ -50,6 +51,9 @@ export function errorResponse(
   details?: Record<string, unknown>,
 ): ApiResponse {
   const requestId = event.node.res.getHeader("x-request-id") as string;
+
+  // Actually set the HTTP status code so $fetch throws
+  setResponseStatus(event, statusCode);
 
   const response: ApiResponse = {
     requestId,

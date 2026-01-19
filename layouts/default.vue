@@ -21,7 +21,8 @@
     </div>
 
     <div
-      class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 pt-8 pb-28 md:px-0"
+      class="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center px-4 pt-8 md:px-0"
+      :class="isPlayPage ? 'pb-28' : 'pb-8'"
     >
       <div
         class="glass-panel border-primary-900/50 relative w-full overflow-hidden rounded-3xl border bg-white/5 text-slate-100 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xs"
@@ -43,6 +44,8 @@
           <slot @shake="triggerShake" />
         </div>
       </div>
+
+      <FooterLinks />
     </div>
   </div>
 </template>
@@ -55,8 +58,12 @@ import {
 } from "~/utils/injection-keys";
 import { skipToMainContent } from "~/utils/accessibility";
 
+const route = useRoute();
 const shouldShake = ref(false);
 const isModalOpen = ref(false);
+
+// Play page needs more bottom padding for the guess bar
+const isPlayPage = computed(() => route.path === "/play");
 
 function triggerShake() {
   shouldShake.value = true;

@@ -27,6 +27,8 @@
       tabindex="-1"
     >
       <slot @shake="triggerShake" />
+
+      <FooterLinks />
     </div>
   </div>
 </template>

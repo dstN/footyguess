@@ -128,6 +128,11 @@ export default defineNuxtConfig({
 
   // Production optimizations
   vite: {
+    define: {
+      __APP_VERSION__: JSON.stringify(
+        require("./package.json").version as string,
+      ),
+    },
     build: {
       // Enable minification in production
       minify: "esbuild",

@@ -2,6 +2,30 @@
 
 # Changelog
 
+## [1.6.4] - 2026-01-19
+
+### Legal & Privacy
+
+Added `/legal` page with Imprint and Privacy Policy in a responsive 3-column
+layout.
+
+- **Imprint**: German legal information (§ 5 DDG) with spam-protected email
+- **Privacy Policy**: 6 sections covering data controller, hosting,
+  localStorage, database, right to erasure, and external links
+- **Footer Links**: New persistent footer with "LEGAL" and "MY DATA" links plus
+  version display, visible on all pages via layouts
+- **Layout**: New `thin-extended` layout for wider content pages
+
+### Bug Fixes
+
+- **Badword Filter Feedback**: Fixed issue where submitting an inappropriate
+  nickname showed a success toast instead of an error. The API now properly sets
+  HTTP status codes so frontend error handling works correctly.
+- **Play Page Padding**: Conditional bottom padding for `/play` route (needs
+  more space for guess bar)
+
+---
+
 ## [1.6.3] - 2026-01-19
 
 ### Self-Service Session Deletion

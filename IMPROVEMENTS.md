@@ -1,6 +1,6 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-17 **Scope**: FootyGuess
+> **Status**: Living Document **Last Updated**: 2026-01-19 **Scope**: FootyGuess
 > Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
@@ -436,11 +436,11 @@ links
    - Optimize images (if any added)
    - Test on low-end devices
 
-4. **Footer Improvements**
-   - Improve current Footer Links
-   - maybe Add social links
-   - ? privacy policy link
-   - ? terms of service link
+4. **Footer Improvements** ✅ DONE (v1.6.4)
+   - Added persistent footer links component to all layouts
+   - Privacy Policy link → `/legal`
+   - Session deletion link → `/delete` ("MY DATA")
+   - Version display with link to GitHub changelog
 
 ---
 

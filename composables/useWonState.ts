@@ -144,9 +144,9 @@ export function useWonState() {
       return { success: true };
     } catch (err) {
       logError("useWonState", "Submit score failed", err as Error);
-      // Extract error message from API response
+      // Extract error message from API response (uses 'error' field, not 'message')
       const errorMessage =
-        (err as { data?: { message?: string } })?.data?.message ||
+        (err as { data?: { error?: string } })?.data?.error ||
         "Please try again";
       return { success: false, error: errorMessage };
     }
