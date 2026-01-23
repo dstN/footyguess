@@ -1,6 +1,6 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-19 **Scope**: FootyGuess
+> **Status**: Living Document **Last Updated**: 2026-01-20 **Scope**: FootyGuess
 > Future Enhancements (with reconciliation status markers)
 
 This document outlines potential improvements for code stability, game logic,
@@ -444,11 +444,16 @@ links
 
 ---
 
-### 3.3 Visual Feedback Enhancements ❌ NOT DONE
+### 3.3 Visual Feedback Enhancements 🟡 PARTIALLY DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: UX
 
-**Potential Improvements**:
+**Completed** (v1.6.0):
+
+- ✅ Score Hiding: Tap the live score badge to hide/reveal (persisted
+  preference)
+
+**Remaining Improvements**:
 
 1. **Score Animation**
 
@@ -523,7 +528,82 @@ links
 
 ---
 
-### 3.6 SEO Optimizations ✅ DONE
+### 3.6 Scoreboard Difficulty Filtering ❌ NOT DONE
+
+**Priority**: P2 | **Effort**: Medium | **Category**: Feature
+
+**Current State**: The Highscores modal displays three tabs (Round Score,
+Session Score, Streak) without any difficulty filtering. All scores are
+aggregated regardless of the difficulty tier they were achieved on.
+
+**Planned Feature**:
+
+1. **Difficulty Dropdown Filter**
+
+   - Add a dropdown selector to each tab (Round, Session, Streak)
+   - Options: Default (all), Easy, Medium, Hard, Ultra
+   - Persist last-selected filter in localStorage
+
+2. **Architecture Consideration: Game Modes**
+
+   > [!NOTE] This feature is designed to be extended when game modes are
+   > implemented (see section 6.1). The hierarchy will be:
+   >
+   > - **Game Mode** (e.g., Classic, Time Attack, Daily Challenge)
+   >   - **Difficulty** (Easy, Medium, Hard, Ultra)
+   >     - Round Score
+   >     - Session Score
+   >     - Streak
+
+3. **Implementation Notes**
+
+   | Component                        | Changes Required                                  |
+   | -------------------------------- | ------------------------------------------------- |
+   | `HighscoreModal.vue`             | Add difficulty dropdown, pass filter to API       |
+   | `server/api/leaderboard.ts`      | Accept `?difficulty=X` param, filter queries      |
+   | `server/services/leaderboard.ts` | Update query functions to filter by difficulty    |
+   | Database schema (future)         | Add `game_mode` column when modes are implemented |
+
+4. **UI Mockup**
+
+   ```text
+   ┌─────────────────────────────────────────────┐
+   │ Highscores                                  │
+   ├─────────────────────────────────────────────┤
+   │ [Players] [Session] [Streak]                │
+   ├─────────────────────────────────────────────┤
+   │ Difficulty: [Default ▼]                     │
+   │             ├── Default (All)               │
+   │             ├── Easy                        │
+   │             ├── Medium                      │
+   │             ├── Hard                        │
+   │             └── Ultra                       │
+   ├─────────────────────────────────────────────┤
+   │ 1. PlayerName          1,234 pts            │
+   │ 2. PlayerName            987 pts            │
+   │ ...                                         │
+   └─────────────────────────────────────────────┘
+   ```
+
+5. **Data Model Considerations**
+
+   - Sessions are already unique to difficulty (user selects difficulty at
+     start)
+   - Streaks are tied to sessions, so also unique to difficulty
+   - Round scores can be played on different difficulties independently
+   - When game modes are added, a `game_mode` field will need to be added to:
+     - `sessions` table
+     - `leaderboard` entries
+
+**Why This Design?**
+
+- Separating by difficulty ensures fair competition (Ultra players vs Ultra)
+- Planning for game modes now prevents database migrations later
+- Default view shows all difficulties for broader leaderboard appeal
+
+---
+
+### 3.7 SEO Optimizations ✅ DONE
 
 **Priority**: P3 | **Effort**: Small | **Category**: SEO
 
@@ -785,11 +865,11 @@ links
 | ----------------------- | ------ | ------- | -------- |
 | 1. Code Stability       | 4      | 0       | 0        |
 | 2. Game Logic           | 3      | 0       | 2        |
-| 3. Frontend/UX          | 2      | 2       | 2        |
+| 3. Frontend/UX          | 2      | 3       | 2        |
 | 4. Developer Experience | 1      | 0       | 2        |
 | 5. Performance          | 0      | 0       | 3        |
 | 6. Future Features      | 0      | 0       | 3        |
-| **Total**               | **10** | **2**   | **12**   |
+| **Total**               | **10** | **3**   | **12**   |
 
 ---
 
@@ -802,6 +882,7 @@ links
 | **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
 | **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
 | **P2**   | UX           | Accessibility, mobile                    | 🟡 Partial     |
+| **P2**   | Feature      | Scoreboard difficulty filtering          | ❌ Not Started |
 | **P2**   | DX           | Debugging                                | ❌ Not Started |
 | **P3**   | Game Logic   | Clue improvements                        | ❌ Not Started |
 | **P3**   | UX           | Visual feedback, social features         | ❌ Not Started |
@@ -825,6 +906,7 @@ When implementing any improvement:
 
 | Date       | Change                                                                 |
 | ---------- | ---------------------------------------------------------------------- |
+| 2026-01-20 | Added Scoreboard Difficulty Filtering feature (section 3.6)            |
 | 2026-01-18 | Full system audit: Game persistence & dev tooling marked DONE          |
 | 2026-01-17 | Full system audit: Updated status markers, fixed test setup (useState) |
 | 2026-01-11 | Reconciliation: Corrected service layer status                         |
