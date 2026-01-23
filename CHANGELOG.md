@@ -14,6 +14,12 @@
   of the database, ensuring that data is properly merged from the `.wal` file
   into the main `.db` file for safe usage or portability.
 
+---
+
+## [1.6.4] - 2026-01-19
+
+### Legal & Privacy
+
 Added `/legal` page with Imprint and Privacy Policy in a responsive 3-column
 layout.
 
