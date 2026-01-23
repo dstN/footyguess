@@ -2,9 +2,17 @@
 
 # Changelog
 
-## [1.6.4] - 2026-01-19
+## [1.6.5] - 2026-01-23
 
-### Legal & Privacy
+### Maintenance & Operations
+
+- **Maintenance Mode**: Added a "Under Construction" / Maintenance screen
+  (enabled by default in `App.vue`). This allows the site to be put into a
+  user-friendly offline mode during updates or server work.
+- **Database Operations**: Added `scripts/checkpoint-local-db.ts` to facilitate
+  correct database exports. This script forces a WAL checkpoint on a local copy
+  of the database, ensuring that data is properly merged from the `.wal` file
+  into the main `.db` file for safe usage or portability.
 
 Added `/legal` page with Imprint and Privacy Policy in a responsive 3-column
 layout.
