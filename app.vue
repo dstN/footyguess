@@ -17,6 +17,6 @@
 <script setup lang="ts">
 import type { ToasterProps } from "@nuxt/ui";
 
-const isMaintenance = ref(true);
+const isMaintenance = ref(false);
 const toaster: ToasterProps = { position: "top-right", expand: false };
 </script>

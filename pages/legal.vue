@@ -38,10 +38,9 @@
               <p>
                 <strong>Responsible:</strong><br />
                 Dustin Tramm<br />
-                Impressums-Service Impressum4u<br />
-                c/o LEADERLY UG (haftungsbeschränkt)<br />
-                Amtstraße 22<br />
-                44575 Castrop-Rauxel<br />
+                c/o Impressumservice Dein-Impressum<br />
+                Stettiner Str. 41<br />
+                35410 Hungen<br />
                 Deutschland
               </p>
               <p>
