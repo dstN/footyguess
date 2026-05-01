@@ -83,9 +83,10 @@
                   <p class="font-medium text-white">1. Data Controller</p>
                   <p class="mt-2">
                     Dustin Tramm<br />
-                    c/o LEADERLY UG (haftungsbeschränkt)<br />
-                    Amtstraße 22<br />
-                    44575 Castrop-Rauxel
+                    c/o Impressumservice Dein-Impressum<br />
+                    Stettiner Str. 41<br />
+                    35410 Hungen<br />
+                    Deutschland
                   </p>
                 </div>
 
