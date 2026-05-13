@@ -176,13 +176,7 @@ provide(isModalOpenKey, isModalOpen);
 
 @media (min-width: 768px) {
   .glitch-layer {
-    animation: glitch-shift 9s linear infinite;
-    will-change: background-position, opacity;
     filter: drop-shadow(0 0 6px rgba(0, 255, 200, 0.25));
-  }
-
-  .glitch-layer::after {
-    animation: glitch-drift 14s ease-in-out infinite alternate;
   }
 }
 </style>

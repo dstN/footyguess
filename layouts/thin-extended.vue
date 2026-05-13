@@ -133,14 +133,4 @@ provide(isModalOpenKey, isModalOpen);
     opacity: 0.85;
   }
 }
-
-@media (min-width: 768px) {
-  .glitch-layer {
-    animation: glitch-shift 9s linear infinite;
-    will-change: background-position, opacity;
-  }
-  .glitch-layer::after {
-    animation: glitch-drift 14s ease-in-out infinite alternate;
-  }
-}
 </style>

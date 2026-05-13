@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   // SEO & Meta Tags
   app: {
     head: {
-      htmlAttrs: { lang: "en" },
+      htmlAttrs: { lang: "en", class: "dark" },
       title: "FootyGuess - Guess the Player from Their Transfer Trail",
       meta: [
         { charset: "utf-8" },
@@ -112,6 +112,7 @@ export default defineNuxtConfig({
 
   modules: ["@nuxt/ui"],
   ui: {
+    colorMode: false,
     theme: {
       colors: [
         "primary",
