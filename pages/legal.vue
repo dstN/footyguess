@@ -96,14 +96,19 @@
                     2. Hosting and Server Log Files
                   </p>
                   <p class="mt-2">
-                    My hosting provider (Netcup) automatically collects
-                    information in server log files (IP address, browser type,
-                    time). This is technically necessary to display the site
-                    securely.
+                    This site is hosted by netcup GmbH, Daimlerstraße 25, 76185
+                    Karlsruhe, Germany; a data processing agreement under Art.
+                    28 GDPR is in place with them. The hosting provider
+                    automatically collects information in server log files (IP
+                    address, browser type, time). This is technically necessary
+                    to display the site securely. The servers are located in
+                    Germany; no transfer to a third country takes place.
                   </p>
                   <p class="mt-2">
-                    I have configured daily log rotation. IP addresses are
-                    automatically deleted after 24 hours at the latest.
+                    I have configured daily log rotation. The access logs are
+                    overwritten automatically and deleted after 48 hours at the
+                    latest. No visitor statistics are generated; log analysis is
+                    switched off in the hosting panel.
                   </p>
                 </div>
 
