@@ -105,10 +105,10 @@
                     Germany; no transfer to a third country takes place.
                   </p>
                   <p class="mt-2">
-                    I have configured daily log rotation. The access logs are
-                    overwritten automatically and deleted after 48 hours at the
-                    latest. No visitor statistics are generated; log analysis is
-                    switched off in the hosting panel.
+                    The web server's access and error logs are rotated daily and
+                    deleted after 3 days at the latest. No visitor statistics
+                    are generated; log analysis is switched off in the hosting
+                    panel.
                   </p>
                 </div>
 
