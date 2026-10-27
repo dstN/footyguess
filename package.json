@@ -19,23 +19,23 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.3.0",
+    "@nuxt/ui": "^4.8.1",
     "bad-words-next": "^3.2.0",
     "better-sqlite3": "^11.9.1",
-    "nuxt": "^4.2.2",
-    "puppeteer": "^24.5.0",
+    "nuxt": "^4.6.2",
+    "puppeteer": "^25.16.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "valibot": "^1.0.0"
+    "valibot": "^1.5.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/better-sqlite3": "^7.6.12",
-    "@vitest/ui": "^3.0.5",
+    "@vitest/ui": "^5.0.5",
     "husky": "^9.1.7",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tsx": "^4.19.3",
-    "vitest": "^3.0.5"
+    "vitest": "^5.0.5"
   }
 }
