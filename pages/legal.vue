@@ -96,7 +96,7 @@
                     2. Hosting and Server Log Files
                   </p>
                   <p class="mt-2">
-                    This site is hosted by netcup GmbH, Daimlerstraße 25, 76185
+                    This site is hosted by netcup GmbH, Emmy-Noether-Straße 10, 76131
                     Karlsruhe, Germany; a data processing agreement under Art.
                     28 GDPR is in place with them. The hosting provider
                     automatically collects information in server log files (IP
