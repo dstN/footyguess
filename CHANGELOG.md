@@ -2,14 +2,23 @@
 
 # Changelog
 
+## [1.6.7] - 2026-11-23
+
+### Changed
+
+- Plainer in-game texts: the "What's new" modal lists its changes without bold
+  labels, the help modal and the start page use full stops instead of dashes,
+  and the clue cards separate their stats with "·". Numbers and rules are
+  unchanged.
+
 ## [1.6.6] - 2026-11-23
 
 ### Documentation
 
 - README, ARCHITECTURE, IMPROVEMENTS, PRODUCTION and this changelog use plain
   wording: status emojis are text, bold labels and dashes between clauses are
-  gone, and so are phrases like "massively" or "transforms". Versions, dates
-  and code blocks are unchanged.
+  gone, and so are phrases like "massively" or "transforms". Versions, dates and
+  code blocks are unchanged.
 
 ### Fixed
 

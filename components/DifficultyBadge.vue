@@ -32,7 +32,7 @@
             v-if="streakBonusPct > 0"
             class="mt-1"
           >
-            Streak bonus: +{{ streakBonusPct }}% → up to
+            Streak bonus: +{{ streakBonusPct }}%, up to
             <span class="text-mew-500">{{ potentialWithStreak }} pts</span>
           </div>
         </div>

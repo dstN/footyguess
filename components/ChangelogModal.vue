@@ -44,18 +44,15 @@
             </p>
             <ul class="list-inside list-disc space-y-1 pl-2">
               <li>
-                <strong class="text-white">Delete Page:</strong> Visit
+                Visit
                 <code class="text-primary-400">/delete</code> to remove your
                 session.
               </li>
               <li>
-                <strong class="text-white">Full Cleanup:</strong> Removes
-                scores, rounds, leaderboard entries, and session data.
+                Deleting removes scores, rounds, leaderboard entries and session
+                data.
               </li>
-              <li>
-                <strong class="text-white">Auto-Detection:</strong> Pre-fills
-                your current session ID for convenience.
-              </li>
+              <li>Your current session ID is filled in for you.</li>
             </ul>
           </div>
         </section>
@@ -77,21 +74,15 @@
             >
           </h3>
           <div class="space-y-3 text-sm text-slate-300">
-            <p>
-              Overhauled difficulty tiers with strict criteria and exceptions.
-            </p>
+            <p>Stricter difficulty tiers, with two exceptions.</p>
             <ul class="list-inside list-disc space-y-1 pl-2">
               <li>
-                <strong class="text-white">Stricter Thresholds:</strong> Require
-                BOTH international AND top-5 league appearances.
+                Easy players now need both international and top-5 league
+                appearances.
               </li>
+              <li>25+ CL goals or 20+ G+A also count as Easy.</li>
               <li>
-                <strong class="text-white">CL Excellence:</strong> 25+ CL goals
-                or 20+ G+A qualify as Easy.
-              </li>
-              <li>
-                <strong class="text-white">GK Recognition:</strong> 325+ clean
-                sheets with international experience → Easy.
+                So do goalkeepers with 325+ clean sheets and international caps.
               </li>
             </ul>
           </div>
@@ -115,31 +106,23 @@
           </h3>
           <div class="space-y-3 text-sm text-slate-300">
             <p>
-              A major update to data integrity, search, and gameplay balance.
+              Fixes to player data and search, plus a fairer difficulty mix.
             </p>
             <ul class="list-inside list-disc space-y-1 pl-2">
               <li>
-                <strong class="text-white">Better Default Difficulty:</strong>
-                Now ensures an equal 33% chance for Easy, Medium, and Hard
-                players (was skewed to 73% Hard).
+                Default difficulty now picks Easy, Medium and Hard players 33%
+                of the time each (it used to be 73% Hard).
               </li>
               <li>
-                <strong class="text-white">Smart Search:</strong> Duplicate
-                names like "Fernando" now show full names for clarity.
+                Search shows full names when several players share one, like
+                "Fernando".
               </li>
               <li>
-                <strong class="text-white">Data Repair:</strong> Fixed "unknown"
-                positions and normalized search names (fixes accents like
+                Fixed "unknown" positions and accents in search names (like
                 "Touré").
               </li>
-              <li>
-                <strong class="text-white">New Players:</strong> Added ~180 new
-                Top Scorers & Ballon d'Or winners.
-              </li>
-              <li>
-                <strong class="text-white">Score Hiding:</strong> Tap the live
-                score badge to hide it if you prefer avoiding spoilers/stress.
-              </li>
+              <li>Added ~180 top scorers and Ballon d'Or winners.</li>
+              <li>Tap the live score badge to hide it.</li>
             </ul>
           </div>
         </section>
@@ -164,13 +147,9 @@
             class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
           >
             <li>
-              <strong class="text-white">Fixed Keyboard:</strong> Input stays
-              visible above the virtual keyboard on mobile.
+              The input stays visible above the virtual keyboard on mobile.
             </li>
-            <li>
-              <strong class="text-white">No Scroll Jumps:</strong> Fixed page
-              jumping when focusing the guess input.
-            </li>
+            <li>The page no longer jumps when you focus the guess input.</li>
           </ul>
         </section>
 
@@ -193,13 +172,10 @@
           <ul
             class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
           >
+            <li>The input stays active while a guess is checked.</li>
             <li>
-              <strong class="text-white">Mobile Keyboard:</strong> Input stays
-              active while checking guesses.
-            </li>
-            <li>
-              <strong class="text-white">Mobile Layout:</strong> Switched to
-              dynamic viewport to prevent scrolling jumps.
+              Dynamic viewport units stop the layout from jumping while
+              scrolling.
             </li>
           </ul>
         </section>
@@ -223,14 +199,8 @@
           <ul
             class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
           >
-            <li>
-              <strong class="text-white">Calmer Live Score:</strong> Score stays
-              stable when not changing, only uses decimals during countdowns.
-            </li>
-            <li>
-              <strong class="text-white">Session Integrity:</strong> Better
-              handling of expired sessions with auto-recovery.
-            </li>
+            <li>The live score only shows decimals while it counts down.</li>
+            <li>Expired sessions recover automatically.</li>
           </ul>
         </section>
 
@@ -253,10 +223,7 @@
           <ul
             class="list-inside list-disc space-y-1 pl-2 text-sm text-slate-300"
           >
-            <li>
-              <strong class="text-white">Grace Period:</strong> Adjusted to 2.5s
-              per club (max 15s) for better pacing.
-            </li>
+            <li>The grace period is now 2.5s per club (max 15s).</li>
           </ul>
         </section>
 

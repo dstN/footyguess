@@ -53,7 +53,7 @@
           </h3>
           <ol class="list-inside list-decimal space-y-2 text-sm text-slate-300">
             <li>
-              Study the <strong class="text-white">transfer timeline</strong> —
+              Study the <strong class="text-white">transfer timeline</strong>:
               clubs and dates are shown
             </li>
             <li>
@@ -62,7 +62,7 @@
             </li>
             <li>Type your guess in the search box and select the player</li>
             <li>
-              Hit <strong class="text-white">Submit</strong> — correct guesses
+              Hit <strong class="text-white">Submit</strong>. Correct guesses
               build your streak!
             </li>
           </ol>
@@ -207,9 +207,9 @@
               </div>
               <p class="mt-2 text-xs text-slate-400">
                 Tiers are based on weighted international + top-5 league
-                appearances, with exceptions for Champions League excellence
-                (25+ CL goals or 20+ G+A qualify as Easy) and goalkeeper clean
-                sheets (325+ CS qualify as Easy).
+                appearances, with exceptions for Champions League scorers (25+
+                CL goals or 20+ G+A qualify as Easy) and goalkeeper clean sheets
+                (325+ CS qualify as Easy).
               </p>
             </div>
 
@@ -254,8 +254,8 @@
                     name="i-lucide-clock"
                     class="mr-1 inline h-3 w-3"
                   />
-                  Grace period: 2.5s per player transfer (max 15s) — timer
-                  starts after grace.
+                  Grace period: 2.5s per player transfer (max 15s). The timer
+                  starts after the grace period.
                 </p>
                 <p class="mt-1 text-xs text-slate-500">
                   <UIcon
@@ -324,7 +324,7 @@
                 Wrong Guess Penalty
               </h4>
               <p class="mb-2 text-xs text-slate-400">
-                Be careful! Wrong guesses have consequences:
+                What wrong guesses cost:
               </p>
               <div class="space-y-2 text-xs text-slate-300">
                 <div class="rounded bg-black/30 p-2">

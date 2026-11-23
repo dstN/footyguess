@@ -82,8 +82,8 @@
               <div>
                 <h3 class="font-medium text-white">Study the Timeline</h3>
                 <p class="text-sm text-slate-400">
-                  Examine the player's transfer history — clubs and dates are
-                  revealed, but not the name.
+                  The player's transfer history shows clubs and dates, but not
+                  the name.
                 </p>
               </div>
             </div>

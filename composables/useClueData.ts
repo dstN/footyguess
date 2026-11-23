@@ -92,7 +92,7 @@ export function useClueData(player: Ref<Player | null>) {
     const totals = player.value.total_stats || {};
     const totalsClue =
       totals && (totals.appearances || totals.goals || totals.assists)
-        ? `${totals.appearances ?? "?"} apps — ${totals.goals ?? "?"} G / ${totals.assists ?? "?"} A`
+        ? `${totals.appearances ?? "?"} apps · ${totals.goals ?? "?"} G / ${totals.assists ?? "?"} A`
         : null;
 
     const minutesPerGoal =
@@ -114,7 +114,7 @@ export function useClueData(player: Ref<Player | null>) {
 
     const discipline =
       totals && (totals.yellow_cards || totals.red_cards)
-        ? `${totals.yellow_cards ?? 0} yellows — ${totals.red_cards ?? 0} reds`
+        ? `${totals.yellow_cards ?? 0} yellows · ${totals.red_cards ?? 0} reds`
         : null;
 
     const mostApps = getMostAppearancesCompetition(player.value.stats);

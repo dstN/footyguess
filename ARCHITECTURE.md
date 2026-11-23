@@ -445,10 +445,10 @@ transfers). Timer only starts counting after grace period.
 
 ### 8.2 Deferred Concerns
 
-| Concern                    | Status                     | Reference         |
-| -------------------------- | -------------------------- | ----------------- |
-| Lazy DB initialization     | Accepted trade-off         | Issue #74         |
-| Production-grade analytics | Deferred                   | No immediate need |
+| Concern                    | Status             | Reference         |
+| -------------------------- | ------------------ | ----------------- |
+| Lazy DB initialization     | Accepted trade-off | Issue #74         |
+| Production-grade analytics | Deferred           | No immediate need |
 
 ---
 
