@@ -1,11 +1,11 @@
 # Architecture & Technical Direction
 
-> **Status**: Living Document  
-> **Last Updated**: 2026-01-17  
-> **Scope**: Nuxt 4 / Nuxt UI 4 — FootyGuess
+> Status: Living Document  
+> Last Updated: 2026-01-17  
+> Scope: Nuxt 4 / Nuxt UI 4, FootyGuess
 
-This document defines the architectural intent, conventions, and guardrails for
-the FootyGuess codebase. It is **normative**, not evaluative.
+Architectural intent, conventions and guardrails for the FootyGuess codebase.
+The rules here are binding; the document does not grade the current code.
 
 ---
 
@@ -15,21 +15,19 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 
 | Priority | Goal        | Rationale                                                                 |
 | -------- | ----------- | ------------------------------------------------------------------------- |
-| **P0**   | Stability   | A working game is more valuable than a perfect one                        |
-| **P0**   | Clarity     | Code should be understandable without tribal knowledge                    |
-| **P1**   | Simplicity  | Prefer explicit patterns over clever abstractions                         |
-| **P1**   | Type Safety | TypeScript exists to catch errors at compile time, not to be circumvented |
-| **P2**   | Testability | Critical paths (scoring, guessing) must remain testable                   |
+| P0       | Stability   | A working game is more valuable than a perfect one                        |
+| P0       | Clarity     | Code should be understandable without tribal knowledge                    |
+| P1       | Simplicity  | Prefer explicit patterns over clever abstractions                         |
+| P1       | Type Safety | TypeScript exists to catch errors at compile time, not to be circumvented |
+| P2       | Testability | Critical paths (scoring, guessing) must remain testable                   |
 
 ### 1.2 Explicit Non-Goals
 
-- **SSR optimization** — The app runs with `ssr: false` (SPA mode). This is
-  intentional.
-- **Multi-tenancy** — Single-instance SQLite is sufficient for the expected
-  scale.
-- **Real-time collaboration** — No WebSocket or push-based features are planned.
-- **Mobile apps** — Web-only. No Capacitor/Electron wrappers.
-- **Internationalization** — English-only at this time.
+- SSR optimization: the app runs with `ssr: false` (SPA mode) on purpose.
+- Multi-tenancy: single-instance SQLite is enough for the expected scale.
+- Real-time collaboration: no WebSocket or push-based features are planned.
+- Mobile apps: web only, no Capacitor/Electron wrappers.
+- Internationalization: English only for now.
 
 ---
 
@@ -72,18 +70,17 @@ the FootyGuess codebase. It is **normative**, not evaluative.
 
 ### 2.2 Client/Server Boundary
 
-| Concern        | Handled By         | Notes                                    |
-| -------------- | ------------------ | ---------------------------------------- |
-| Routing        | `pages/`           | File-based, SPA mode                     |
-| UI Rendering   | `components/`      | Nuxt UI 4 primitives                     |
-| Client State   | `composables/`     | Reactive refs, orchestration             |
-| Business Logic | `server/services/` | **All scoring, validation, persistence** |
-| Data Access    | `server/db/`       | Single SQLite connection                 |
-| External APIs  | `server/scraper/`  | External data ingestion (with DLQ)       |
+| Concern        | Handled By         | Notes                                |
+| -------------- | ------------------ | ------------------------------------ |
+| Routing        | `pages/`           | File-based, SPA mode                 |
+| UI Rendering   | `components/`      | Nuxt UI 4 primitives                 |
+| Client State   | `composables/`     | Reactive refs, orchestration         |
+| Business Logic | `server/services/` | All scoring, validation, persistence |
+| Data Access    | `server/db/`       | Single SQLite connection             |
+| External APIs  | `server/scraper/`  | External data ingestion (with DLQ)   |
 
-**Key principle**: The client is a **presentation layer**. All authoritative
-game state (scores, streaks, clue counts) lives server-side and is validated via
-tokens.
+The client only presents data. All authoritative game state (scores, streaks,
+clue counts) lives server-side and is validated via tokens.
 
 ### 2.3 Data Flow
 
@@ -142,18 +139,18 @@ export default defineEventHandler(async (event) => {
 
 ### 3.3 Composable vs Utility
 
-| Use a **Composable** (`composables/`) when... | Use a **Utility** (`utils/`) when... |
-| --------------------------------------------- | ------------------------------------ |
-| You need Vue reactivity (refs, computed)      | The function is pure                 |
-| You need lifecycle hooks (onMounted, watch)   | No Vue dependency required           |
-| State must be shared across components        | Stateless transformation/validation  |
-| You're orchestrating other composables        | Simple formatting, calculation       |
+| Use a Composable (`composables/`) when...   | Use a Utility (`utils/`) when...    |
+| ------------------------------------------- | ----------------------------------- |
+| You need Vue reactivity (refs, computed)    | The function is pure                |
+| You need lifecycle hooks (onMounted, watch) | No Vue dependency required          |
+| State must be shared across components      | Stateless transformation/validation |
+| You're orchestrating other composables      | Simple formatting, calculation      |
 
-**Example**:
+Examples:
 
-- `useGameSession` — composable (manages reactive session state)
-- `scoring-constants.ts` — utility (pure constants)
-- `sanitize.ts` — utility (pure string transformation)
+- `useGameSession`: composable (manages reactive session state)
+- `scoring-constants.ts`: utility (pure constants)
+- `sanitize.ts`: utility (pure string transformation)
 
 ---
 
@@ -161,10 +158,10 @@ export default defineEventHandler(async (event) => {
 
 ### 4.1 Component Composition
 
-- **Use Nuxt UI components directly** — `UButton`, `UModal`, `UInput`, etc.
-- **Do not wrap Nuxt UI components** just to add default props. Use the
+- Use Nuxt UI components (`UButton`, `UModal`, `UInput`, etc.) directly.
+- Do not wrap Nuxt UI components just to add default props. Use the
   `app.config.ts` theme system instead.
-- **Slots and props are the API** — Avoid reaching into component internals.
+- Work through slots and props; do not reach into component internals.
 
 ### 4.2 Styling Boundaries
 
@@ -177,7 +174,7 @@ export default defineEventHandler(async (event) => {
 
 ### 4.3 What Is Intentionally Not Abstracted
 
-These are used **directly** without wrapper components:
+These are used directly without wrapper components:
 
 - `UButton`, `UModal`, `UInput`, `UToast`
 - `UIcon` (via Lucide icons: `i-lucide-*`)
@@ -189,16 +186,16 @@ These are used **directly** without wrapper components:
 
 ### 5.1 Typing Philosophy
 
-| Principle                                  | Practice                                      |
-| ------------------------------------------ | --------------------------------------------- |
-| **Strict mode enabled**                    | `typescript: { strict: true }` in nuxt.config |
-| **Explicit over inferred** for public APIs | Service functions have explicit return types  |
-| **Inferred for implementation details**    | Local variables, intermediate values          |
-| **No `any` in application code**           | Scraper files are a known exception (see §8)  |
+| Principle                              | Practice                                      |
+| -------------------------------------- | --------------------------------------------- |
+| Strict mode enabled                    | `typescript: { strict: true }` in nuxt.config |
+| Explicit over inferred for public APIs | Service functions have explicit return types  |
+| Inferred for implementation details    | Local variables, intermediate values          |
+| No `any` in application code           | Scraper files are a known exception (see §8)  |
 
 ### 5.2 Error & Return Contracts
 
-**API Routes** return `ApiResponse<T>`:
+API Routes return `ApiResponse<T>`:
 
 ```typescript
 interface ApiResponse<T = unknown> {
@@ -212,7 +209,7 @@ interface ApiResponse<T = unknown> {
 }
 ```
 
-**Services** return typed data or throw:
+Services return typed data or throw:
 
 ```typescript
 // Good: explicit return type
@@ -222,7 +219,7 @@ function getRound(roundId: string): RoundData | undefined { ... }
 function verifyAndValidateRound(token: string, roundId: string): { sessionId: string; payload: RoundPayload }
 ```
 
-**Composables** return typed state objects:
+Composables return typed state objects:
 
 ```typescript
 function useGameSession() {
@@ -238,16 +235,16 @@ function useGameSession() {
 
 ### 6.1 Error Hierarchy
 
-| Layer          | Error Handling Strategy                                          |
-| -------------- | ---------------------------------------------------------------- |
-| **DB/Service** | Throw `AppError` for logic failures; standard Error for crashes  |
-| **API Route**  | Catch via `handleApiError()`, which logs and formats response    |
-| **Composable** | Catch, set `isError` ref, show toast, log to console             |
-| **Component**  | Should not catch; propagate to composable or use `ErrorBoundary` |
+| Layer      | Error Handling Strategy                                          |
+| ---------- | ---------------------------------------------------------------- |
+| DB/Service | Throw `AppError` for logic failures; standard Error for crashes  |
+| API Route  | Catch via `handleApiError()`, which logs and formats response    |
+| Composable | Catch, set `isError` ref, show toast, log to console             |
+| Component  | Should not catch; propagate to composable or use `ErrorBoundary` |
 
 ### 6.2 Logging Expectations
 
-**Server-side**: Use the structured logger (`server/utils/logger.ts`):
+Server-side: Use the structured logger (`server/utils/logger.ts`):
 
 ```typescript
 import { logError, logInfo } from "../utils/logger.ts";
@@ -256,7 +253,7 @@ logError("guess", "Token verification failed", error, { roundId });
 logInfo("round", "New round created", { sessionId, playerId });
 ```
 
-**Client-side**: Use the unified client logger (`utils/client-logger.ts`):
+Client-side: Use the unified client logger (`utils/client-logger.ts`):
 
 ```typescript
 import { logError, logInfo } from "~/utils/client-logger";
@@ -273,14 +270,14 @@ logError("useGameSession", "Failed to load player", err);
 | Round expired       | 410 + prompt to start new round |
 | Player not found    | 404 + suggest search            |
 | Token invalid       | 401 + session refresh           |
-| **DB corruption**   | 500 + crash (unrecoverable)     |
+| DB corruption       | 500 + crash (unrecoverable)     |
 | Missing env config  | Crash at startup (fail fast)    |
 
 ### 6.4 Health & Monitoring
 
-- **Health Check**: `/api/health` monitors DB connectivity
-- **Security Headers**: Standardized headers via middleware
-- **Rate Limiting**: Enforced on all public endpoints
+- `/api/health` checks DB connectivity
+- Middleware sets the security headers
+- Rate limiting applies to all public endpoints
 
 ---
 
@@ -334,20 +331,19 @@ getRandomPlayer({ tierFilter: X })
 | Hard   | 3×         | 300 pts        | Obscure players                    |
 | Ultra  | 4×         | 400 pts        | Very obscure (not in Default pool) |
 
-**"Default" difficulty**: Randomly selects Easy, Medium, or Hard (excludes
-Ultra).
+"Default" difficulty: randomly selects Easy, Medium, or Hard (excludes Ultra).
 
 ### 7.4 Loss Conditions (v1.4.0)
 
 A round can end in three distinct outcomes:
 
-| Outcome       | Trigger                       | Score | Streak      | UI Treatment            |
-| ------------- | ----------------------------- | ----- | ----------- | ----------------------- |
-| **Win**       | Correct guess                 | ≥ 1   | Incremented | Green checkmark, points |
-| **Surrender** | User clicks "Give Up"         | 0     | Reset to 0  | White flag icon         |
-| **Aborted**   | 6th wrong guess (max reached) | 0     | Reset to 0  | Red X icon, "Game Over" |
+| Outcome   | Trigger                       | Score | Streak      | UI Treatment            |
+| --------- | ----------------------------- | ----- | ----------- | ----------------------- |
+| Win       | Correct guess                 | ≥ 1   | Incremented | Green checkmark, points |
+| Surrender | User clicks "Give Up"         | 0     | Reset to 0  | White flag icon         |
+| Aborted   | 6th wrong guess (max reached) | 0     | Reset to 0  | Red X icon, "Game Over" |
 
-**Wrong Guess Penalty**:
+Wrong Guess Penalty:
 
 - Each wrong guess applies a `-6%` penalty (malice)
 - Maximum 5 wrong guesses allowed (-30% total)
@@ -389,7 +385,7 @@ User selects difficulty → stored in localStorage
             usePlayGame reads from localStorage if no query param
 ```
 
-**Persistence Rules**:
+Persistence Rules:
 
 - Difficulty is written to localStorage when user selects it
 - On `/play` mount: if `?difficulty` query param exists, use it; else read from
@@ -399,9 +395,9 @@ User selects difficulty → stored in localStorage
 
 ### 7.6 Scoring Formula (v1.4.2)
 
-**ALL ADDITIVE** formula - every bonus/penalty is a percentage of
-`adjustedBase`. **Each penalty capped at 5 uses = -30%**, ensuring minimum 10%
-score.
+The formula is all-additive: every bonus and penalty is a percentage of
+`adjustedBase`. Each penalty is capped at 5 uses (-30%), so the score never
+drops below 10%.
 
 ```text
 adjustedBase = base × multiplier
@@ -413,13 +409,13 @@ score = adjustedBase
       + timeBonus        (-0.1% per sec after 5min, max -30%, up to +120%)
 ```
 
-**Example worst case** (Easy, 5 clues, 5 wrong guesses, 10+ minutes):
+Example worst case (Easy, 5 clues, 5 wrong guesses, 10+ minutes):
 
 ```text
 100 (base) - 30 (clues) - 30 (malice) - 30 (time) = 10 pts
 ```
 
-**Grace period**: Time freeze of 2.5s per player transfer (capped at 15s for 6+
+Grace period: time freeze of 2.5s per player transfer (capped at 15s for 6+
 transfers). Timer only starts counting after grace period.
 
 ### 7.7 Key Files
@@ -441,11 +437,11 @@ transfers). Timer only starts counting after grace period.
 
 ### 8.1 Current Priorities
 
-- **Client bundle size** — Vite chunking enabled, vendor split
-- **DB query efficiency** — Indexes on frequently queried columns
-- **Rate limiting** — IP and session-based to prevent abuse
-- **WAL mode** — SQLite configured for concurrent reads
-- **Robustness** — Client side timeouts, dead letter queues, and session cleanup
+- Client bundle size: Vite chunking enabled, vendor split
+- DB query efficiency: indexes on frequently queried columns
+- Rate limiting: by IP and session, against abuse
+- WAL mode: SQLite configured for concurrent reads
+- Failure handling: client-side timeouts, dead letter queues and session cleanup
 
 ### 8.2 Deferred Concerns
 
@@ -460,11 +456,11 @@ transfers). Timer only starts counting after grace period.
 
 ### 9.1 Intentional Technical Debt
 
-| Issue                             | Category    | Decision                                                              |
-| --------------------------------- | ----------- | --------------------------------------------------------------------- |
-| **#98**: Scraper uses `any` types | TypeScript  | Accepted. Scraper is isolated, external API shapes are unstable.      |
-| **#74**: Sync DB init             | Performance | Accepted. Simplicity > serverless cold-start optimization.            |
-| **#110**: DB type assertions      | TypeScript  | Accepted for now. Runtime validation adds overhead; schema is stable. |
+| Issue                         | Category    | Decision                                                              |
+| ----------------------------- | ----------- | --------------------------------------------------------------------- |
+| #98: Scraper uses `any` types | TypeScript  | Accepted. Scraper is isolated, external API shapes are unstable.      |
+| #74: Sync DB init             | Performance | Accepted. Simplicity > serverless cold-start optimization.            |
+| #110: DB type assertions      | TypeScript  | Accepted for now. Runtime validation adds overhead; schema is stable. |
 
 ---
 
@@ -487,7 +483,7 @@ transfers). Timer only starts counting after grace period.
 | Pattern                      | When Acceptable                                                  |
 | ---------------------------- | ---------------------------------------------------------------- |
 | Type assertions (`as T`)     | After parsing (parseSchema) or for DB results with stable schema |
-| `console.log` in client code | **Only during development debugging**; use `logInfo` otherwise   |
+| `console.log` in client code | Only during development debugging; use `logInfo` otherwise       |
 | Inline styles                | One-off animations or dynamic values only                        |
 | Direct localStorage access   | Only in composables, with try/catch for private browsing         |
 
@@ -512,12 +508,12 @@ transfers). Timer only starts counting after grace period.
 
 ### Absolute Rules
 
-1. **Never trust client-provided data** — Always validate server-side.
-2. **Never store secrets in code** — Use environment variables.
-3. **Never skip rate limiting** — Every public endpoint must be protected.
-4. **Never mutate shared refs directly** — Use computed or wrapper functions.
-5. **Never use `@ts-ignore` without a comment explaining why**.
-6. **Never wrap Nuxt UI components just to change defaults** — Use theme config.
+1. Validate client-provided data on the server.
+2. Keep secrets out of code; use environment variables.
+3. Rate-limit every public endpoint.
+4. Do not mutate shared refs directly; use computed or wrapper functions.
+5. Every `@ts-ignore` needs a comment explaining why.
+6. Do not wrap Nuxt UI components just to change defaults; use theme config.
 
 ---
 
@@ -525,15 +521,15 @@ transfers). Timer only starts counting after grace period.
 
 ### 12.1 Accessibility Requirements (WCAG 2.1 Target: AA)
 
-| Requirement                 | Implementation                                                          |
-| --------------------------- | ----------------------------------------------------------------------- |
-| **Reduced motion**          | `@media (prefers-reduced-motion)` in `main.css` disables all animations |
-| **Focus management**        | `utils/accessibility.ts` provides `createFocusTrap()`, `restoreFocus()` |
-| **Screen reader announces** | `announceToScreenReader()` for dynamic content changes                  |
-| **Skip links**              | `skipToMainContent()` utility available                                 |
-| **ARIA labels**             | All interactive elements must have `aria-label` or visible text         |
-| **Keyboard navigation**     | All modals trap focus; Escape closes modals                             |
-| **Color contrast**          | Text on dark backgrounds uses `slate-300` or lighter (4.5:1 minimum)    |
+| Requirement             | Implementation                                                          |
+| ----------------------- | ----------------------------------------------------------------------- |
+| Reduced motion          | `@media (prefers-reduced-motion)` in `main.css` disables all animations |
+| Focus management        | `utils/accessibility.ts` provides `createFocusTrap()`, `restoreFocus()` |
+| Screen reader announces | `announceToScreenReader()` for dynamic content changes                  |
+| Skip links              | `skipToMainContent()` utility available                                 |
+| ARIA labels             | All interactive elements must have `aria-label` or visible text         |
+| Keyboard navigation     | All modals trap focus; Escape closes modals                             |
+| Color contrast          | Text on dark backgrounds uses `slate-300` or lighter (4.5:1 minimum)    |
 
 ### 12.2 Accessibility Pattern
 
@@ -552,12 +548,12 @@ watch(isOpen, (open) => {
 
 ### 12.3 Mobile Optimization
 
-| Concern             | Current State                                   |
-| ------------------- | ----------------------------------------------- |
-| **Touch targets**   | Buttons use `size="xl"` (≥44px) on primary CTAs |
-| **Responsive grid** | Tailwind `sm:` / `md:` breakpoints              |
-| **Fixed footer**    | GuessFooter uses `fixed bottom-0` on mobile     |
-| **Text scaling**    | No fixed `px` font sizes in body text           |
+| Concern         | Current State                                   |
+| --------------- | ----------------------------------------------- |
+| Touch targets   | Buttons use `size="xl"` (≥44px) on primary CTAs |
+| Responsive grid | Tailwind `sm:` / `md:` breakpoints              |
+| Fixed footer    | GuessFooter uses `fixed bottom-0` on mobile     |
+| Text scaling    | No fixed `px` font sizes in body text           |
 
 ### 12.4 Accessibility Decision Rules
 
@@ -593,10 +589,11 @@ watch(isOpen, (open) => {
 
 The `.llm/` directory contains framework documentation for AI assistants:
 
-- `.llm/nuxt/llms.txt` — Nuxt 4 documentation summary
-- `.llm/nuxtui/llms.txt` — Nuxt UI 4 documentation summary
+- `.llm/nuxt/llms.txt`: Nuxt 4 documentation summary
+- `.llm/nuxtui/llms.txt`: Nuxt UI 4 documentation summary
 
-**These files override general framework knowledge** when working with AI tools.
+When working with AI tools, these files take precedence over general framework
+knowledge.
 
 ---
 

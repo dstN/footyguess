@@ -1,10 +1,8 @@
 # Production Readiness Plan
 
-> **Status**: Production Ready ✅ **Last Updated**: 2026-01-18 **Version**:
-> 1.6.1
+> Status: production ready. Last updated: 2026-01-18. Version: 1.6.1.
 
-This document outlines the production deployment status and requirements for
-FootyGuess.
+Deployment status and requirements for FootyGuess.
 
 ---
 
@@ -22,21 +20,21 @@ FootyGuess.
 
 ## 1. Current State
 
-### Completed ✅
+### Completed
 
-| Area                | Status   | Version |
-| ------------------- | -------- | ------- |
-| Core Game Logic     | ✅ Ready | v1.0.0  |
-| Service Layer       | ✅ Ready | v1.0.0  |
-| Rate Limiting       | ✅ Ready | v1.0.0  |
-| Error Handling      | ✅ Ready | v1.0.0  |
-| Security Headers    | ✅ Ready | v1.0.0  |
-| Health Check API    | ✅ Ready | v1.0.0  |
-| Test Coverage       | ✅ Ready | v1.0.0  |
-| Surrender Feature   | ✅ Ready | v1.1.0  |
-| Exploit Prevention  | ✅ Ready | v1.1.0  |
-| SEO Optimization    | ✅ Ready | v1.2.0  |
-| Favicons & Manifest | ✅ Ready | v1.2.0  |
+| Area                | Status | Version |
+| ------------------- | ------ | ------- |
+| Core Game Logic     | Ready  | v1.0.0  |
+| Service Layer       | Ready  | v1.0.0  |
+| Rate Limiting       | Ready  | v1.0.0  |
+| Error Handling      | Ready  | v1.0.0  |
+| Security Headers    | Ready  | v1.0.0  |
+| Health Check API    | Ready  | v1.0.0  |
+| Test Coverage       | Ready  | v1.0.0  |
+| Surrender Feature   | Ready  | v1.1.0  |
+| Exploit Prevention  | Ready  | v1.1.0  |
+| SEO Optimization    | Ready  | v1.2.0  |
+| Favicons & Manifest | Ready  | v1.2.0  |
 
 ### Test Coverage
 
@@ -81,25 +79,25 @@ LOG_LEVEL=info
 
 ## 3. Security
 
-### Implemented ✅
+### Implemented
 
-- **Rate Limiting**: All 12 API endpoints protected
-- **Security Headers**: `server/middleware/security-headers.ts`
+- Rate limiting on all 12 API endpoints
+- Security headers from `server/middleware/security-headers.ts`:
   - X-Content-Type-Options: nosniff
   - X-Frame-Options: DENY
   - X-XSS-Protection: 1; mode=block
   - Referrer-Policy: strict-origin-when-cross-origin
   - Permissions-Policy: camera=(), microphone=(), geolocation=()
-- **Token Security**: Round tokens with HMAC signatures, 30-min expiry
-- **Input Validation**: Valibot schemas on all API endpoints
-- **No Secrets in Code**: All credentials via environment variables
+- Round tokens signed with HMAC, valid for 30 minutes
+- Valibot schemas validate input on all API endpoints
+- No secrets in code: all credentials come from environment variables
 
 ### Secrets Audit (2026-01-10)
 
-- ✅ No hardcoded IPs
-- ✅ No hardcoded credentials
-- ✅ No API keys in code
-- ✅ DEPLOYMENT.md removed from git history
+- No hardcoded IPs
+- No hardcoded credentials
+- No API keys in code
+- DEPLOYMENT.md removed from git history
 
 ---
 
@@ -165,7 +163,7 @@ sqlite3 footyguess.db ".backup 'backup.db'"
 
 ### Troubleshooting
 
-**ReadOnly Error**: Ensure write permissions on both file and directory:
+A ReadOnly error means the file or its directory lacks write permission:
 
 ```bash
 chmod 755 /httpdocs/db
@@ -178,7 +176,7 @@ chmod 644 /httpdocs/db/footyguess.db
 
 ### Health Check
 
-**Endpoint**: `GET /api/health`
+Endpoint: `GET /api/health`
 
 ```json
 {

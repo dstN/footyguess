@@ -7,10 +7,10 @@ players based on career statistics, transfer history, and biographical clues.
 
 FootyGuess is a single-player web game that tests your knowledge of professional
 football players. Each round presents a mystery player from a database of real
-career data. You reveal clues incrementally—nationality, position, career stats,
-transfer timeline—and submit guesses until you identify the player correctly.
+career data. You reveal clues one at a time (nationality, position, career
+stats, transfer timeline) and keep guessing until you name the player.
 
-**Choose your difficulty before each game:**
+You pick a difficulty before each game:
 
 | Difficulty | Multiplier | Max Base Score | Description                       |
 | ---------- | ---------- | -------------- | --------------------------------- |
@@ -28,8 +28,8 @@ is validated server-side with rate limiting and secure headers.
 
 ### Prerequisites
 
-- **Node.js** 20+ (LTS recommended)
-- **npm** 9+
+- Node.js 20+ (LTS recommended)
+- npm 9+
 
 ### Installation
 
@@ -74,12 +74,12 @@ footyguess/
 
 ## Tech Stack
 
-- **[Nuxt 4](https://nuxt.com/)** — Full-stack Vue framework (SPA mode)
-- **[Nuxt UI 4](https://ui.nuxt.com/)** — Component library
-- **[SQLite](https://www.sqlite.org/)** + better-sqlite3 — Embedded database
-- **[Valibot](https://valibot.dev/)** — Runtime validation
-- **[Vitest](https://vitest.dev/)** / **[Playwright](https://playwright.dev/)**
-  — Testing
+- [Nuxt 4](https://nuxt.com/): full-stack Vue framework (SPA mode)
+- [Nuxt UI 4](https://ui.nuxt.com/): component library
+- [SQLite](https://www.sqlite.org/) with better-sqlite3: embedded database
+- [Valibot](https://valibot.dev/): runtime validation
+- [Vitest](https://vitest.dev/) and [Playwright](https://playwright.dev/):
+  testing
 
 ## Documentation
 
@@ -98,7 +98,7 @@ The game requires player data. Run the data acquisition process manually:
 npm run scrape
 ```
 
-⚠️ This takes several hours for a full dataset. Data is stored in
+A full dataset takes several hours. The data ends up in
 `server/db/file/footyguess.db`.
 
 ## License

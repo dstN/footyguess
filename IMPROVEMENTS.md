@@ -1,14 +1,12 @@
 # Improvements Roadmap
 
-> **Status**: Living Document **Last Updated**: 2026-01-20 **Scope**: FootyGuess
-> Future Enhancements (with reconciliation status markers)
+> Status: Living Document. Last Updated: 2026-01-20. Scope: FootyGuess future
+> enhancements, with status markers from the reconciliation audits.
 
-This document outlines potential improvements for code stability, game logic,
-frontend experience, and developer experience. Items are categorized by priority
-and effort.
+Possible improvements to code stability, game logic, the frontend and the
+developer experience, each with priority and effort.
 
-All improvements should follow the guidelines in
-[ARCHITECTURE.md](ARCHITECTURE.md).
+All improvements follow the guidelines in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -25,14 +23,13 @@ All improvements should follow the guidelines in
 
 ## 1. Code Stability
 
-### 1.1 Service Layer Completion ✅ DONE
+### 1.1 Service Layer Completion (done)
 
-**Priority**: P1 | **Effort**: Large | **Category**: Architecture
+Priority: P1 | Effort: Large | Category: Architecture
 
-Service layer is now complete. All API routes delegate business logic to service
-functions.
+All API routes delegate business logic to service functions.
 
-**Current State** (as of 2026-01-12):
+Current State (as of 2026-01-12):
 
 ```typescript
 server/services/
@@ -46,21 +43,21 @@ server/services/
 └── index.ts         # ✅ Exports all services
 ```
 
-**Completed Work**:
+Completed Work:
 
-- ✅ `submitScore.ts` now uses leaderboard service functions
-- ✅ All services properly exported from `index.ts`
-- ✅ Validation middleware fixed to match actual endpoint schemas
+- `submitScore.ts` now uses leaderboard service functions
+- All services are exported from `index.ts`
+- Validation middleware fixed to match actual endpoint schemas
 
 ---
 
-### 1.2 TypeScript Strictness ✅ DONE
+### 1.2 TypeScript Strictness (done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Type Safety
+Priority: P2 | Effort: Medium | Category: Type Safety
 
-**Areas to Improve**:
+Areas to Improve:
 
-1. **Eliminate `any` in application code**
+1. Eliminate `any` in application code
 
    ```typescript
    // Before
@@ -78,7 +75,7 @@ server/services/
    }
    ```
 
-2. **Add explicit return types to public functions**
+2. Add explicit return types to public functions
 
    ```typescript
    // Before
@@ -88,7 +85,7 @@ server/services/
    export function calculateScore(params: ScoreParams): ScoreResult { ... }
    ```
 
-3. **Replace type assertions with type guards**
+3. Replace type assertions with type guards
 
    ```typescript
    // Before
@@ -100,7 +97,7 @@ server/services/
    }
    ```
 
-**Files Needing Attention**:
+Files Needing Attention:
 
 - `server/utils/player-parser.ts`
 - `server/middleware/validation.ts`
@@ -110,17 +107,17 @@ server/services/
 
 ---
 
-### 1.3 Error Handling Standardization ✅ DONE
+### 1.3 Error Handling Standardization (done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Reliability
+Priority: P2 | Effort: Medium | Category: Reliability
 
-**Current Issues**:
+Current Issues:
 
 - Mixed use of `setResponseStatus()` and `errorResponse()`
 - Some endpoints return raw data, others use `successResponse()`
 - Inconsistent error logging patterns
 
-**Improvement**: Create error handling utilities
+Improvement: error handling utilities
 
 ```typescript
 // server/utils/error-handler.ts
@@ -148,19 +145,19 @@ export function handleApiError(event: H3Event, error: unknown) {
 
 ---
 
-### 1.4 Test Coverage Expansion ✅ DONE
+### 1.4 Test Coverage Expansion (done)
 
-**Priority**: P1 | **Effort**: Large | **Category**: Testing
+Priority: P1 | Effort: Large | Category: Testing
 
-**Critical Missing Tests** (per ARCHITECTURE.md):
+Critical Missing Tests (per ARCHITECTURE.md):
 
 | File            | Required Tests                           | Priority |
 | --------------- | ---------------------------------------- | -------- |
-| `scoring.ts`    | All scoring calculations                 | **P0**   |
+| `scoring.ts`    | All scoring calculations                 | P0       |
 | `difficulty.ts` | Tier calculations, downgrade rules       | P1       |
 | `token.ts`      | Token creation, verification, expiration | P1       |
 
-**Recommended Test Structure**:
+Recommended Test Structure:
 
 ```typescript
 // tests/scoring.test.ts
@@ -185,7 +182,7 @@ describe('calculateScore', () => {
 });
 ```
 
-**Additional Testing Improvements**:
+Additional Testing Improvements:
 
 - Add integration tests for full game flow
 - Create typed test fixtures (no `as unknown as Player`)
@@ -194,38 +191,37 @@ describe('calculateScore', () => {
 
 ### Recent Test Fixes (v1.4.0)
 
-A quick summary of the test updates applied to align the test-suite with recent
-game logic changes:
+Test updates after the game logic changes:
 
-- **Added** a `useRoute` mock to the global test setup to provide `route.query`
-  access for route-aware composables (tests/setup.ts).
-- **Updated** difficulty multiplier expectations in `tests/difficulty.test.ts`
-  to reflect new multipliers (1×, 2×, 3×, 4×).
-- **Updated** scoring expectations and fixtures in `tests/scoring.test.ts` to
-  match the v1.3.0 multipliers and v1.4.0 malice penalty (-10% per wrong guess).
-- **Adjusted** `tests/usePlayGame.test.ts` to expect router pushes with the new
+- Added a `useRoute` mock to the global test setup (tests/setup.ts), so
+  route-aware composables can read `route.query`.
+- Updated difficulty multiplier expectations in `tests/difficulty.test.ts` to
+  the new multipliers (1×, 2×, 3×, 4×).
+- Updated scoring expectations and fixtures in `tests/scoring.test.ts` to match
+  the v1.3.0 multipliers and v1.4.0 malice penalty (-10% per wrong guess).
+- Adjusted `tests/usePlayGame.test.ts` to expect router pushes with the new
   object form including `query: { reason: 'win' }`.
-- These fixes restored full test green status (all tests passing locally).
+- After these fixes all tests passed locally.
 
 ---
 
 ## 2. Game Logic Enhancements
 
-### 2.1 Clue System Improvements ❌ NOT DONE
+### 2.1 Clue System Improvements (not done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Game Logic
+Priority: P2 | Effort: Medium | Category: Game Logic
 
-**Potential New Clue Types**:
+Potential New Clue Types:
 
-| Clue Type              | Description                    | Implementation Notes                |
-| ---------------------- | ------------------------------ | ----------------------------------- |
-| **Career Highlight**   | "Won Champions League in 2015" | Requires trophy data                |
-| **Teammate**           | "Played with [Famous Player]"  | Complex: needs player relationships |
-| **Manager**            | "Played under [Manager]"       | Requires manager data               |
-| **Jersey Number**      | "Wore #7 at [Club]"            | Requires historical jersey data     |
-| **Transfer Fee Range** | "Cost €30-50M"                 | Already have transfer data          |
+| Clue Type          | Description                    | Implementation Notes                |
+| ------------------ | ------------------------------ | ----------------------------------- |
+| Career Highlight   | "Won Champions League in 2015" | Requires trophy data                |
+| Teammate           | "Played with [Famous Player]"  | Complex: needs player relationships |
+| Manager            | "Played under [Manager]"       | Requires manager data               |
+| Jersey Number      | "Wore #7 at [Club]"            | Requires historical jersey data     |
+| Transfer Fee Range | "Cost €30-50M"                 | Already have transfer data          |
 
-**Implementation**:
+Implementation:
 
 1. Add clue key to `ClueKey` type in `useClueData.ts`
 2. Implement extraction in `cluePool` computed
@@ -234,136 +230,135 @@ game logic changes:
 
 ---
 
-### 2.2 Scoring System Refinements ✅ DONE (v1.4.2)
+### 2.2 Scoring System Refinements (done) (v1.4.2)
 
-**Priority**: P3 | **Effort**: Small | **Category**: Game Logic
+Priority: P3 | Effort: Small | Category: Game Logic
 
-**Completed**:
+Completed:
 
-- **Linear Time Penalty**: Implemented smoother decay (-0.1%/sec) instead of
-  steps.
-- **Detailed Breakdowns**: Toast notification provides full bonus/penalty
-  visibility.
-- **All-Additive Formula**: Standardized all bonuses as % of adjusted base.
+- Linear Time Penalty: The time penalty decays linearly (-0.1%/sec) instead of
+  in steps.
+- Detailed Breakdowns: The toast lists every bonus and penalty.
+- All-Additive Formula: All bonuses are a % of the adjusted base.
 
-**Future Ideas**:
+Future Ideas:
 
-1. **Progressive Clue Costs**
+1. Progressive Clue Costs
 
    - First clue: 5 points
    - Later clues: 15 points
 
-2. **Guess Quality Bonus**
+2. Guess Quality Bonus
    - Partial match detection ("Ronaldo" for "Cristiano Ronaldo")
 
-**Technical Notes**:
+Technical Notes:
 
 - `server/utils/scoring.ts` is the single source of truth.
 - `HelpModal.vue` is automatically synced via constants.
 
 ---
 
-### 2.3 Difficulty Selection System ✅ DONE (v1.3.0)
+### 2.3 Difficulty Selection System (done) (v1.3.0)
 
-**Priority**: P1 | **Effort**: Medium | **Category**: Game Logic
+Priority: P1 | Effort: Medium | Category: Game Logic
 
-**Implementation**:
+Implementation:
 
 - User-selectable difficulty before game start
 - Options: Default (random E/M/H), Easy, Medium, Hard, Ultra
 - New multipliers: 1×, 2×, 3×, 4× (was 1×, 1.25×, 1.5×, 2×)
 - Max base scores: 100, 200, 300, 400 pts
 
-**Files Changed**:
+Files Changed:
 
-- `types/player.ts` - Added `UserSelectedDifficulty`, `GameMode` types
-- `utils/scoring-constants.ts` - Updated multipliers
-- `server/utils/difficulty.ts` - Updated multipliers
-- `server/services/player.ts` - `getRandomPlayer({ tierFilter })`
-- `server/api/randomPlayer.ts` - `?difficulty=X` query param
-- `components/DifficultySelector.vue` - New modal component
-- `components/PlayHeader.vue` - Two-step new game flow
-- `composables/useGameSession.ts` - Difficulty option in loadPlayer
-- `composables/usePlayGame.ts` - Query param handling
-- `composables/usePlayerReset.ts` - Difficulty param in confirm
+- `types/player.ts`: Added `UserSelectedDifficulty`, `GameMode` types
+- `utils/scoring-constants.ts`: Updated multipliers
+- `server/utils/difficulty.ts`: Updated multipliers
+- `server/services/player.ts`: `getRandomPlayer({ tierFilter })`
+- `server/api/randomPlayer.ts`: `?difficulty=X` query param
+- `components/DifficultySelector.vue`: New modal component
+- `components/PlayHeader.vue`: Two-step new game flow
+- `composables/useGameSession.ts`: Difficulty option in loadPlayer
+- `composables/usePlayGame.ts`: Query param handling
+- `composables/usePlayerReset.ts`: Difficulty param in confirm
 
-**Future Enhancements** (P3):
+Future Enhancements (P3):
 
-1. **Additional Difficulty Factors**
+1. Additional Difficulty Factors
 
    - Years since retirement (retired players harder)
    - National team prominence
    - Social media following (if available)
 
-2. **Dynamic Difficulty Adjustment**
+2. Dynamic Difficulty Adjustment
 
    - Adjust based on player streak
    - Option for "Hard Mode" with only Hard/Ultra players
 
-3. **Difficulty Categories**
-   - "Legends" - retired icons
-   - "Current Stars" - active top players
-   - "Rising Stars" - young talents
-   - "Cult Heroes" - less famous but notable
+3. Difficulty Categories
+   - "Legends": retired icons
+   - "Current Stars": active top players
+   - "Rising Stars": young talents
+   - "Cult Heroes": less famous but notable
 
 ---
 
-### 2.4 Loss Mechanics & Wrong Guess Penalty ✅ DONE (v1.4.0)
+### 2.4 Loss Mechanics & Wrong Guess Penalty (done) (v1.4.0)
 
-**Priority**: P1 | **Effort**: Medium | **Category**: Game Logic
+Priority: P1 | Effort: Medium | Category: Game Logic
 
-**Implementation**:
+Implementation:
 
 - Wrong guess penalty increased from -2% to -10% per guess
 - Maximum 5 wrong guesses allowed (6th = instant loss)
 - Three distinct loss states: win, surrender, aborted
 - Difficulty persistence across rounds via localStorage
 
-**Files Changed**:
+Files Changed:
 
-- `utils/scoring-constants.ts` - `MAX_WRONG_GUESSES = 5`, updated malice penalty
-- `server/utils/scoring.ts` - Updated malice calculation
-- `server/services/guess.ts` - Abort logic for 6th wrong guess
-- `server/api/guess.ts` - Returns abort fields
-- `composables/useGuessSubmission.ts` - `onAborted` callback, abort handling
-- `composables/usePlayGame.ts` - Difficulty persistence, abort handling
-- `components/PlayHeader.vue` - Fixed give-up disabled state
-- `pages/won.vue` - Distinct UI for win/surrender/aborted
-- `components/HelpModal.vue` - Updated wrong guess documentation
-- `pages/index.vue` - Updated scoring row
-- `components/VictoryCard.vue` - Difficulty persistence on "New mystery"
+- `utils/scoring-constants.ts`: `MAX_WRONG_GUESSES = 5`, updated malice penalty
+- `server/utils/scoring.ts`: Updated malice calculation
+- `server/services/guess.ts`: Abort logic for 6th wrong guess
+- `server/api/guess.ts`: Returns abort fields
+- `composables/useGuessSubmission.ts`: `onAborted` callback, abort handling
+- `composables/usePlayGame.ts`: Difficulty persistence, abort handling
+- `components/PlayHeader.vue`: Fixed give-up disabled state
+- `pages/won.vue`: Distinct UI for win/surrender/aborted
+- `components/HelpModal.vue`: Updated wrong guess documentation
+- `pages/index.vue`: Updated scoring row
+- `components/VictoryCard.vue`: Difficulty persistence on "New mystery"
 
-**Fixes Addressed**:
+Fixes Addressed:
 
-1. ✅ Difficulty lost on "New Mystery" navigation
-2. ✅ Give-up blocked after revealing all clues
-3. ✅ Wrong guess penalty too lenient (-2%)
-4. ✅ No distinct losing state for surrender vs. abort
+1. Difficulty lost on "New Mystery" navigation
+2. Give-up blocked after revealing all clues
+3. Wrong guess penalty too lenient (-2%)
+4. No distinct losing state for surrender vs. abort
 
 ---
 
-### 2.5 Streak System Enhancements ❌ NOT DONE
+### 2.5 Streak System Enhancements (not done)
 
-**Priority**: P3 | **Effort**: Small | **Category**: Game Logic
+Priority: P3 | Effort: Small | Category: Game Logic
 
-**Current System**:
+Current System:
 
 - Simple increment/reset
 - Bonus multiplier at thresholds
 
-**Potential Improvements**:
+Potential Improvements:
 
-1. **Streak Milestones**
+1. Streak Milestones
 
    - Visual celebration at 10, 25, 50, 100
    - Unlock achievements/badges
 
-2. **Streak Recovery**
+2. Streak Recovery
 
    - "Second Chance" mechanic (once per session)
    - Costs accumulated points
 
-3. **Weekly/Daily Streaks**
+3. Weekly/Daily Streaks
    - Track consecutive days played
    - Bonus for daily engagement
 
@@ -371,28 +366,27 @@ game logic changes:
 
 ## 3. Frontend/UX Improvements
 
-### 3.1 Accessibility Enhancements 🟡 PARTIALLY DONE
+### 3.1 Accessibility Enhancements (partially done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Accessibility
+Priority: P2 | Effort: Medium | Category: Accessibility
 
-**Current State**: Good foundation with ARIA labels, focus management, skip
-links
+Current State: ARIA labels, focus management and skip links are in place
 
-**Improvements**:
+Improvements:
 
-1. **Keyboard Navigation**
+1. Keyboard Navigation
 
    - Full keyboard support for all interactions
    - Visible focus indicators on all interactive elements
    - Escape key to close modals (verify working)
 
-2. **Screen Reader Optimization**
+2. Screen Reader Optimization
 
    - Announce clue reveals
    - Announce score changes
    - Better game state descriptions
 
-3. **Reduced Motion Support**
+3. Reduced Motion Support
 
    ```css
    @media (prefers-reduced-motion: reduce) {
@@ -403,159 +397,159 @@ links
    }
    ```
 
-4. **Color Contrast**
+4. Color Contrast
    - Audit all color combinations
    - Ensure 4.5:1 ratio for text
    - Don't rely on color alone for information
 
 ---
 
-### 3.2 Mobile Experience 🟡 PARTIALLY DONE
+### 3.2 Mobile Experience (partially done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: UX
+Priority: P2 | Effort: Medium | Category: UX
 
-**Current State**: Responsive via Tailwind, but not mobile-optimized
+Current State: Responsive via Tailwind, but not optimized for mobile
 
-**Improvements**:
+Improvements:
 
-1. **Touch Interactions**
+1. Touch Interactions
 
    - Larger touch targets (44x44px minimum)
    - Swipe gestures for clue reveal
    - Pull-to-refresh for new player
 
-2. **Mobile Layout Optimization**
+2. Mobile Layout Optimization
 
    - Collapsible clue panel
    - Fixed bottom action bar
    - Full-screen modals
 
-3. **Performance on Mobile**
+3. Performance on Mobile
 
    - Reduce initial bundle for slow networks
    - Optimize images (if any added)
    - Test on low-end devices
 
-4. **Footer Improvements** ✅ DONE (v1.6.4)
+4. Footer Improvements (done) (v1.6.4)
    - Added persistent footer links component to all layouts
-   - Privacy Policy link → `/legal`
-   - Session deletion link → `/delete` ("MY DATA")
+   - Privacy Policy link: `/legal`
+   - Session deletion link: `/delete` ("MY DATA")
    - Version display with link to GitHub changelog
 
 ---
 
-### 3.3 Visual Feedback Enhancements 🟡 PARTIALLY DONE
+### 3.3 Visual Feedback Enhancements (partially done)
 
-**Priority**: P3 | **Effort**: Small | **Category**: UX
+Priority: P3 | Effort: Small | Category: UX
 
-**Completed** (v1.6.0):
+Completed (v1.6.0):
 
-- ✅ Score Hiding: Tap the live score badge to hide/reveal (persisted
-  preference)
+- Score Hiding: Tapping the live score badge hides or reveals it (the choice is
+  saved)
 
-**Remaining Improvements**:
+Remaining Improvements:
 
-1. **Score Animation**
+1. Score Animation
 
    - Animated counter when score changes
    - Visual breakdown of score components
    - Confetti or celebration on high scores
 
-2. **Clue Reveal Animation**
+2. Clue Reveal Animation
 
    - Card flip or fade-in effect
    - Sound effects (optional, mutable)
 
-3. **Loading States**
+3. Loading States
 
    - Skeleton loaders for all async content
    - Progress indication for searches
 
-4. **Error States**
+4. Error States
    - Friendly error illustrations
    - Clear recovery actions
    - Retry buttons with exponential backoff
 
 ---
 
-### 3.4 Game State Persistence ✅ DONE
+### 3.4 Game State Persistence (done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: UX
+Priority: P2 | Effort: Medium | Category: UX
 
-**Current State**: Session persists, difficulty persists across rounds (v1.4.0)
+Current State: Session persists, difficulty persists across rounds (v1.4.0)
 
-**Completed** (v1.4.0):
+Completed (v1.4.0):
 
-- ✅ Difficulty selection persists in localStorage
-- ✅ "New mystery" reads difficulty from localStorage
+- Difficulty selection persists in localStorage
+- "New mystery" reads difficulty from localStorage
 
-**Remaining Improvements**:
+Remaining Improvements:
 
-1. **Resume Interrupted Game**
+1. Resume Interrupted Game
 
    - Store current round state in localStorage
    - Prompt to resume on return
    - Handle expired rounds gracefully
 
-2. **Offline Support**
+2. Offline Support
    - Service worker for static assets
    - Graceful degradation when offline
    - Sync when back online
 
 ---
 
-### 3.5 Social Features ❌ NOT DONE
+### 3.5 Social Features (not done)
 
-**Priority**: P3 | **Effort**: Large | **Category**: Feature
+Priority: P3 | Effort: Large | Category: Feature
 
-**Potential Features**:
+Potential Features:
 
-1. **Share Results**
+1. Share Results
 
    - Generate shareable image/text
    - "I guessed [Player] in X clues!"
    - Social media sharing buttons
 
-2. **Challenge Friends**
+2. Challenge Friends
 
    - Generate challenge link with specific player
    - Compare scores on same player
 
-3. **Global Leaderboard Improvements**
+3. Global Leaderboard Improvements
    - Daily/weekly leaderboards
    - Filter by difficulty tier
    - Player profile pages
 
 ---
 
-### 3.6 Scoreboard Difficulty Filtering ❌ NOT DONE
+### 3.6 Scoreboard Difficulty Filtering (not done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Feature
+Priority: P2 | Effort: Medium | Category: Feature
 
-**Current State**: The Highscores modal displays three tabs (Round Score,
-Session Score, Streak) without any difficulty filtering. All scores are
-aggregated regardless of the difficulty tier they were achieved on.
+Current State: The Highscores modal displays three tabs (Round Score, Session
+Score, Streak) without any difficulty filtering. All scores are aggregated
+regardless of the difficulty tier they were achieved on.
 
-**Planned Feature**:
+Planned Feature:
 
-1. **Difficulty Dropdown Filter**
+1. Difficulty Dropdown Filter
 
    - Add a dropdown selector to each tab (Round, Session, Streak)
    - Options: Default (all), Easy, Medium, Hard, Ultra
    - Persist last-selected filter in localStorage
 
-2. **Architecture Consideration: Game Modes**
+2. Architecture Consideration: Game Modes
 
    > [!NOTE] This feature is designed to be extended when game modes are
    > implemented (see section 6.1). The hierarchy will be:
    >
-   > - **Game Mode** (e.g., Classic, Time Attack, Daily Challenge)
-   >   - **Difficulty** (Easy, Medium, Hard, Ultra)
+   > - Game Mode (e.g., Classic, Time Attack, Daily Challenge)
+   >   - Difficulty (Easy, Medium, Hard, Ultra)
    >     - Round Score
    >     - Session Score
    >     - Streak
 
-3. **Implementation Notes**
+3. Implementation Notes
 
    | Component                        | Changes Required                                  |
    | -------------------------------- | ------------------------------------------------- |
@@ -564,7 +558,7 @@ aggregated regardless of the difficulty tier they were achieved on.
    | `server/services/leaderboard.ts` | Update query functions to filter by difficulty    |
    | Database schema (future)         | Add `game_mode` column when modes are implemented |
 
-4. **UI Mockup**
+4. UI Mockup
 
    ```text
    ┌─────────────────────────────────────────────┐
@@ -585,7 +579,7 @@ aggregated regardless of the difficulty tier they were achieved on.
    └─────────────────────────────────────────────┘
    ```
 
-5. **Data Model Considerations**
+5. Data Model Considerations
 
    - Sessions are already unique to difficulty (user selects difficulty at
      start)
@@ -595,34 +589,34 @@ aggregated regardless of the difficulty tier they were achieved on.
      - `sessions` table
      - `leaderboard` entries
 
-**Why This Design?**
+Reasons for this design:
 
-- Separating by difficulty ensures fair competition (Ultra players vs Ultra)
-- Planning for game modes now prevents database migrations later
-- Default view shows all difficulties for broader leaderboard appeal
+- Separate lists per difficulty mean Ultra players compete with Ultra players
+- Planning for game modes now saves a database migration later
+- The default view shows all difficulties, so more players appear on it
 
 ---
 
-### 3.7 SEO Optimizations ✅ DONE
+### 3.7 SEO Optimizations (done)
 
-**Priority**: P3 | **Effort**: Small | **Category**: SEO
+Priority: P3 | Effort: Small | Category: SEO
 
-**Current State**: Basic meta tags, no sitemap
+Current State: Basic meta tags, no sitemap
 
-**Improvements**:
+Improvements:
 
-1. **Meta Tags**
+1. Meta Tags
 
    - Dynamic title and description
    - OpenGraph tags for social sharing
    - Canonical URLs
 
-2. **Sitemap Generation**
+2. Sitemap Generation
 
    - Generate sitemap.xml
    - Submit to search engines
 
-3. **Robots.txt**
+3. Robots.txt
    - Properly configured
    - Dynamic rules for different environments
 
@@ -630,13 +624,13 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 ## 4. Developer Experience
 
-### 4.1 Development Tooling ✅ DONE
+### 4.1 Development Tooling (done)
 
-**Priority**: P2 | **Effort**: Small | **Category**: DX
+Priority: P2 | Effort: Small | Category: DX
 
-**Improvements**:
+Improvements:
 
-1. **Git Hooks**
+1. Git Hooks
 
    ```bash
    # .husky/pre-commit
@@ -645,13 +639,13 @@ aggregated regardless of the difficulty tier they were achieved on.
    npm test -- --run
    ```
 
-2. **VS Code Configuration**
+2. VS Code Configuration
 
    - Recommended extensions
    - Debug configurations
    - Task definitions
 
-3. **Development Scripts**
+3. Development Scripts
 
    ```json
    {
@@ -663,47 +657,47 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 ---
 
-### 4.2 Documentation Improvements ❌ NOT DONE
+### 4.2 Documentation Improvements (not done)
 
-**Priority**: P3 | **Effort**: Medium | **Category**: DX
+Priority: P3 | Effort: Medium | Category: DX
 
-**Potential Documentation**:
+Potential Documentation:
 
-1. **API Documentation**
+1. API Documentation
 
    - OpenAPI/Swagger spec for all endpoints
    - Request/response examples
    - Error code reference
 
-2. **Component Storybook**
+2. Component Storybook
 
    - Visual component library
    - Interactive prop playground
    - Accessibility testing integration
 
-3. **Architecture Decision Records (ADRs)**
+3. Architecture Decision Records (ADRs)
    - Document major decisions
    - Context, decision, consequences
    - Help future contributors understand "why"
 
 ---
 
-### 4.3 Debugging Improvements ❌ NOT DONE
+### 4.3 Debugging Improvements (not done)
 
-**Priority**: P2 | **Effort**: Small | **Category**: DX
+Priority: P2 | Effort: Small | Category: DX
 
-**Current State**: DevPanel exists for development
+Current State: DevPanel exists for development
 
-**Improvements**:
+Improvements:
 
-1. **Enhanced DevPanel**
+1. Enhanced DevPanel
 
    - View current round state
    - View all available clues
    - Reset to specific game states
    - Performance metrics
 
-2. **Request Tracing**
+2. Request Tracing
    - Correlation IDs in all logs
    - Client-side request timing
    - API response time display
@@ -712,70 +706,70 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 ## 5. Performance Optimizations
 
-### 5.1 Database Query Optimization ❌ NOT DONE
+### 5.1 Database Query Optimization (not done)
 
-**Priority**: P2 | **Effort**: Medium | **Category**: Performance
+Priority: P2 | Effort: Medium | Category: Performance
 
-**Potential Improvements**:
+Potential Improvements:
 
-1. **Query Analysis**
+1. Query Analysis
 
    - Run `EXPLAIN QUERY PLAN` on all queries
    - Identify missing indexes
    - Optimize JOIN patterns
 
-2. **Prepared Statement Caching**
+2. Prepared Statement Caching
 
    - Pre-compile frequent queries
    - Reuse prepared statements
 
-3. **Connection Pooling** (if scaling beyond single instance)
+3. Connection Pooling (if scaling beyond single instance)
    - Consider D1 or PostgreSQL for multi-instance
 
 ---
 
-### 5.2 Client Bundle Optimization ❌ NOT DONE
+### 5.2 Client Bundle Optimization (not done)
 
-**Priority**: P2 | **Effort**: Small | **Category**: Performance
+Priority: P2 | Effort: Small | Category: Performance
 
-**Current State**: Vite chunking enabled, vendor split
+Current State: Vite chunking enabled, vendor split
 
-**Improvements**:
+Improvements:
 
-1. **Lazy Loading**
+1. Lazy Loading
 
    - Lazy load modals (HelpModal, HighscoreModal)
    - Lazy load victory page components
 
-2. **Tree Shaking Verification**
+2. Tree Shaking Verification
 
    - Audit unused exports
    - Remove dead code
 
-3. **Image Optimization** (if images added)
+3. Image Optimization (if images added)
    - WebP format
    - Responsive images
    - Lazy loading
 
 ---
 
-### 5.3 Caching Strategies ❌ NOT DONE
+### 5.3 Caching Strategies (not done)
 
-**Priority**: P3 | **Effort**: Medium | **Category**: Performance
+Priority: P3 | Effort: Medium | Category: Performance
 
-**Potential Implementations**:
+Potential Implementations:
 
-1. **API Response Caching**
+1. API Response Caching
 
    - Cache leaderboard for 1 minute
    - Cache player search results
 
-2. **Static Asset Caching**
+2. Static Asset Caching
 
    - Long cache for versioned assets
    - Service worker for offline support
 
-3. **Database Query Caching**
+3. Database Query Caching
    - In-memory cache for frequent queries
    - Invalidation strategy
 
@@ -783,77 +777,77 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 ## 6. Future Features
 
-### 6.1 Game Modes ❌ NOT DONE
+### 6.1 Game Modes (not done)
 
-**Priority**: P3 | **Effort**: Large | **Category**: Feature
+Priority: P3 | Effort: Large | Category: Feature
 
-**Potential Modes**:
+Potential Modes:
 
-1. **Time Attack**
+1. Time Attack
 
    - Guess as many players as possible in 5 minutes
    - Simplified clue set for speed
 
-2. **Career Mode**
+2. Career Mode
 
    - Progress through difficulty tiers
    - Unlock harder players
    - Achievements system
 
-3. **Versus Mode**
+3. Versus Mode
 
    - Real-time competition
    - Same player, race to guess
    - WebSocket integration required
 
-4. **Daily Challenge**
+4. Daily Challenge
    - Same player for everyone
    - One attempt per day
    - Global leaderboard
 
 ---
 
-### 6.2 Content Expansion ❌ NOT DONE
+### 6.2 Content Expansion (not done)
 
-**Priority**: P3 | **Effort**: Large | **Category**: Content
+Priority: P3 | Effort: Large | Category: Content
 
-**Potential Expansions**:
+Potential Expansions:
 
-1. **Historical Players**
+1. Historical Players
 
    - Legends from 1990s, 1980s, etc.
    - Different clue types (no transfer data)
 
-2. **Women's Football**
+2. Women's Football
 
    - Separate player database
    - Same game mechanics
 
-3. **Regional Focus**
+3. Regional Focus
    - Filter by league/country
    - "Premier League Only" mode
 
 ---
 
-### 6.3 Monetization Options ❌ NOT DONE
+### 6.3 Monetization Options (not done)
 
-**Priority**: P4 | **Effort**: Large | **Category**: Business
+Priority: P4 | Effort: Large | Category: Business
 
-**If monetization needed**:
+If monetization needed:
 
-1. **Premium Features**
+1. Premium Features
 
    - Ad-free experience
    - Exclusive game modes
    - Detailed statistics
 
-2. **Cosmetics**
+2. Cosmetics
 
    - Themes
    - Profile customization
    - Achievement badges
 
-3. **Non-Intrusive Ads**
+3. Non-Intrusive Ads
    - Between rounds only
    - Respect user experience
 
@@ -861,32 +855,32 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 ## Status Summary (Reconciliation Audit 2026-01-17)
 
-| Section                 | Done   | Partial | Not Done |
-| ----------------------- | ------ | ------- | -------- |
-| 1. Code Stability       | 4      | 0       | 0        |
-| 2. Game Logic           | 3      | 0       | 2        |
-| 3. Frontend/UX          | 2      | 3       | 2        |
-| 4. Developer Experience | 1      | 0       | 2        |
-| 5. Performance          | 0      | 0       | 3        |
-| 6. Future Features      | 0      | 0       | 3        |
-| **Total**               | **10** | **3**   | **12**   |
+| Section                 | Done | Partial | Not Done |
+| ----------------------- | ---- | ------- | -------- |
+| 1. Code Stability       | 4    | 0       | 0        |
+| 2. Game Logic           | 3    | 0       | 2        |
+| 3. Frontend/UX          | 2    | 3       | 2        |
+| 4. Developer Experience | 1    | 0       | 2        |
+| 5. Performance          | 0    | 0       | 3        |
+| 6. Future Features      | 0    | 0       | 3        |
+| Total                   | 10   | 3       | 12       |
 
 ---
 
 ## Priority Matrix
 
-| Priority | Category     | Items                                    | Status         |
-| -------- | ------------ | ---------------------------------------- | -------------- |
-| **P0**   | Testing      | Scoring tests                            | ✅ DONE        |
-| **P1**   | Architecture | Service layer, TypeScript strictness     | ✅ DONE        |
-| **P1**   | Testing      | Difficulty tests, token tests            | ✅ DONE        |
-| **P2**   | Stability    | Error handling, response standardization | ✅ DONE        |
-| **P2**   | UX           | Accessibility, mobile                    | 🟡 Partial     |
-| **P2**   | Feature      | Scoreboard difficulty filtering          | ❌ Not Started |
-| **P2**   | DX           | Debugging                                | ❌ Not Started |
-| **P3**   | Game Logic   | Clue improvements                        | ❌ Not Started |
-| **P3**   | UX           | Visual feedback, social features         | ❌ Not Started |
-| **P3**   | Features     | Game modes, content expansion            | ❌ Not Started |
+| Priority | Category     | Items                                    | Status      |
+| -------- | ------------ | ---------------------------------------- | ----------- |
+| P0       | Testing      | Scoring tests                            | (done)      |
+| P1       | Architecture | Service layer, TypeScript strictness     | (done)      |
+| P1       | Testing      | Difficulty tests, token tests            | (done)      |
+| P2       | Stability    | Error handling, response standardization | (done)      |
+| P2       | UX           | Accessibility, mobile                    | Partial     |
+| P2       | Feature      | Scoreboard difficulty filtering          | Not started |
+| P2       | DX           | Debugging                                | Not started |
+| P3       | Game Logic   | Clue improvements                        | Not started |
+| P3       | UX           | Visual feedback, social features         | Not started |
+| P3       | Features     | Game modes, content expansion            | Not started |
 
 ---
 
@@ -894,11 +888,11 @@ aggregated regardless of the difficulty tier they were achieved on.
 
 When implementing any improvement:
 
-1. **Follow ARCHITECTURE.md** - All code must adhere to established patterns
-2. **Test First** - Critical paths must have tests
-3. **Document Changes** - Update README/ARCHITECTURE if patterns change
-4. **Incremental Delivery** - Small PRs over large rewrites
-5. **Measure Impact** - Performance changes need before/after metrics
+1. Follow ARCHITECTURE.md and its established patterns.
+2. Write tests first; critical paths must have tests.
+3. Update README/ARCHITECTURE when patterns change.
+4. Prefer small PRs over large rewrites.
+5. Performance changes need before/after metrics.
 
 ---
 
