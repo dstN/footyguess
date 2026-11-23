@@ -11,6 +11,12 @@
   gone, and so are phrases like "massively" or "transforms". Versions, dates
   and code blocks are unchanged.
 
+### Fixed
+
+- Three tables in ARCHITECTURE.md (Deferred Concerns, Quick Reference and the
+  document changelog) had rows with more columns than their header, so GitHub
+  rendered them wrongly.
+
 ## [1.6.5] - 2026-01-23
 
 ### Maintenance & Operations

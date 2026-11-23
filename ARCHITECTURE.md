@@ -445,10 +445,10 @@ transfers). Timer only starts counting after grace period.
 
 ### 8.2 Deferred Concerns
 
-| Concern                | Status                     | Reference |
-| ---------------------- | -------------------------- | --------- | ----------------- |
-| Lazy DB initialization | Accepted trade-off         | Issue #74 |
-| -                      | Production-grade analytics | Deferred  | No immediate need |
+| Concern                    | Status                     | Reference         |
+| -------------------------- | -------------------------- | ----------------- |
+| Lazy DB initialization     | Accepted trade-off         | Issue #74         |
+| Production-grade analytics | Deferred                   | No immediate need |
 
 ---
 
@@ -494,7 +494,7 @@ transfers). Timer only starts counting after grace period.
 ### Quick Reference
 
 | If...                       | Then...                                                           |
-| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------- |
+| --------------------------- | ----------------------------------------------------------------- |
 | Adding server-side logic    | Put it in `server/services/`, not in API route                    |
 | Adding client state         | Create or extend a composable                                     |
 | Adding pure functions       | Put in `utils/` (client) or `server/utils/`                       |
@@ -503,7 +503,7 @@ transfers). Timer only starts counting after grace period.
 | Adding an API endpoint      | Follow the 5-step pattern in §3.1                                 |
 | Catching errors server-side | Use `logError()` + `errorResponse()`                              |
 | Catching errors client-side | Use `logError()` + update `isError` ref + show toast              |
-| -                           | Typing a function return                                          | Explicit if public API, inferred if internal |
+| Typing a function return    | Explicit if public API, inferred if internal                      |
 | Modifying scoring logic     | Update `server/utils/scoring.ts` AND `utils/scoring-constants.ts` |
 
 ### Absolute Rules
@@ -599,16 +599,16 @@ knowledge.
 
 ## Changelog
 
-| Date | Change     |
-| ---- | ---------- | ------------------------------------------------- |
-| -    | 2026-01-17 | Admin Tools & Full Audit (v1.5.0)                 |
-| -    | 2026-01-17 | Added §12 Accessibility & Mobile Guidelines       |
-| -    | 2026-01-17 | Header Polish & Grace Timer (v1.4.4)              |
-| -    | 2026-01-15 | Updated §7.6 Scoring, Leaderboard fixes (v1.4.3)  |
-| -    | 2026-01-14 | Added §7.6 Scoring Formula order                  |
-| -    | 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
-| -    | 2026-01-12 | Added §7 Difficulty & Scoring System              |
-| -    | 2026-01-11 | Fixed duplicate diagram in §2.1                   |
-| -    | 2026-01-10 | Added Service Layer, AppError, Security Headers   |
-| -    | 2026-01-09 | Updated: Resolved all major tech debt issues      |
-| -    | 2026-01-07 | Initial architecture document created             |
+| Date       | Change                                            |
+| ---------- | ------------------------------------------------- |
+| 2026-01-17 | Admin Tools & Full Audit (v1.5.0)                 |
+| 2026-01-17 | Added §12 Accessibility & Mobile Guidelines       |
+| 2026-01-17 | Header Polish & Grace Timer (v1.4.4)              |
+| 2026-01-15 | Updated §7.6 Scoring, Leaderboard fixes (v1.4.3)  |
+| 2026-01-14 | Added §7.6 Scoring Formula order                  |
+| 2026-01-13 | Added §7.4 Loss Conditions, §7.5 Difficulty Pers. |
+| 2026-01-12 | Added §7 Difficulty & Scoring System              |
+| 2026-01-11 | Fixed duplicate diagram in §2.1                   |
+| 2026-01-10 | Added Service Layer, AppError, Security Headers   |
+| 2026-01-09 | Updated: Resolved all major tech debt issues      |
+| 2026-01-07 | Initial architecture document created             |
